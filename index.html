@@ -429,6 +429,12 @@ select{appearance:none;-webkit-appearance:none;
       <button class="btn" id="a-rule" style="margin:0">🔁 반복</button>
     </div>
 
+    <!-- 목표는 맨 아래. 매일 보는 것은 통장 잔고이므로 -->
+    <div class="card">
+      <h2>모으는 목표</h2>
+      <div id="a-goal"></div>
+      <button class="btn" id="a-goal-edit" style="margin:10px 0 0 0">목표 정하기</button>
+    </div>
   </section>
 
   <!-- ══════════ 설정 ══════════ -->
@@ -681,6 +687,19 @@ select{appearance:none;-webkit-appearance:none;
   </div>
 </div>
 
+<!-- ══════════ 목표 정하기 시트 ══════════ -->
+<div id="gosheet" style="position:fixed;inset:0;z-index:61;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="go-cancel">취소</button>
+    <div class="ttl">목표 정하기</div>
+    <button id="go-off" class="del">끄기</button>
+  </div>
+  <div class="sh-body" id="go-body"></div>
+  <div class="sh-pad" style="padding:12px 14px">
+    <button class="btn pri" id="go-save" style="margin:0">저장</button>
+  </div>
+</div>
+
 <div id="emoji"><div class="box">
   <h3 id="em-title">아이콘 고르기</h3>
   <div class="tiny muted" style="line-height:1.6">
@@ -725,7 +744,8 @@ function blankDB(){
   return { ver:2, people:['남편','아내'], cats:cloneList(DEFAULT_CATS),
            targets:cloneList(DEFAULT_TARGETS),
            tx:[], assets:[], rules:[], last:{payId:'', who:0}, theme:'auto',
-           guideDone:false, budget:{amount:0, payIds:[], acctId:''}, catBudget:{} };
+           guideDone:false, budget:{amount:0, payIds:[], acctId:''}, catBudget:{},
+           goal:{on:false, name:'', need:0, date:'', ids:[]} };
 }
 /* 목록에서 「지우기」를 눌렀을 때 —
    그 이름으로 적어둔 기록이 하나도 없으면 진짜로 없애고,
@@ -758,6 +778,8 @@ function normalize(){
   if(!DB.last) DB.last={payId:'', who:0};
   if(!DB.theme) DB.theme='auto';
   if(DB.guideDone==null) DB.guideDone=false;
+  if(!DB.goal) DB.goal={on:false, name:'', need:0, date:'', ids:[]};
+  if(!DB.goal.ids) DB.goal.ids=[];
   if(!DB.budget) DB.budget={amount:0, payIds:[], acctId:''};
   if(!DB.budget.payIds) DB.budget.payIds=[];
   if(!DB.catBudget) DB.catBudget={};
@@ -1975,6 +1997,7 @@ $('#sh-del').onclick=function(){
    9. 돈(자산) 화면
    ============================================================================ */
 function renderAsset(){
+  renderGoal();
   var nw=netWorth(), ym=ymOf(todayStr());
   $('#a-net').textContent=wonx(nw.net);
   $('#a-net').style.color=nw.net>=0?'var(--txt)':'var(--minus)';
@@ -2120,11 +2143,193 @@ $('#a-rule').onclick=function(){ openRules(); };
 $('#s-goto-asset').onclick=function(){ go('asset'); };
 
 /* ============================================================================
+   9-2. 모으는 목표 — 「지금 속도면 되나」
+   🚨 집값·대출가능액을 앱이 추정하지 않는다. 근거가 약해서 정밀한 척하면 안 된다.
+      사용자가 「그때까지 있어야 할 돈」을 직접 적고, 앱은 자기가 아는 것만 계산한다.
+   ============================================================================ */
+function goalOn(){ return !!(DB.goal && DB.goal.on && +DB.goal.need>0 && DB.goal.date); }
+/* 목표에 쓰기로 고른 통장·적금·투자에 지금 들어 있는 돈 */
+function goalSaved(){
+  var ids=DB.goal.ids||[], sum=0;
+  liveAssets().forEach(function(a){ if(ids.indexOf(a.id)>=0) sum+=balanceOf(a); });
+  return sum;
+}
+/* 반복 규칙만으로 그 통장들에 매달 얼마가 쌓이는지.
+   들어오는 것에서 나가는 것을 뺀다 — 목표 통장에서 매달 빠져나가는 게 있으면 그만큼 덜 모인다. */
+function goalMonthly(){
+  var ids=DB.goal.ids||[], sum=0;
+  liveRules().forEach(function(r){
+    if(r.active===false) return;
+    var amt=+r.amount||0;
+    if((r.kind==='transfer'||r.kind==='income') && ids.indexOf(r.toId)>=0) sum+=amt;
+    if((r.kind==='transfer'||r.kind==='expense') && ids.indexOf(r.fromId)>=0) sum-=amt;
+  });
+  return sum;
+}
+/* 오늘부터 목표일까지 남은 개월수. 최소 1 */
+function goalMonthsLeft(){
+  var d=new Date(DB.goal.date), now=new Date();
+  var m=(d.getFullYear()-now.getFullYear())*12 + (d.getMonth()-now.getMonth());
+  if(d.getDate()<now.getDate()) m--;
+  return Math.max(1, m);
+}
+function renderGoal(){
+  var box=$('#a-goal'); box.innerHTML='';
+  if(!goalOn()){
+    box.appendChild(el('div','tiny muted',
+      '집 잔금처럼 <b>언제까지 얼마</b>가 필요한 일을 적어두면,<br>'
+    + '지금 모으는 속도로 되는지 알려드립니다.<br>'
+    + '아직 정해둔 목표가 없습니다.'));
+    return;
+  }
+  var g=DB.goal, need=+g.need, saved=goalSaved(), months=goalMonthsLeft();
+  var left=Math.max(0, need-saved), per=Math.ceil(left/months), now=goalMonthly();
+  var gap=now-per, done=Math.min(100, need? saved/need*100 : 0);
+
+  box.appendChild(el('div','tiny muted', g.name||'목표'));
+  box.appendChild(el('div','bigamt num', wonx(saved)));
+  box.appendChild(el('div','tiny muted', '목표 '+wonx(need)+' 중 지금까지 모은 돈'));
+
+  var tr=el('div','track'); tr.style.margin='11px 0';
+  var f=el('i','fill'); f.style.display='block'; f.style.width=Math.max(2,done)+'%';
+  tr.appendChild(f); box.appendChild(tr);
+
+  box.appendChild(kv('목표일', g.date+' (약 '+months+'개월 뒤)'));
+  box.appendChild(kv('앞으로 더 모을 돈', wonx(left)));
+  box.appendChild(kv('매달 이만큼 필요', wonx(per)));
+  box.appendChild(kv('지금 매달 모으는 돈', wonx(now)));
+
+  var verdict=el('div'); verdict.style.cssText='margin-top:12px;font-size:16px;font-weight:800;letter-spacing:-.4px';
+  if(left<=0){
+    verdict.textContent='이미 다 모았습니다.';
+    verdict.style.color='var(--plus)';
+  }else if(gap>=0){
+    verdict.textContent='이 속도면 됩니다 · 매달 '+wonx(gap)+' 여유';
+    verdict.style.color='var(--plus)';
+  }else{
+    verdict.textContent='이 속도로는 모자랍니다 · 매달 '+wonx(-gap)+' 더';
+    verdict.style.color='var(--minus)';
+  }
+  box.appendChild(verdict);
+
+  box.appendChild(el('div','tiny muted',
+    '「지금 매달 모으는 돈」은<br>'
+  + '<b>반복에 등록한 것만</b> 셉니다.<br>'
+  + '손으로 옮긴 돈은 안 들어갑니다.<br>'
+  + '집값·대출은 계산하지 않습니다.<br>'
+  + '직접 적으신 금액만 씁니다.'));
+}
+
+var gdraft=null;
+$('#a-goal-edit').onclick=function(){
+  gdraft={ on:true, name:DB.goal.name||'', need:+DB.goal.need||0,
+           date:DB.goal.date||'', ids:(DB.goal.ids||[]).slice() };
+  drawGoalSheet();
+  $('#gosheet').style.display='flex';
+  document.body.style.overflow='hidden';
+};
+function closeGoal(){ $('#gosheet').style.display='none'; document.body.style.overflow=''; gdraft=null; }
+$('#go-cancel').onclick=closeGoal;
+$('#go-off').onclick=function(){
+  DB.goal.on=false; save(); closeGoal(); renderGoal();
+  toast('목표를 껐습니다. 적어둔 값은 그대로 있습니다');
+};
+function drawGoalSheet(){
+  var b=$('#go-body'); b.innerHTML='';
+  b.appendChild(el('div','notice',
+    '집 잔금처럼 <b>언제까지 얼마</b>가<br>'
+  + '필요한 일을 적습니다.<br>'
+  + '집값이나 대출은 앱이 계산하지 않습니다.<br>'
+  + '필요한 금액은 직접 적어주세요.'));
+
+  b.appendChild(fldLabel('무엇을 위한 돈인가'));
+  var ni=el('input'); ni.value=gdraft.name; ni.maxLength=20; ni.placeholder='예: 거북섬 입주 잔금';
+  ni.oninput=function(){ gdraft.name=ni.value; };
+  b.appendChild(ni);
+  b.appendChild(el('div','fld'));
+
+  b.appendChild(fldLabel('그때까지 있어야 할 돈'));
+  var ai=el('input'); ai.type='number'; ai.inputMode='numeric';
+  ai.value=gdraft.need||''; ai.placeholder='원 단위로';
+  ai.oninput=function(){ gdraft.need=parseInt(ai.value,10)||0; };
+  b.appendChild(ai);
+  b.appendChild(el('div','tiny muted','재정계획에서 계산한 「필요 현금」을 적으시면 됩니다.'));
+  b.appendChild(el('div','fld'));
+
+  b.appendChild(fldLabel('언제까지'));
+  var di=el('input'); di.type='date'; di.value=gdraft.date;
+  di.onchange=function(){ gdraft.date=di.value; };
+  b.appendChild(di);
+  b.appendChild(el('div','fld'));
+
+  b.appendChild(fldLabel('어디에 모으고 있나 (여러 개 고를 수 있습니다)'));
+  var pool=liveAssets().filter(function(a){
+    return a.kind==='bank'||a.kind==='savings'||a.kind==='invest';
+  });
+  if(!pool.length){
+    b.appendChild(el('div','tiny muted','통장·적금·투자를 먼저 등록해 주세요.'));
+  }else{
+    var ch=el('div','chips');
+    pool.forEach(function(a){
+      var on=gdraft.ids.indexOf(a.id)>=0;
+      var btn=el('button', on?'on':'', a.name||KIND_LABEL[a.kind]);
+      btn.onclick=function(){
+        var i=gdraft.ids.indexOf(a.id);
+        if(i>=0) gdraft.ids.splice(i,1); else gdraft.ids.push(a.id);
+        drawGoalSheet();
+      };
+      ch.appendChild(btn);
+    });
+    b.appendChild(ch);
+    b.appendChild(el('div','tiny muted',
+      '고른 곳에 든 돈을 <b>지금까지 모은 돈</b>으로 셉니다.<br>'
+    + '반복으로 그리로 들어가는 돈이 <b>매달 모으는 돈</b>입니다.'));
+  }
+  b.appendChild(el('div',null,'<div style="height:10px"></div>'));
+}
+$('#go-save').onclick=function(){
+  if(!(+gdraft.need>0)){ toast('필요한 금액을 적어주세요'); return; }
+  if(!gdraft.date){ toast('언제까지인지 골라주세요'); return; }
+  if(!gdraft.ids.length){ toast('어디에 모으는지 하나는 골라주세요'); return; }
+  DB.goal={ on:true, name:gdraft.name, need:+gdraft.need, date:gdraft.date, ids:gdraft.ids.slice() };
+  save(); closeGoal(); renderGoal(); toast('목표를 정했습니다');
+};
+
+/* ============================================================================
    10. 통장·카드 상세 — 그 안에서 뭐가 오갔는지
    ============================================================================ */
-var detailId=null, detailYM=null;
+var detailId=null, detailYM=null, detailFlow=false;
+/* 이 통장에 돈이 어디서 들어오고 어디로 나갔는지 묶어서 센다.
+   옮김은 상대 통장으로, 카드 지출은 카드 이름으로, 통장에서 바로 낸 것은 분류로 묶는다. */
+function flowOf(id, ym){
+  var inMap={}, outMap={};
+  function add(map, key, emo, v){
+    if(!map[key]) map[key]={ label:key, emo:emo, v:0, n:0 };
+    map[key].v+=v; map[key].n++;
+  }
+  liveTx().forEach(function(t){
+    if(ymOf(t.date)!==ym) return;
+    var d=txDelta(t, id);
+    if(!d) return;
+    if(t.type==='transfer'){
+      if(d>0) add(inMap,  assetName(t.fromId)||'어디선가', '🏦', d);
+      else    add(outMap, assetName(t.toId)  ||'어딘가',  '🏦', -d);
+    }else if(t.type==='income'){
+      add(inMap, t.cat||'수입', catOf(t.cat).e, d);
+    }else{
+      var pa=assetById(t.payId);
+      if(pa && pa.kind==='card') add(outMap, pa.name||'카드', '💳', -d);
+      else add(outMap, t.cat||'지출', catOf(t.cat).e, -d);
+    }
+  });
+  function arr(m){
+    return Object.keys(m).map(function(k){ return m[k]; })
+                 .sort(function(x,y){ return y.v-x.v; });
+  }
+  return { in:arr(inMap), out:arr(outMap) };
+}
 function openDetail(a){
-  detailId=a.id; detailYM=ymOf(todayStr());
+  detailId=a.id; detailYM=ymOf(todayStr()); detailFlow=false;
   drawDetail();
   $('#dsheet').style.display='flex';
   document.body.style.overflow='hidden';
@@ -2175,6 +2380,36 @@ function drawDetail(){
       });
       b.appendChild(cc);
     }
+  }
+
+  /* 흐름은 평소엔 접어둔다. 눌렀을 때만 펼친다.
+     매일 보는 것은 잔고와 내역이지 흐름이 아니기 때문. */
+  if(a.kind==='bank'){
+    var fc=el('div','card');
+    var tg=el('button','btn', detailFlow?'흐름 접기':'자세히 보기 — 어디서 들어오고 어디로 나가나');
+    tg.style.cssText='margin:0;border:1px solid var(--line)';
+    tg.onclick=function(){ detailFlow=!detailFlow; drawDetail(); };
+    fc.appendChild(tg);
+    if(detailFlow){
+      var fl=flowOf(a.id, detailYM);
+      [['들어온 곳', fl.in, 'var(--plus)'], ['나간 곳', fl.out, 'var(--minus)']].forEach(function(p){
+        var h=el('h2',null,p[0]); h.style.marginTop='16px';
+        fc.appendChild(h);
+        if(!p[1].length){ fc.appendChild(el('div','tiny muted','이 달에는 없습니다.')); return; }
+        p[1].forEach(function(r){
+          var row=el('div','kv');
+          row.appendChild(el('span',null,(r.emo?r.emo+' ':'')+r.label+' · '+r.n+'건'));
+          var v=el('b','num', wonx(r.v)); v.style.color=p[2];
+          row.appendChild(v);
+          fc.appendChild(row);
+        });
+      });
+      fc.appendChild(el('div','tiny muted',
+        '카드로 쓴 것은 <b>카드 이름</b>으로 묶입니다.<br>'
+      + '통장끼리 옮긴 것은 <b>상대 통장</b>으로 묶입니다.<br>'
+      + '통장에서 바로 낸 것은 <b>분류</b>로 묶입니다.'));
+    }
+    b.appendChild(fc);
   }
 
   var rows=liveTx().filter(function(t){
