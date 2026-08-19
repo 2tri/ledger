@@ -161,6 +161,43 @@ select{appearance:none;-webkit-appearance:none;
 .seg button{padding:12px 4px;font-size:14.5px;font-weight:700;color:var(--sub);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}
 .seg button.on{background:var(--accent);color:#fff}
+/* 2줄짜리 세그(홈의 갈라 보기) — 오른쪽 끝 칸의 세로선을 지우고
+   윗줄과 아랫줄 사이에 가로선을 넣어 칸 경계가 헷갈리지 않게 한다. */
+.seg.two button:nth-child(2n){border-right:none}
+.seg.two button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+
+/* ============================================================
+   목록 고치기 (분류 · 대상)
+   한 줄에 [아이콘] [이름] [↑] [↓] [지우기] 를 같은 높이로 둔다.
+   손가락이 칸 경계를 헷갈리면 안 되므로 칸마다 선을 넣는다.
+   ============================================================ */
+.listedit{border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  margin-bottom:10px;background:var(--card)}
+.lerow{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+.lerow:last-child{border-bottom:none}
+.lerow>button{background:transparent}
+.leemo{width:48px;height:48px;flex:none;font-size:20px;border-right:1px solid var(--line)}
+.lename{flex:1;min-width:0;height:48px;border:none;background:transparent;
+  font-size:15px;font-weight:700;color:var(--txt);padding:0 11px;letter-spacing:-.3px}
+.lename:focus{outline:none;background:var(--line2)}
+.lebtn{width:38px;height:48px;flex:none;font-size:15px;font-weight:700;
+  color:var(--sub);border-left:1px solid var(--line)}
+.lebtn.del{color:var(--minus)}
+.lebtn:disabled{opacity:.22}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}
+
+/* 아이콘 고르는 판 */
+#emoji{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:none}
+#emoji.on{display:block}
+#emoji .box{position:absolute;left:0;right:0;bottom:0;max-height:76%;overflow:auto;
+  background:var(--bg);border-radius:20px 20px 0 0;padding:16px 16px 26px}
+#emoji h3{font-size:17px;font-weight:800;margin:0 0 4px;letter-spacing:-.4px}
+#emoji .grp{font-size:13px;color:var(--dim);font-weight:700;margin:14px 0 7px}
+#emoji .eg{display:grid;grid-template-columns:repeat(6,1fr);
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+#emoji .eg button{height:46px;font-size:22px;border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line)}
+#emoji .eg button:nth-child(6n){border-right:none}
 .daygroup{margin-bottom:14px}
 .dayhead{display:flex;justify-content:space-between;align-items:baseline;
   padding:8px 4px;font-size:14px;color:var(--sub);font-weight:700}
@@ -309,10 +346,12 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card">
       <h2>어디에 많이 썼나</h2>
-      <div class="seg" id="h-by" style="grid-template-columns:repeat(3,1fr)">
+      <!-- 4칸이 되어 2줄로 나눴다. 한 줄에 4개를 넣으면 「카드·통장별」이 잘린다. -->
+      <div class="seg two" id="h-by" style="grid-template-columns:repeat(2,1fr)">
         <button data-b="cat" class="on">분류별</button>
         <button data-b="pay">카드·통장별</button>
         <button data-b="who">사람별</button>
+        <button data-b="target">대상별</button>
       </div>
       <div id="h-bars"></div>
       <div class="tiny muted" id="h-bars-note" style="margin-top:10px;line-height:1.7"></div>
@@ -427,17 +466,28 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card">
       <h2>분류 (지출)</h2>
-      <div class="chips" id="s-cats" style="margin-bottom:10px"></div>
-      <div class="row2">
-        <input id="s-cat-emo" placeholder="🍚" maxlength="2">
-        <input id="s-cat-nm" placeholder="새 분류 이름" maxlength="8">
+      <div class="listedit" id="s-cats"></div>
+      <button class="btn" id="s-cat-add">＋ 분류 새로 만들기</button>
+      <div class="tiny muted" style="line-height:1.6;margin-top:9px">
+        그림을 누르면 아이콘을 고릅니다.<br>
+        이름은 눌러서 바로 고칠 수 있습니다.<br>
+        ↑↓ 로 순서를 바꿉니다.<br>
+        이미 적어둔 내역은 지워지지 않습니다.
       </div>
-      <button class="btn" id="s-cat-add" style="margin-top:9px">분류 추가</button>
-      <div class="tiny muted" style="line-height:1.6">
-        분류를 눌러서 지울 수 있습니다.<br>
-        이미 적어둔 내역은<br>
-        지워지지 않고 남습니다.
+      <button class="btn ghost" id="s-cat-reset" style="margin-top:9px">처음 분류로 되돌리기</button>
+    </div>
+
+    <div class="card">
+      <h2>누구에게 · 무엇을 위해</h2>
+      <div class="listedit" id="s-targets"></div>
+      <button class="btn" id="s-tgt-add">＋ 대상 새로 만들기</button>
+      <div class="tiny muted" style="line-height:1.6;margin-top:9px">
+        돈이 누구에게 갔는지 적는 칸입니다.<br>
+        시댁·친정처럼 늘려서 쓰시면 됩니다.<br>
+        「누가 적었나」와는 다른 것입니다.<br>
+        안 고르면 「우리」로 들어갑니다.
       </div>
+      <button class="btn ghost" id="s-tgt-reset" style="margin-top:9px">처음 대상으로 되돌리기</button>
     </div>
 
     <div class="card">
@@ -627,6 +677,15 @@ select{appearance:none;-webkit-appearance:none;
   </div>
 </div>
 
+<div id="emoji"><div class="box">
+  <h3 id="em-title">아이콘 고르기</h3>
+  <div class="tiny muted" style="line-height:1.6">
+    누르면 바로 바뀝니다.<br>
+    마음에 드는 게 없으면 그냥 닫으세요.
+  </div>
+  <div id="em-body"></div>
+  <button class="btn ghost" id="em-close" style="margin-top:16px">닫기</button>
+</div></div>
 <div id="toast"></div>
 
 <script>
@@ -648,16 +707,47 @@ var INCOME_CATS = [
   {e:'💵',n:'급여'},{e:'🎉',n:'상여'},{e:'🧧',n:'용돈'},
   {e:'💼',n:'부수입'},{e:'🏦',n:'이자·배당'},{e:'📦',n:'기타'}
 ];
+/* 「누구에게 / 무엇을 위해」 쓴 돈인가.
+   「누가 적었나」(people)와는 다른 축이다. 예: 아내가 적었지만 시댁에 쓴 돈.
+   기본이 「우리」라서, 안 누르면 그대로 우리로 들어간다. */
+var DEFAULT_TARGETS = [
+  {e:'👫',n:'우리'},{e:'🙋',n:'남편'},{e:'🙋‍♀️',n:'아내'},
+  {e:'🏠',n:'시댁'},{e:'🏡',n:'친정'}
+];
+var DEF_TARGET = '우리';
 var DB = null;
 
 function blankDB(){
-  return { ver:2, people:['나','아내'], cats:DEFAULT_CATS.slice(),
+  return { ver:2, people:['남편','아내'], cats:cloneList(DEFAULT_CATS),
+           targets:cloneList(DEFAULT_TARGETS),
            tx:[], assets:[], rules:[], last:{payId:'', who:0}, theme:'auto',
            guideDone:false, budget:{amount:0, payIds:[], acctId:''}, catBudget:{} };
 }
+/* 목록에서 「지우기」를 눌렀을 때 —
+   그 이름으로 적어둔 기록이 하나도 없으면 진짜로 없애고,
+   하나라도 있으면 hidden 만 켜서 목록에서만 뺀다(옛 기록은 그대로 보인다).
+   그래서 사용자는 규칙을 몰라도 되고 「지우기」만 누르면 된다. */
+function visibleList(list){
+  var out=[], i;
+  for(i=0;i<list.length;i++) if(!list[i].hidden) out.push(list[i]);
+  return out;
+}
+/* 기본 목록을 복사할 때 반드시 이걸 쓴다.
+   slice() 만 하면 줄만 복사되고 알맹이는 같은 것을 가리켜서,
+   사용자가 아이콘 하나만 바꿔도 「처음 목록」 자체가 같이 바뀌어 버린다. */
+function cloneList(list){
+  return list.map(function(o){ return { e:o.e, n:o.n }; });
+}
 function normalize(){
-  if(!DB.people) DB.people=['나','아내'];
-  if(!DB.cats||!DB.cats.length) DB.cats=DEFAULT_CATS.slice();
+  if(!DB.people) DB.people=['남편','아내'];
+  /* 처음엔 「나/아내」였는데 둘이 같이 쓰는 앱이라 「남편/아내」가 맞다.
+     손대지 않은 기본값일 때만 바꾼다 — 일부러 「나」로 두신 분의 이름은 안 건드린다. */
+  if(DB.people[0]==='나' && DB.people[1]==='아내') DB.people[0]='남편';
+  if(DB.targets) DB.targets.forEach(function(t){
+    if(t.n==='나' && !DB.tx.some(function(x){ return x.target==='나'; })) t.n='남편';
+  });
+  if(!DB.cats||!DB.cats.length) DB.cats=cloneList(DEFAULT_CATS);
+  if(!DB.targets||!DB.targets.length) DB.targets=cloneList(DEFAULT_TARGETS);
   if(!DB.tx) DB.tx=[];
   if(!DB.assets) DB.assets=[];
   if(!DB.rules) DB.rules=[];
@@ -772,6 +862,11 @@ function catOf(name){
   var i, list=DB.cats.concat(INCOME_CATS);
   for(i=0;i<list.length;i++) if(list[i].n===name) return list[i];
   return {e:'📦', n:name||'기타'};
+}
+function targetOf(name){
+  var i, list=DB.targets||[];
+  for(i=0;i<list.length;i++) if(list[i].n===name) return list[i];
+  return {e:'🙂', n:name||DEF_TARGET};
 }
 function liveTx(){ return DB.tx.filter(function(t){ return !t.deleted; }); }
 function liveAssets(){ return DB.assets.filter(function(a){ return !a.deleted; }); }
@@ -901,6 +996,7 @@ function runRules(){
             fromId:(r.kind==='transfer'? r.fromId : ''),
             toId:((r.kind==='transfer'||r.kind==='income')? r.toId : ''),
             memo:r.title||'', who:(r.who===1?1:0), ruleId:r.id,
+            target:(r.target||DEF_TARGET),
             updated:Date.now(), deleted:false });
           made++;
         }
@@ -1037,6 +1133,10 @@ function groupSpending(ym, by){
       key = String(t.who===1?1:0);
       label = DB.people[t.who===1?1:0] || ('사람'+((t.who===1?1:0)+1));
       emo = '';
+    }else if(by==='target'){
+      key = t.target || DEF_TARGET;
+      label = key;
+      emo = targetOf(key).e;
     }else{
       key = t.cat||'기타';
       label = key;
@@ -1164,8 +1264,12 @@ function renderBars(ym){
       : '분류마다 한도를 정해두면<br>얼마나 더 쓸 수 있는지 나옵니다.<br>「생활비 정하기」에서 정합니다.';
   }else if(homeBy==='pay'){
     note.innerHTML='카드값은 <b>쓴 날 바로</b><br>물려 있는 통장에서 빠진 것으로 셉니다.';
-  }else{
+  }else if(homeBy==='who'){
     note.innerHTML='누가 적었는지 기준입니다.<br>공동으로 쓴 것도 적은 사람 쪽으로 갑니다.';
+  }else{
+    note.innerHTML='돈이 <b>누구에게 갔는지</b> 기준입니다.<br>'
+      + '적을 때 안 고른 것은 「우리」로 들어갑니다.<br>'
+      + '대상은 「분류·대상 고치기」에서 늘릴 수 있습니다.';
   }
 }
 $$('#h-by button').forEach(function(b){
@@ -1400,7 +1504,7 @@ var listQ='';
    "저번에 그 병원비 얼마였지"는 대개 몇 달 전 일이기 때문. */
 function txMatches(t, q){
   if(!q) return true;
-  var hay = (t.memo||'') + ' ' + (t.cat||'') + ' ' + String(t.amount)
+  var hay = (t.memo||'') + ' ' + (t.cat||'') + ' ' + (t.target||'') + ' ' + String(t.amount)
           + ' ' + won(t.amount)
           + ' ' + (t.payId?assetName(t.payId):'')
           + ' ' + (t.fromId?assetName(t.fromId):'')
@@ -1488,14 +1592,21 @@ function openSheet(tx){
   if(tx){
     editingId=tx.id;
     draft={ type:tx.type, amount:tx.amount, cat:tx.cat, payId:tx.payId||'', memo:tx.memo||'',
-            who:tx.who, date:tx.date, fromId:tx.fromId||'', toId:tx.toId||'' };
+            who:tx.who, date:tx.date, fromId:tx.fromId||'', toId:tx.toId||'',
+            target:tx.target||DEF_TARGET };
     $('#sh-del').style.display=''; $('#sh-done').style.display='';
   }else{
     editingId=null;
     var p=payables(), b=banks();
-    draft={ type:'expense', amount:0, cat:'', payId:(DB.last.payId||(p[0]?p[0].id:'')),
+    /* 「마지막에 고른 결제수단」을 기억해두는데, 그 카드·통장을 지운 뒤에도
+       기억이 남아 있으면 없는 곳에서 돈이 빠진 것으로 저장된다.
+       그래서 아직 살아 있는 것인지 확인하고, 아니면 잊는다. */
+    var lastPay = DB.last.payId;
+    if(lastPay && !p.some(function(a){ return a.id===lastPay; })) lastPay='';
+    draft={ type:'expense', amount:0, cat:'', payId:(lastPay||(p[0]?p[0].id:'')),
             memo:'', who:DB.last.who||0, date:todayStr(),
-            fromId:(b[0]?b[0].id:''), toId:(b[1]?b[1].id:'') };
+            fromId:(b[0]?b[0].id:''), toId:(b[1]?b[1].id:''),
+            target:(DB.last.target||DEF_TARGET) };
     $('#sh-del').style.display='none'; $('#sh-done').style.display='none';
   }
   drawSheet();
@@ -1515,7 +1626,18 @@ function fldLabel(txt){
 function chipRow(list, curId, onPick, colorByOwner){
   var ch=el('div','chips');
   if(!list.length){
-    ch.appendChild(el('div','tiny muted','돈 탭에서 먼저 등록해주세요.'));
+    /* 고를 것이 하나도 없는데 「골라주세요」라고만 하면 막다른 길이 된다.
+       그래서 여기서 바로 등록하러 갈 수 있게 한다. */
+    var warn=el('div','tiny muted');
+    warn.innerHTML='아직 등록한 통장·카드가 없습니다.<br>'
+                 + '하나라도 있어야 적을 수 있습니다.<br>'
+                 + '아래 버튼으로 지금 만드세요.';
+    ch.appendChild(warn);
+    var go1=el('button','act', '＋ 통장·카드 만들러 가기');
+    go1.style.cssText='width:100%;margin-top:9px;padding:13px;border-radius:14px;'
+      + 'background:var(--accent);color:#fff;font-weight:700;font-size:15px';
+    go1.onclick=function(){ closeSheet(); go('asset'); openGuide(); };
+    ch.appendChild(go1);
     return ch;
   }
   list.forEach(function(a){
@@ -1563,7 +1685,7 @@ function drawSheet(){
     b.appendChild(el('div','fld'));
   }else{
     b.appendChild(fldLabel('어디에 썼나'));
-    b.appendChild(catGrid(DB.cats));
+    b.appendChild(catGrid(visibleList(DB.cats), true));
     b.appendChild(el('div','fld'));
     b.appendChild(fldLabel('무엇으로 결제'));
     b.appendChild(chipRow(payables(), draft.payId, function(id){ draft.payId=id; drawSheet(); }, true));
@@ -1587,6 +1709,25 @@ function drawSheet(){
     });
     b.appendChild(ch2);
     b.appendChild(el('div','fld'));
+
+    /* 「누구에게 / 무엇을 위해」 — 위의 「누가」와는 다른 축이다.
+       기본이 「우리」로 골라져 있어서 그냥 두면 우리로 들어간다. */
+    b.appendChild(fldLabel('누구에게 · 무엇을 위해'));
+    var ch4=el('div','chips');
+    visibleList(DB.targets).forEach(function(t){
+      var btn=el('button', draft.target===t.n?'on':'', t.e+' '+t.n);
+      btn.onclick=function(){ draft.target=t.n; drawSheet(); };
+      ch4.appendChild(btn);
+    });
+    var addT=el('button',null,'＋');
+    addT.onclick=function(){ quickAdd('target'); };
+    ch4.appendChild(addT);
+    b.appendChild(ch4);
+    b.appendChild(el('div','tiny muted',
+      '안 고르면 「우리」로 들어갑니다.<br>'
+    + '시댁·친정처럼 돈이 간 곳을 남기면<br>'
+    + '나중에 모아 볼 수 있습니다.'));
+    b.appendChild(el('div','fld'));
   }
 
   b.appendChild(fldLabel('날짜'));
@@ -1604,15 +1745,36 @@ function drawSheet(){
   b.appendChild(di);
   b.appendChild(el('div','fld'));
 
-  b.appendChild(fldLabel('메모 (안 써도 됩니다)'));
-  var mi=el('input'); mi.value=draft.memo; mi.placeholder='예: 점심 김치찌개'; mi.maxLength=40;
+  /* 메모는 지출·수입에서 꼭 받는다.
+     금액과 분류만 남으면 한 달 뒤에 무엇이었는지 알 수 없기 때문이다.
+     대신 「최근 쓴 메모」를 눌러서 끝낼 수 있게 해서 손이 덜 가게 했다.
+     옮김은 자동이체가 대부분이고 규칙 이름이 이미 붙으므로 필수에서 뺐다. */
+  var memoNeed = (draft.type!=='transfer');
+  b.appendChild(fldLabel(memoNeed ? '무엇에 썼나 (꼭 적어주세요)' : '메모 (안 써도 됩니다)'));
+  var mi=el('input'); mi.value=draft.memo; mi.maxLength=40;
+  mi.placeholder = memoNeed ? '예: 치킨 배달' : '예: 생활비 이체';
   mi.oninput=function(){ draft.memo=mi.value; };
+  mi.id='sh-memo';
   b.appendChild(mi);
+
+  if(memoNeed){
+    var recents=recentMemos(draft.cat, 6);
+    if(recents.length){
+      var rw=el('div','chips'); rw.style.marginTop='8px';
+      recents.forEach(function(m){
+        var btn=el('button', draft.memo===m?'on':'', m);
+        btn.onclick=function(){ draft.memo=m; mi.value=m; drawSheet(); };
+        rw.appendChild(btn);
+      });
+      b.appendChild(rw);
+      b.appendChild(el('div','tiny muted','전에 적었던 것입니다. 누르면 그대로 들어갑니다.'));
+    }
+  }
   b.appendChild(el('div',null,'<div style="height:10px"></div>'));
 
   drawPad();
 }
-function catGrid(list){
+function catGrid(list, allowAdd){
   var g=el('div','grid4');
   list.forEach(function(c){
     var btn=el('button', draft.cat===c.n?'on':'');
@@ -1621,7 +1783,61 @@ function catGrid(list){
     btn.onclick=function(){ draft.cat=c.n; drawSheet(); };
     g.appendChild(btn);
   });
+  if(allowAdd){
+    /* 적다가 없는 분류를 만났을 때 그 자리에서 만들 수 있게 한다.
+       설정까지 들어갔다 나오면 적던 것을 잃어버린다. */
+    var ab=el('button');
+    ab.appendChild(el('span','e','＋'));
+    ab.appendChild(el('span',null,'추가'));
+    ab.onclick=function(){ quickAdd('cat'); };
+    g.appendChild(ab);
+  }
   return g;
+}
+/* 입력 도중에 분류·대상을 하나 늘린다. 이름만 받고 그림은 기본값을 준다.
+   자세히 고치는 것은 설정의 「분류·대상 고치기」에서 한다. */
+function quickAdd(which){
+  var isCat = (which==='cat');
+  var nm = prompt(isCat ? '새 분류 이름을 적어주세요' : '새 대상 이름을 적어주세요');
+  if(nm===null) return;
+  nm=nm.trim();
+  if(!nm){ toast('이름을 적어주세요'); return; }
+  var list = isCat ? DB.cats : DB.targets, i;
+  for(i=0;i<list.length;i++){
+    if(list[i].n===nm){
+      if(list[i].hidden){ list[i].hidden=false; }
+      else { toast('이미 있는 이름입니다'); }
+      if(isCat) draft.cat=nm; else draft.target=nm;
+      save(); drawSheet(); return;
+    }
+  }
+  var item={ e:(isCat?'📦':'🙂'), n:nm };
+  list.push(item);
+  if(isCat) draft.cat=nm; else draft.target=nm;
+  save(); drawSheet();
+  /* 적는 도중이라도 아이콘은 고르게 한다. 그냥 닫으면 기본 그림으로 들어간다. */
+  pickEmoji(item.e, function(v){ item.e=v; save(); drawSheet(); });
+}
+/* 메모 칸으로 화면을 끌어다 놓고 커서를 넣는다. */
+function focusMemo(){
+  var mi=$('#sh-memo');
+  if(!mi) return;
+  mi.scrollIntoView({block:'center'});
+  mi.focus();
+}
+/* 메모 칸 아래에 띄울 「전에 적었던 것」.
+   같은 분류에서 쓴 것을 먼저 보여주고, 모자라면 최근 것으로 채운다. */
+function recentMemos(cat, max){
+  var seen={}, same=[], other=[], i, t;
+  for(i=DB.tx.length-1; i>=0 && (same.length+other.length)<max*3; i--){
+    t=DB.tx[i];
+    if(t.deleted || t.type==='transfer') continue;
+    var m=(t.memo||'').trim();
+    if(!m || seen[m]) continue;
+    seen[m]=1;
+    if(cat && t.cat===cat) same.push(m); else other.push(m);
+  }
+  return same.concat(other).slice(0,max);
 }
 function drawPad(){
   var p=$('#sh-pad'); p.innerHTML='';
@@ -1660,24 +1876,51 @@ function commitTx(keepOpen){
     draft.cat='이동';
   }else{
     if(!draft.cat){ toast('분류를 하나 골라주세요'); return; }
-    if(draft.type==='expense' && !draft.payId){ toast('무엇으로 결제했는지 골라주세요'); return; }
-    if(draft.type==='income'  && !draft.toId){ toast('어느 통장으로 들어왔는지 골라주세요'); return; }
+    /* 고를 것이 아예 없을 때와 있는데 안 고른 때는 할 말이 다르다.
+       지워진 카드·통장을 가리키고 있으면 안 고른 것으로 본다. */
+    if(draft.payId && !payables().some(function(a){ return a.id===draft.payId; })) draft.payId='';
+    if(draft.toId  && !liveAssets().some(function(a){ return a.id===draft.toId;  })) draft.toId='';
+    if(draft.fromId&& !liveAssets().some(function(a){ return a.id===draft.fromId;})) draft.fromId='';
+    if(draft.type==='expense' && !draft.payId){
+      toast(payables().length ? '무엇으로 결제했는지 골라주세요'
+                              : '먼저 통장이나 카드를 만들어 주세요');
+      return;
+    }
+    if(draft.type==='income' && !draft.toId){
+      toast(banks().length ? '어느 통장으로 들어왔는지 골라주세요'
+                           : '먼저 통장을 하나 만들어 주세요');
+      return;
+    }
+    if(!(draft.memo||'').trim()){
+      /* 그냥 막기만 하면 왜 저장이 안 되는지 모른 채 헤맨다.
+         특히 메모 없이 들어온 옛 기록(가져오기·반복)을 고칠 때 그렇다.
+         그래서 메모 칸까지 끌어다 놓고 커서를 넣어준다. */
+      toast('무엇에 썼는지 적어주세요');
+      focusMemo();
+      return;
+    }
   }
+  /* 종류를 바꿔 저장할 때 쓰지 않는 칸을 비운다.
+     안 비우면 「옮김인데 결제수단이 남아 있는」 기록이 생겨 나중에 헷갈린다. */
+  if(draft.type==='transfer'){ draft.payId=''; }
+  else if(draft.type==='income'){ draft.payId=''; draft.fromId=''; }
+  else { draft.fromId=''; draft.toId=''; }
   if(editingId){
     var i, f=null;
     for(i=0;i<DB.tx.length;i++) if(DB.tx[i].id===editingId) f=DB.tx[i];
     if(f){
       f.type=draft.type; f.amount=draft.amount; f.cat=draft.cat; f.payId=draft.payId;
       f.memo=draft.memo; f.who=draft.who; f.date=draft.date;
+      f.target=draft.target;
       f.fromId=draft.fromId; f.toId=draft.toId; f.updated=Date.now();
     }
   }else{
     DB.tx.push({ id:uid(), ts:Date.now(), date:draft.date, type:draft.type,
       amount:draft.amount, cat:draft.cat, payId:draft.payId, memo:draft.memo,
-      who:draft.who, fromId:draft.fromId, toId:draft.toId,
+      who:draft.who, target:draft.target, fromId:draft.fromId, toId:draft.toId,
       updated:Date.now(), deleted:false });
   }
-  if(draft.type==='expense') DB.last={ payId:draft.payId, who:draft.who };
+  if(draft.type==='expense') DB.last={ payId:draft.payId, who:draft.who, target:draft.target };
   save();
   if(keepOpen && !editingId){
     toast('저장했습니다. 이어서 적으세요');
@@ -2307,7 +2550,7 @@ function drawGuide(){
     var box=el('div');
     box.appendChild(el('label','tiny muted', w===0?'첫 번째':'두 번째'));
     var i=el('input'); i.maxLength=6; i.value=DB.people[w]||'';
-    i.onchange=function(){ DB.people[w]=i.value||(w===0?'나':'아내'); save(); drawGuide(); };
+    i.onchange=function(){ DB.people[w]=i.value||(w===0?'남편':'아내'); save(); drawGuide(); };
     box.appendChild(i); r2.appendChild(box);
   });
   c1.appendChild(r2);
@@ -2386,37 +2629,220 @@ function renderSet(){
   $$('#s-theme button').forEach(function(b){ b.classList.toggle('on',(DB.theme||'auto')===b.dataset.t); });
   $('#s-p0').value=DB.people[0]||'';
   $('#s-p1').value=DB.people[1]||'';
-  var cb=$('#s-cats'); cb.innerHTML='';
-  DB.cats.forEach(function(c,idx){
-    var b=el('button',null,c.e+' '+c.n);
-    b.onclick=function(){
-      if(DB.cats.length<=1){ toast('분류는 하나 이상 남겨두세요'); return; }
-      if(!confirm('「'+c.n+'」 분류를 목록에서 뺄까요?')) return;
-      DB.cats.splice(idx,1); save(); renderSet();
-    };
-    cb.appendChild(b);
-  });
+  drawListEditor($('#s-cats'), 'cat');
+  drawListEditor($('#s-targets'), 'target');
   $('#s-ver').textContent='우리 가계부 · 1단계 (폰 안에만 저장) · 내역 '+liveTx().length+'건';
+}
+/* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
+   따로 만들면 나중에 반드시 한쪽만 고쳐져서 어긋난다.
+   한 줄에 [아이콘] [이름] [↑] [↓] [지우기]. */
+function drawListEditor(box, which){
+  var isCat = (which==='cat');
+  var list = isCat ? DB.cats : DB.targets;
+  var shown = visibleList(list);
+  box.innerHTML='';
+  shown.forEach(function(c, i){
+    var row=el('div','lerow');
+
+    var eb=el('button','leemo', c.e);
+    eb.title='아이콘 고르기';
+    eb.onclick=function(){ pickEmoji(c.e, function(v){
+      c.e=v; save(); renderSet();
+    }); };
+    row.appendChild(eb);
+
+    var ni=el('input','lename'); ni.value=c.n; ni.maxLength=8;
+    ni.onchange=function(){ renameInList(which, c.n, ni.value, ni); };
+    row.appendChild(ni);
+
+    var up=el('button','lebtn','↑');
+    up.disabled = (i===0);
+    up.onclick=function(){ moveInList(which, c.n, -1); };
+    row.appendChild(up);
+
+    var dn=el('button','lebtn','↓');
+    dn.disabled = (i===shown.length-1);
+    dn.onclick=function(){ moveInList(which, c.n, 1); };
+    row.appendChild(dn);
+
+    var del=el('button','lebtn del','✕');
+    del.onclick=function(){ removeFromList(which, c.n); };
+    row.appendChild(del);
+
+    box.appendChild(row);
+  });
+  if(!shown.length) box.appendChild(el('div','empty','하나도 없습니다. 아래에서 만들어 주세요.'));
+}
+/* 이름 바꾸기 — 이미 적어둔 내역의 이름도 같이 바꿔준다.
+   안 바꾸면 옛 내역이 없는 분류를 가리키게 되어 목록에서 사라진 것처럼 보인다. */
+function renameInList(which, oldName, newName, inputEl){
+  var isCat=(which==='cat');
+  var list = isCat ? DB.cats : DB.targets, i;
+  newName=(newName||'').trim();
+  if(!newName){ toast('이름을 비워둘 수 없습니다'); if(inputEl) inputEl.value=oldName; return; }
+  if(newName===oldName) return;
+  for(i=0;i<list.length;i++){
+    if(list[i].n===newName){
+      toast('이미 있는 이름입니다');
+      if(inputEl) inputEl.value=oldName;
+      return;
+    }
+  }
+  for(i=0;i<list.length;i++) if(list[i].n===oldName){ list[i].n=newName; break; }
+  var moved=0;
+  DB.tx.forEach(function(t){
+    if(isCat){ if(t.cat===oldName){ t.cat=newName; t.updated=Date.now(); moved++; } }
+    else { if((t.target||DEF_TARGET)===oldName){ t.target=newName; t.updated=Date.now(); moved++; } }
+  });
+  if(isCat && DB.catBudget && DB.catBudget[oldName]!=null){
+    DB.catBudget[newName]=DB.catBudget[oldName];
+    delete DB.catBudget[oldName];
+  }
+  if(isCat) DB.rules.forEach(function(r){ if(r.cat===oldName) r.cat=newName; });
+  save(); renderSet();
+  toast(moved ? ('이름을 바꿨습니다 · 옛 내역 '+moved+'건도 같이') : '이름을 바꿨습니다');
+}
+/* 순서 바꾸기 — 화면에 보이는 것끼리만 자리를 맞바꾼다.
+   숨긴 항목이 사이에 끼어 있어도 눌린 대로 움직이게 하기 위함. */
+function moveInList(which, name, dir){
+  var list = (which==='cat') ? DB.cats : DB.targets;
+  var idxs=[], i;
+  for(i=0;i<list.length;i++) if(!list[i].hidden) idxs.push(i);
+  var at=-1;
+  for(i=0;i<idxs.length;i++) if(list[idxs[i]].n===name) at=i;
+  if(at<0) return;
+  var to=at+dir;
+  if(to<0||to>=idxs.length) return;
+  var a=idxs[at], b=idxs[to], tmp=list[a];
+  list[a]=list[b]; list[b]=tmp;
+  save(); renderSet();
+}
+/* 아이콘 고르는 판. 고르면 콜백으로 넘겨준다. */
+var EMOJI_SETS=[
+  {t:'먹는 것', v:['🍚','🍜','🍔','🍕','🍗','🍣','🥗','🍰','☕','🍺','🍎','🥤']},
+  {t:'사는 것', v:['🛒','🧻','🧴','🧺','🛍','🎁','🧧','💐']},
+  {t:'다니는 것', v:['🚌','🚕','🚗','⛽','🚇','✈️','🅿️','🚲']},
+  {t:'집', v:['🏠','🏡','🛋','💡','🔧','🚿','🪑','🧯']},
+  {t:'몸', v:['💊','🏥','🦷','👓','💪','🧘','🩺','🧴']},
+  {t:'꾸미기', v:['👕','👗','👟','💄','✂️','💅','👜','⌚']},
+  {t:'노는 것', v:['🎬','🎮','🎤','⚽','🏕','📷','🎳','🎧','📺','🎫','🎨','🎂']},
+  {t:'배우기', v:['📚','✏️','🎓','💻','🖊','🧮']},
+  {t:'사람', v:['👫','🙋','🙋‍♀️','👶','🧸','🐾','🤝','👨‍👩‍👧']},
+  {t:'돈', v:['🏦','💳','💰','📈','🛡','🧾','💵','📱']},
+  {t:'그 밖에', v:['📦','❓','⭐','🔖','🔔','🌱','🎯','🧊']}
+];
+var emojiPick=null;
+function pickEmoji(cur, cb){
+  emojiPick=cb;
+  var body=$('#em-body'); body.innerHTML='';
+  EMOJI_SETS.forEach(function(g){
+    body.appendChild(el('div','grp', g.t));
+    var grid=el('div','eg');
+    g.v.forEach(function(v){
+      var b=el('button',null,v);
+      if(v===cur) b.style.background='var(--accent)';
+      b.onclick=function(){
+        if(emojiPick) emojiPick(v);
+        emojiPick=null;
+        $('#emoji').classList.remove('on');
+        document.body.style.overflow='';
+      };
+      grid.appendChild(b);
+    });
+    body.appendChild(grid);
+  });
+  $('#emoji').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+$('#em-close').onclick=function(){
+  emojiPick=null;
+  $('#emoji').classList.remove('on');
+  document.body.style.overflow='';
+};
+$('#emoji').onclick=function(e){ if(e.target===this) $('#em-close').onclick(); };
+/* 「지우기」는 한 가지 동작으로 보이지만 속으로는 두 갈래다.
+   그 이름으로 적어둔 내역이 없으면 진짜로 없애고(오타로 만든 것),
+   하나라도 있으면 목록에서만 뺀다 — 옛 내역은 그대로 보여야 하기 때문. */
+function removeFromList(which, name){
+  var isCat = (which==='cat');
+  var list = isCat ? DB.cats : DB.targets;
+  if(visibleList(list).length<=1){
+    toast(isCat?'분류는 하나 이상 남겨두세요':'대상은 하나 이상 남겨두세요'); return;
+  }
+  var used=0;
+  liveTx().forEach(function(t){
+    if(isCat ? (t.cat===name) : ((t.target||DEF_TARGET)===name)) used++;
+  });
+  var msg = used
+    ? ('「'+name+'」(으)로 적어둔 내역이 '+used+'건 있습니다.\n\n'
+      + '목록에서만 빼고 그 내역은 그대로 둘까요?')
+    : ('「'+name+'」을(를) 지울까요?');
+  if(!confirm(msg)) return;
+  var i;
+  for(i=0;i<list.length;i++){
+    if(list[i].n===name){
+      if(used) list[i].hidden=true; else list.splice(i,1);
+      break;
+    }
+  }
+  save(); renderSet();
+  toast(used?'목록에서 뺐습니다':'지웠습니다');
 }
 $$('#s-theme button').forEach(function(b){
   b.onclick=function(){ DB.theme=b.dataset.t; save(); applyTheme(); renderSet(); };
 });
 $('#s-guide').onclick=openGuide;
-$('#s-p0').onchange=function(){ DB.people[0]=this.value||'나'; save(); };
+$('#s-p0').onchange=function(){ DB.people[0]=this.value||'남편'; save(); };
 $('#s-p1').onchange=function(){ DB.people[1]=this.value||'아내'; save(); };
-$('#s-cat-add').onclick=function(){
-  var n=$('#s-cat-nm').value.trim(), e=$('#s-cat-emo').value.trim()||'📦';
-  if(!n){ toast('분류 이름을 적어주세요'); return; }
-  DB.cats.push({e:e,n:n}); save();
-  $('#s-cat-nm').value=''; $('#s-cat-emo').value='';
-  renderSet(); toast('추가했습니다');
-};
+function addToList(which, name, emo){
+  var isCat=(which==='cat');
+  var list = isCat ? DB.cats : DB.targets, i;
+  name=(name||'').trim();
+  if(!name){ toast(isCat?'분류 이름을 적어주세요':'대상 이름을 적어주세요'); return false; }
+  for(i=0;i<list.length;i++){
+    if(list[i].n===name){
+      if(list[i].hidden){ list[i].hidden=false; save(); renderSet(); toast('다시 넣었습니다'); return true; }
+      toast('이미 있는 이름입니다'); return false;
+    }
+  }
+  list.push({ e:(emo||'').trim() || (isCat?'📦':'🙂'), n:name });
+  save(); renderSet(); toast('추가했습니다');
+  return true;
+}
+/* 새로 만들기 — 이름을 받고 곧바로 아이콘 판을 띄운다.
+   아이콘을 안 고르고 닫아도 기본 그림으로 들어간다. */
+function newListItem(which){
+  var isCat=(which==='cat');
+  var nm=prompt(isCat?'새 분류 이름을 적어주세요':'새 대상 이름을 적어주세요');
+  if(nm===null) return;
+  if(!addToList(which, nm, '')) return;
+  var name=nm.trim();
+  var list = isCat ? DB.cats : DB.targets, i, item=null;
+  for(i=0;i<list.length;i++) if(list[i].n===name) item=list[i];
+  if(item) pickEmoji(item.e, function(v){ item.e=v; save(); renderSet(); });
+}
+$('#s-cat-add').onclick=function(){ newListItem('cat'); };
+$('#s-tgt-add').onclick=function(){ newListItem('target'); };
+
+/* 처음 상태로 되돌리기 — 늘려 쓰다 엉킨 목록을 한 번에 정리하는 길.
+   이미 적어둔 내역의 이름은 건드리지 않으므로 지난 기록은 그대로 남는다. */
+function resetList(which){
+  var isCat=(which==='cat');
+  var def = isCat ? DEFAULT_CATS : DEFAULT_TARGETS;
+  if(!confirm((isCat?'분류':'대상')+' 목록을 처음 상태로 되돌릴까요?\n\n'
+    + '직접 만든 것은 목록에서 빠집니다.\n'
+    + '이미 적어둔 내역은 그대로 남습니다.')) return;
+  if(isCat) DB.cats=cloneList(def); else DB.targets=cloneList(def);
+  save(); renderSet(); toast('되돌렸습니다');
+}
+$('#s-cat-reset').onclick=function(){ resetList('cat'); };
+$('#s-tgt-reset').onclick=function(){ resetList('target'); };
 
 /* ============================================================================
    14. 엑셀(CSV) 내보내기·가져오기
       엑셀이 한글을 깨뜨리지 않도록 파일 맨 앞에 BOM 이라는 표식을 붙인다.
    ============================================================================ */
-var CSV_HEAD=['날짜','구분','금액','분류','결제수단','메모','사용자'];
+var CSV_HEAD=['날짜','구분','금액','분류','결제수단','메모','사용자','대상'];
 function csvCell(v){
   v=(v==null?'':String(v));
   return /[",\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
@@ -2430,7 +2856,7 @@ function buildCSV(){
               : t.type==='income'   ? assetName(t.toId)
               : assetName(t.payId);
     out.push([t.date, TL[t.type]||'지출', t.amount, t.cat, where, t.memo||'',
-              DB.people[t.who]||''].map(csvCell).join(','));
+              DB.people[t.who]||'', t.target||''].map(csvCell).join(','));
   });
   return out.join('\r\n');
 }
@@ -2489,7 +2915,10 @@ var TARGETS=[
   {k:'cat',   label:'분류',    need:false, hint:['카테고리','분류','category','항목','대분류']},
   {k:'pay',   label:'결제수단',need:false, hint:['지불','결제','수단','방식','자산','카드','계좌','pay','method','asset']},
   {k:'memo',  label:'메모',    need:false, hint:['메모','내용','비고','설명','memo','note','상호','가맹점','title']},
-  {k:'who',   label:'사용자',  need:false, hint:['입력자','사용자','작성자','이름','user','member','who','멤버','주체']}
+  {k:'who',   label:'사용자',  need:false, hint:['입력자','사용자','작성자','이름','user','member','who','멤버']},
+  /* BuBoo 의 「주체」 열이 여기로 온다. 예전엔 쓸 곳이 없어 버렸는데,
+     사용자가 실제로 누르던 칸(우리/개인)이라 「대상」으로 살린다. */
+  {k:'target',label:'대상',    need:false, hint:['주체','대상','목적','누구','누구에게','for']}
 ];
 var csvHead=[], csvRows=[], mapDraft={}, mapFallback='expense';
 /* 파일에 적힌 사람 이름(예: 「뿡공주」)이 우리 앱의 누구인지 이어주는 표.
@@ -2774,7 +3203,12 @@ function rowToTx(r){
     else if(whoMap[wname]===0) who=0;
     else if(wname && DB.people[1] && wname.indexOf(DB.people[1])>=0) who=1;
   }
-  return { date:date, type:type, amount:amt.n, cat:cat, payName:payName, memo:memo, who:who };
+  /* 파일에 「주체」 같은 열이 있으면 그 글자를 그대로 대상으로 쓴다.
+     우리 목록에 없는 이름이면 목록에 새로 넣는다 — 멋대로 버리지 않는다. */
+  var target = mapDraft.target>=0 ? String(r[mapDraft.target]||'').trim() : '';
+  if(!target) target=DEF_TARGET;
+  return { date:date, type:type, amount:amt.n, cat:cat, payName:payName,
+           memo:memo, who:who, target:target };
 }
 function dupKey(t){ return t.date+'|'+t.type+'|'+t.amount+'|'+t.cat+'|'+(t.memo||''); }
 $('#ms-go').onclick=function(){
@@ -2815,7 +3249,7 @@ $('#ms-go').onclick=function(){
     });
     return out;
   })();
-  var added=0, skipped=0, bad=0, newCats={};
+  var added=0, skipped=0, bad=0, newCats={}, newTargets={};
   for(i=0;i<csvRows.length;i++){
     var r=rowToTx(csvRows[i]);
     if(!r){ bad++; continue; }
@@ -2829,13 +3263,17 @@ $('#ms-go').onclick=function(){
                  cat:r.cat,
                  payId:(r.type==='expense'? pid : ''),
                  toId:(r.type==='income' && pAs && pAs.kind==='bank' ? pid : ''),
-                 fromId:'', memo:r.memo, who:r.who,
+                 fromId:'', memo:r.memo, who:r.who, target:r.target,
                  updated:Date.now(), deleted:false });
     added++;
     if(r.type==='expense') newCats[r.cat]=1;
+    if(r.target) newTargets[r.target]=1;
   }
   Object.keys(newCats).forEach(function(nm){
     if(nm && !DB.cats.some(function(c){ return c.n===nm; })) DB.cats.push({e:'📦', n:nm});
+  });
+  Object.keys(newTargets).forEach(function(nm){
+    if(nm && !DB.targets.some(function(c){ return c.n===nm; })) DB.targets.push({e:'🙂', n:nm});
   });
   save();
   $('#msheet').style.display='none'; document.body.style.overflow='';
