@@ -215,7 +215,10 @@ select{appearance:none;-webkit-appearance:none;
 .sh-body{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
 .sh-pad{background:var(--card);padding-bottom:var(--safe-b);border-top:1px solid var(--line)}
 
-.amtbox{background:var(--card);border-radius:var(--r);padding:18px;margin-bottom:12px;text-align:right}
+.amtbox{background:var(--card);border-radius:var(--r);padding:18px;margin-bottom:12px;text-align:right;
+  cursor:pointer;border:1.5px solid transparent}
+.amtbox.open{border-color:var(--accent)}
+.amtbox .hint{font-size:13px;color:var(--dim);text-align:left;margin-top:6px;font-weight:600}
 .amtbox .lbl{font-size:14px;color:var(--sub);text-align:left;margin-bottom:4px;font-weight:600}
 .amtbox .v{font-size:38px;font-weight:800;letter-spacing:-1.6px}
 .amtbox .v.zero{color:var(--dim)}
@@ -425,6 +428,7 @@ select{appearance:none;-webkit-appearance:none;
       <button class="btn pri" id="a-add" style="margin:0">＋ 통장·카드</button>
       <button class="btn" id="a-rule" style="margin:0">🔁 반복</button>
     </div>
+
   </section>
 
   <!-- ══════════ 설정 ══════════ -->
@@ -1583,6 +1587,8 @@ $$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset
    8. 입력 시트
    ============================================================================ */
 var draft=null, editingId=null;
+/* 숫자판이 올라와 있는지. 시트를 열 때는 내려가 있다. */
+var padOpen=false;
 
 function payables(){ return liveAssets().filter(function(a){ return KIND_PAY[a.kind]; }); }
 function movables(){ return liveAssets().filter(function(a){ return KIND_MOVE[a.kind]; }); }
@@ -1609,6 +1615,7 @@ function openSheet(tx){
             target:(DB.last.target||DEF_TARGET) };
     $('#sh-del').style.display='none'; $('#sh-done').style.display='none';
   }
+  padOpen = !draft.amount;   /* 새로 적을 때는 금액부터니 숫자판을 올려둔다 */
   drawSheet();
   $('#sheet').classList.add('on');
   document.body.style.overflow='hidden';
@@ -1662,10 +1669,15 @@ function drawSheet(){
   });
   b.appendChild(seg);
 
-  var box=el('div','amtbox');
+  /* 숫자판이 늘 떠 있으면 화면 절반을 차지해서 아래 칸들이 안 보인다.
+     그래서 금액 칸을 눌렀을 때만 숫자판이 올라오게 했다. */
+  var box=el('div','amtbox'+(padOpen?' open':''));
   var lbl = draft.type==='income'?'받은 금액':(draft.type==='transfer'?'옮길 금액':'쓴 금액');
   box.appendChild(el('div','lbl', lbl));
   box.appendChild(el('div','v num'+(draft.amount?'':' zero'), won(draft.amount)+'원'));
+  box.appendChild(el('div','hint', padOpen ? '다시 누르면 숫자판이 내려갑니다.'
+                                           : '눌러서 금액을 적어주세요.'));
+  box.onclick=function(){ padOpen=!padOpen; drawSheet(); };
   b.appendChild(box);
 
   if(draft.type==='transfer'){
@@ -1841,6 +1853,23 @@ function recentMemos(cat, max){
 }
 function drawPad(){
   var p=$('#sh-pad'); p.innerHTML='';
+  /* 숫자판이 내려가 있을 때도 저장은 늘 눌릴 수 있어야 한다.
+     안 그러면 금액을 다 적고 나서 저장을 못 찾는다. */
+  if(!padOpen){
+    var bar=el('div'); bar.style.cssText='padding:12px 14px;display:flex;gap:9px';
+    var sv=el('button','btn pri', editingId?'수정 완료':'저장');
+    sv.style.cssText='margin:0;flex:1';
+    sv.onclick=function(){ commitTx(); };
+    bar.appendChild(sv);
+    if(!editingId){
+      var go2=el('button','btn','＋계속');
+      go2.style.cssText='margin:0;flex:none;width:96px;border:1px solid var(--line)';
+      go2.onclick=function(){ commitTx(true); };
+      bar.appendChild(go2);
+    }
+    p.appendChild(bar);
+    return;
+  }
   var grid=el('div','pad');
   var layout=[{k:'1'},{k:'2'},{k:'3'},{k:'SAVE'},
               {k:'4'},{k:'5'},{k:'6'},
