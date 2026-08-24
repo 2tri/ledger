@@ -6,7 +6,10 @@
 <meta name="theme-color" content="#F2F4F6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101214" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- black-translucent 는 앱이 시계·배터리 자리까지 덮어버려
+     시트의 「취소」 버튼이 시계에 깔려 안 눌렸다(2026-08-20 사용자 신고).
+     default 로 두면 iOS 가 알아서 상태바 아래에서 시작한다. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="우리 가계부">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-180.png">
@@ -28,7 +31,18 @@
   --p1:#FF8A00; --p1-soft:#FFF3E0;
   --warn-bg:#FFF8E7; --warn-txt:#8A6100;
   --nav-h:64px; --safe-b:env(safe-area-inset-bottom,0px);
-  --r:20px;
+  --safe-t:env(safe-area-inset-top,0px);   /* 시계·노치가 차지하는 높이 */
+  /* ── 겉모습 스위치 (2026-08-20) ──────────────────────────────
+     마음에 안 들면 아래 네 줄만 원래 값으로 되돌리면 끝난다.
+       --r        : 20px   (큰 카드 모서리)
+       --r2       : 16px   (작은 상자. 원래는 14px·16px 이 섞여 있었다)
+       --cardline : none   (카드 테두리 없음)
+       --fab-r    : 50%    (＋ 버튼 동그라미)
+     ──────────────────────────────────────────────────────────── */
+  --r:12px;
+  --r2:12px;
+  --cardline:1px solid var(--line);
+  --fab-r:18px;
 }
 /* 「자동」일 때만 폰 설정을 따라간다.
    사용자가 「밝게」를 고르면 data-theme="light" 가 붙어 이 규칙이 비켜난다. */
@@ -63,7 +77,7 @@ body{
 }
 button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;letter-spacing:inherit}
 input,select,textarea{font-family:inherit;font-size:16px;color:var(--txt);background:var(--card);
-  border:1px solid var(--line);border-radius:14px;padding:14px;width:100%;letter-spacing:-.3px}
+  border:1px solid var(--line);border-radius:var(--r2);padding:14px;width:100%;letter-spacing:-.3px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
 select{appearance:none;-webkit-appearance:none;
   background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
@@ -78,11 +92,12 @@ select{appearance:none;-webkit-appearance:none;
 .page.on{display:block}
 .head{
   position:sticky;top:0;z-index:20;background:var(--bg);
-  padding:18px 0 12px 0;display:flex;align-items:center;gap:10px;
+  padding:calc(18px + var(--safe-t)) 0 12px 0;
+  display:flex;align-items:center;gap:10px;
 }
 .head h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.9px}
 .head .spacer{flex:1}
-.card{background:var(--card);border-radius:var(--r);padding:20px 18px;margin-bottom:12px}
+.card{background:var(--card);border:var(--cardline);border-radius:var(--r);padding:20px 18px;margin-bottom:12px}
 .card h2{margin:0 0 14px 0;font-size:15px;font-weight:700;color:var(--sub);letter-spacing:-.4px}
 .muted{color:var(--sub)}
 .tiny{font-size:14px;letter-spacing:-.35px}
@@ -103,7 +118,7 @@ select{appearance:none;-webkit-appearance:none;
 #fab{
   position:fixed;z-index:41;right:calc(50% - 260px + 18px);
   bottom:calc(var(--nav-h) + var(--safe-b) + 18px);
-  width:62px;height:62px;border-radius:50%;background:var(--accent);color:#fff;
+  width:62px;height:62px;border-radius:var(--fab-r);background:var(--accent);color:#fff;
   font-size:31px;font-weight:300;line-height:58px;text-align:center;
   box-shadow:0 8px 22px rgba(49,130,246,.40);
 }
@@ -116,7 +131,7 @@ select{appearance:none;-webkit-appearance:none;
    ============================================================ */
 .bigamt{font-size:40px;font-weight:800;letter-spacing:-1.8px;line-height:1.12}
 .trio{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;
-  border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:16px}
+  border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-top:16px}
 .trio>div{padding:13px 6px;text-align:center;border-right:1px solid var(--line)}
 .trio>div:last-child{border-right:none}
 .trio .lbl{font-size:13px;color:var(--sub);margin-bottom:4px;font-weight:600}
@@ -130,7 +145,7 @@ select{appearance:none;-webkit-appearance:none;
 .bar-row .amt{width:78px;flex:none;text-align:right;font-size:14px;font-weight:800}
 
 .tx-line{display:flex;align-items:center;gap:12px;padding:13px 0;width:100%;text-align:left}
-.tx-line .emo{width:42px;height:42px;flex:none;border-radius:14px;background:var(--accent-soft);
+.tx-line .emo{width:42px;height:42px;flex:none;border-radius:var(--r2);background:var(--accent-soft);
   display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
 .tx-line .emo.who0{background:var(--p0-soft)}
 .tx-line .emo.who1{background:var(--p1-soft)}
@@ -155,9 +170,9 @@ select{appearance:none;-webkit-appearance:none;
    내역
    ============================================================ */
 .monthbar{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px}
-.monthbar button{width:42px;height:42px;border-radius:14px;background:var(--card);font-size:19px;color:var(--sub)}
+.monthbar button{width:42px;height:42px;border-radius:var(--r2);background:var(--card);font-size:19px;color:var(--sub)}
 .monthbar .ym{font-size:19px;font-weight:800;min-width:126px;text-align:center;letter-spacing:-.6px}
-.seg{display:grid;grid-auto-rows:1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--card)}
+.seg{display:grid;grid-auto-rows:1fr;border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-bottom:12px;background:var(--card)}
 .seg button{padding:12px 4px;font-size:14.5px;font-weight:700;color:var(--sub);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}
 .seg button.on{background:var(--accent);color:#fff}
@@ -171,7 +186,7 @@ select{appearance:none;-webkit-appearance:none;
    한 줄에 [아이콘] [이름] [↑] [↓] [지우기] 를 같은 높이로 둔다.
    손가락이 칸 경계를 헷갈리면 안 되므로 칸마다 선을 넣는다.
    ============================================================ */
-.listedit{border:1px solid var(--line);border-radius:14px;overflow:hidden;
+.listedit{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
   margin-bottom:10px;background:var(--card)}
 .lerow{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
 .lerow:last-child{border-bottom:none}
@@ -208,7 +223,8 @@ select{appearance:none;-webkit-appearance:none;
    ============================================================ */
 #sheet{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column}
 #sheet.on{display:flex}
-.sh-head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card)}
+.sh-head{display:flex;align-items:center;gap:10px;background:var(--card);
+  padding:calc(14px + var(--safe-t)) 16px 14px 16px}
 .sh-head .ttl{font-size:18px;font-weight:800;flex:1;text-align:center;letter-spacing:-.6px}
 .sh-head button{font-size:15.5px;font-weight:700;color:var(--accent);padding:6px 4px}
 .sh-head button.del{color:var(--minus)}
@@ -224,7 +240,7 @@ select{appearance:none;-webkit-appearance:none;
 .amtbox .v.zero{color:var(--dim)}
 
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;
-  border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
+  border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;background:var(--line)}
 .grid4 button{background:var(--card);padding:11px 2px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--sub);
   border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:70px;letter-spacing:-.4px}
@@ -251,7 +267,7 @@ select{appearance:none;-webkit-appearance:none;
 /* ============================================================
    자산
    ============================================================ */
-.asset-card{background:var(--card);border-radius:var(--r);padding:18px;margin-bottom:10px;width:100%;text-align:left;display:block}
+.asset-card{background:var(--card);border:var(--cardline);border-radius:var(--r);padding:18px;margin-bottom:10px;width:100%;text-align:left;display:block}
 .asset-card:active{opacity:.6}
 .asset-card .ah{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .asset-card .ah .nm{font-size:16px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -262,11 +278,11 @@ select{appearance:none;-webkit-appearance:none;
 .kv{display:flex;justify-content:space-between;font-size:14px;color:var(--sub);padding:5px 0;font-weight:500}
 .kv b{color:var(--txt);font-weight:700}
 
-.notice{background:var(--warn-bg);border-radius:16px;color:var(--warn-txt);
+.notice{background:var(--warn-bg);border-radius:var(--r2);color:var(--warn-txt);
   padding:15px 16px;font-size:14px;line-height:1.6;margin-bottom:12px;font-weight:500}
 
 .btn{display:block;width:100%;text-align:center;background:var(--card);
-  border-radius:16px;padding:16px;font-size:16px;font-weight:700;margin-bottom:10px;letter-spacing:-.4px}
+  border-radius:var(--r2);padding:16px;font-size:16px;font-weight:700;margin-bottom:10px;letter-spacing:-.4px}
 .btn.pri{background:var(--accent);color:#fff}
 .btn.dan{color:var(--minus)}
 .btn:active{opacity:.7}
@@ -283,7 +299,8 @@ select{appearance:none;-webkit-appearance:none;
 #rotate{display:none}
 @media (orientation:landscape) and (max-height:520px){
   #rotate{display:flex;position:fixed;inset:0;z-index:200;background:var(--bg);
-    flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px}
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+    padding:calc(20px + var(--safe-t)) 20px 20px 20px}
   #rotate .ic{font-size:46px}
   #rotate .t{font-size:19px;font-weight:800;letter-spacing:-.6px}
   #rotate .s{font-size:15px;color:var(--sub);line-height:1.65;font-weight:500}
@@ -320,9 +337,17 @@ select{appearance:none;-webkit-appearance:none;
   <section class="page on" id="pg-home">
     <div class="head"><h1>우리 가계부</h1><div class="spacer"></div>
       <button class="tiny muted" id="home-ym-lbl" style="font-weight:700"></button></div>
+    <button class="tiny muted" id="h-sync" style="display:none;width:100%;text-align:left;
+      background:none;border:0;padding:0 0 9px 0;font-weight:700"></button>
+    <div class="monthbar" id="h-monthbar" style="margin-bottom:12px">
+      <button id="h-prev">‹</button>
+      <div class="ym num" id="h-ym"></div>
+      <button id="h-next">›</button>
+    </div>
+    <button class="btn" id="h-today" style="display:none;margin-bottom:12px">이번 달로 돌아가기</button>
 
     <div class="card">
-      <div class="tiny muted">이번 달 쓴 돈</div>
+      <div class="tiny muted" id="h-spent-lbl">이번 달 쓴 돈</div>
       <div class="bigamt num" id="h-spent">0원</div>
       <div class="tiny muted" id="h-vs" style="margin-top:4px"></div>
       <div class="trio">
@@ -330,12 +355,17 @@ select{appearance:none;-webkit-appearance:none;
         <div><div class="lbl">지출</div><div class="val num" id="h-out" style="color:var(--minus)">0</div></div>
         <div><div class="lbl">남은 돈</div><div class="val num" id="h-net">0</div></div>
       </div>
+      <div class="tiny muted" id="h-saved" style="margin-top:10px;line-height:1.6"></div>
       <div class="trio" style="margin-top:8px">
-        <div><div class="lbl">고정으로 나간 돈</div><div class="val num" id="h-fix">0</div></div>
-        <div><div class="lbl">내가 쓴 돈</div><div class="val num" id="h-var">0</div></div>
+        <div><div class="lbl">고정비</div><div class="val num" id="h-fix">0</div></div>
+        <div><div class="lbl">변동비</div><div class="val num" id="h-var">0</div></div>
       </div>
       <div class="tiny muted" id="h-fixnote" style="margin-top:9px;line-height:1.7"></div>
     </div>
+
+    <div class="card" id="h-empty" style="display:none"></div>
+
+    <div class="card" id="h-todo" style="display:none"></div>
 
     <div class="card" id="h-budget"></div>
 
@@ -403,7 +433,7 @@ select{appearance:none;-webkit-appearance:none;
 
   <!-- ══════════ 자산 ══════════ -->
   <section class="page" id="pg-asset">
-    <div class="head"><h1>돈</h1></div>
+    <div class="head"><h1>살림</h1></div>
 
     <div class="card">
       <div class="tiny muted">순자산 (가진 것 − 갚을 것)</div>
@@ -411,8 +441,18 @@ select{appearance:none;-webkit-appearance:none;
       <div class="trio">
         <div><div class="lbl">가진 것</div><div class="val num" id="a-plus" style="color:var(--plus)">0</div></div>
         <div><div class="lbl">갚을 것</div><div class="val num" id="a-minus" style="color:var(--minus)">0</div></div>
-        <div><div class="lbl">이번 달 카드값</div><div class="val num" id="a-card">0</div></div>
+        <div><div class="lbl">카드값</div><div class="val num" id="a-card">0</div></div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>이번 달 움직임</h2>
+      <div class="trio" style="margin-top:0">
+        <div><div class="lbl">모은 돈</div><div class="val num" id="a-saved" style="color:var(--plus)">0</div></div>
+        <div><div class="lbl">갚은 빚</div><div class="val num" id="a-repaid" style="color:var(--accent)">0</div></div>
+        <div><div class="lbl">늘어난 몫</div><div class="val num" id="a-grew">0</div></div>
+      </div>
+      <div class="tiny muted" id="a-move-note" style="margin-top:10px;line-height:1.6"></div>
     </div>
 
     <div class="card" id="a-owner-card">
@@ -560,12 +600,42 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card">
       <h2>두 폰 맞추기</h2>
-      <div class="tiny muted" style="line-height:1.6">
-        아직 연결되지 않았습니다.<br>
-        <b>3단계에서 붙일 예정</b>입니다.<br>
-        지금 적는 내역은<br>
-        나중에 그대로 옮겨집니다.<br>
-        다시 입력할 필요는 없습니다.
+
+      <div id="sy-box-off">
+        <div class="tiny muted" style="line-height:1.6">
+          GitHub 저장소를 창고로 씁니다.<br>
+          두 폰이 그 창고를 거쳐 맞춰집니다.<br>
+          새로 가입할 것은 없습니다.
+        </div>
+        <div class="notice" style="margin:10px 0 0 0">
+          <b>먼저 열쇠가 필요합니다</b><br>
+          집 PC 에서 만드는 것이 편합니다.<br>
+          만드는 순서는 안내 페이지에<br>
+          그림과 함께 적어 두었습니다.<br>
+          만든 열쇠를 아래에 넣으세요.
+        </div>
+        <label class="tiny muted" style="display:block;margin:10px 0 3px 0">열쇠 붙여넣기</label>
+        <input id="sy-token" type="password" autocomplete="off" placeholder="github_pat_... 또는 ghp_...">
+        <label class="tiny muted" style="display:block;margin:9px 0 3px 0">저장소 (비워두면 앱이 찾습니다)</label>
+        <input id="sy-repo" autocomplete="off" placeholder="비워두거나  내아이디/저장소이름">
+        <button class="btn" id="sy-on" style="margin-top:9px">연결 켜기</button>
+        <div class="tiny muted" style="line-height:1.6;margin-top:9px">
+          열쇠는 이 폰 안에만 저장됩니다.<br>
+          백업 파일과 창고에는 들어가지 않습니다.
+        </div>
+      </div>
+
+      <div id="sy-box-on" style="display:none">
+        <div class="tiny" id="sy-state" style="line-height:1.7"></div>
+        <button class="btn" id="sy-now" style="margin-top:9px">지금 맞추기</button>
+        <button class="btn ghost" id="sy-disconnect" style="margin-top:7px">연결 끄기</button>
+        <div class="tiny muted" style="line-height:1.6;margin-top:9px">
+          적으면 저절로 올라갑니다.<br>
+          열면 저절로 받아옵니다.<br>
+          인터넷이 없으면 쌓아두고<br>
+          다음에 한꺼번에 올립니다.<br>
+          <b>이 단추는 안 눌러도 됩니다.</b>
+        </div>
       </div>
     </div>
 
@@ -581,7 +651,7 @@ select{appearance:none;-webkit-appearance:none;
   <nav id="nav">
     <button data-go="home" class="on"><span class="ic">🏠</span>홈</button>
     <button data-go="list"><span class="ic">📋</span>내역</button>
-    <button data-go="asset"><span class="ic">🏦</span>돈</button>
+    <button data-go="asset"><span class="ic">🏦</span>살림</button>
     <button data-go="set"><span class="ic">⚙️</span>설정</button>
   </nav>
   <button id="fab">＋</button>
@@ -744,7 +814,7 @@ function blankDB(){
   return { ver:2, people:['남편','아내'], cats:cloneList(DEFAULT_CATS),
            targets:cloneList(DEFAULT_TARGETS),
            tx:[], assets:[], rules:[], last:{payId:'', who:0}, theme:'auto',
-           guideDone:false, budget:{amount:0, payIds:[], acctId:''}, catBudget:{},
+           guideDone:false, budget:{amount:0, payIds:[], acctIds:[]}, catBudget:{},
            goal:{on:false, name:'', need:0, date:'', ids:[]} };
 }
 /* 목록에서 「지우기」를 눌렀을 때 —
@@ -780,9 +850,14 @@ function normalize(){
   if(DB.guideDone==null) DB.guideDone=false;
   if(!DB.goal) DB.goal={on:false, name:'', need:0, date:'', ids:[]};
   if(!DB.goal.ids) DB.goal.ids=[];
-  if(!DB.budget) DB.budget={amount:0, payIds:[], acctId:''};
+  if(!DB.budget) DB.budget={amount:0, payIds:[], acctIds:[]};
+  /* 옛 방식(통장 한 곳)을 여러 곳으로 옮긴다 */
+  if(!DB.budget.acctIds) DB.budget.acctIds = DB.budget.acctId ? [DB.budget.acctId] : [];
+  delete DB.budget.acctId;
   if(!DB.budget.payIds) DB.budget.payIds=[];
   if(!DB.catBudget) DB.catBudget={};
+  /* 설정 묶음마다 「마지막으로 바뀐 시각」. 두 폰을 맞출 때 누가 최신인지 가리는 데 쓴다. */
+  if(!DB.meta) DB.meta={};
   migrate();
 }
 /* 옛 방식(결제수단이 글자, 통장이 매달 자동으로 늘던 것)을 새 방식으로 옮긴다.
@@ -823,12 +898,281 @@ function load(){
     DB = raw ? JSON.parse(raw) : blankDB();
   }catch(e){ DB = blankDB(); }
   normalize();
+  resnapSettings();
 }
+/* 저장에 성공했는지 돌려준다.
+   예전에는 실패해도 토스트만 띄웠는데, 부르는 쪽에서 곧바로
+   「저장했습니다」 토스트로 덮어써서 **유실을 모른 채 계속 적게** 됐다.
+   그래서 실패는 알림창으로 막는다. */
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(DB)); }
-  catch(e){ toast('저장 공간이 가득 찼습니다'); }
+  stampSettings();
+  try{ localStorage.setItem(KEY, JSON.stringify(DB));
+        syncOnSave(); return true; }
+  catch(e){
+    alert('저장하지 못했습니다.\n\n'
+        + '폰의 저장 공간이 가득 찼습니다.\n'
+        + '방금 적은 것은 아직 저장되지 않았습니다.\n\n'
+        + '설정 → 「전체 백업 파일 만들기」로\n'
+        + '지금 내용을 먼저 내보낸 뒤\n'
+        + '오래된 내역을 정리해 주세요.');
+    return false;
+  }
 }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   두 폰 맞추기 — 「무엇을 맞추고 무엇은 안 맞추나」를 여기 한 곳에 모아 둔다.
+
+   기록(거래·통장카드·반복)은 줄마다 이름표·수정시각·지움표시가 있으므로
+   한 줄씩 짝지어 최신을 고른다.
+
+   설정(분류·대상·사람 이름·예산·목표)은 줄마다 시각이 없다. 그래서 다섯 묶음으로
+   나눠 묶음마다 시각 하나를 둔다. 통째로 하나로 묶지 않는 이유는, 아내가 분류를
+   고치고 내가 예산을 고쳤을 때 한쪽이 날아가지 않게 하려는 것이다.
+
+   🚨 밝기 · 마지막에 고른 결제수단 · 처음 안내 봤는지는 **맞추지 않는다.**
+      폰마다 달라야 하는 것이라, 맞추면 남의 폰 화면색과 입력 습관이 바뀐다.
+   ──────────────────────────────────────────────────────────────────────────── */
+var SYNC_LISTS = ['tx','assets','rules'];
+var SYNC_SETS  = ['cats','targets','people','budget','goal'];
+
+/* 설정 묶음이 「지금 어떤 모습인가」를 글자로 만들어 두는 것.
+   저장할 때마다 예전 모습과 견줘 보고, 달라졌으면 그 묶음의 시각만 새로 찍는다.
+   이렇게 하면 설정을 고치는 자리가 스무 곳이 넘어도 **한 곳만 손보면 된다.** */
+function setGroupShape(k){
+  if(k==='budget') return JSON.stringify([DB.budget, DB.catBudget]);
+  return JSON.stringify(DB[k]);
+}
+var setSnap = null;
+/* 지금 모습을 「기준」으로 삼는다. 시각은 찍지 않는다.
+   앱을 켤 때와, 창고에서 받아와 합친 직후에 부른다
+   (받아온 것을 「내가 방금 고친 것」으로 착각하면 안 되므로). */
+function resnapSettings(){
+  setSnap = {};
+  SYNC_SETS.forEach(function(k){ setSnap[k] = setGroupShape(k); });
+}
+function stampSettings(){
+  if(!DB.meta) DB.meta = {};
+  if(!setSnap){ resnapSettings(); return; }
+  SYNC_SETS.forEach(function(k){
+    var cur = setGroupShape(k);
+    if(setSnap[k] === cur) return;
+    setSnap[k] = cur;
+    DB.meta[k] = Date.now();
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   창고와 주고받기 — GitHub 의 **비공개 저장소** 하나를 창고로 쓴다.
+
+   왜 저장소인가: 파일을 올릴 때 「내가 본 그 버전이 아직 그대로냐」를 같이 물어볼 수 있다.
+   그 사이 상대가 올렸으면 GitHub 이 **거절**한다. 그러면 상대 것을 다시 받아 합친 뒤 올린다.
+   -> **덮어써서 남의 기록을 날리는 일이 원천적으로 안 생긴다.**
+
+   [주의] 열쇠는 살림(DB)과 **따로** 둔다. 살림 안에 넣으면 백업 파일에도 들어가고
+          창고에도 올라간다. 그래서 폰 저장소의 **다른 칸**에 둔다.
+   ---------------------------------------------------------------------------- */
+var SKEY = 'ourledger_sync_v1';
+var SYNC_FILE = 'ourledger.json';
+var syncCfg = { token:'', owner:'', repo:'', last:0, err:'' };
+var syncBusy = false, syncAgain = false, syncT = null, syncShape = null;
+
+function syncLoadCfg(){
+  try{
+    var o = JSON.parse(localStorage.getItem(SKEY) || '{}');
+    syncCfg.token = o.token || ''; syncCfg.owner = o.owner || '';
+    syncCfg.repo  = o.repo  || ''; syncCfg.last  = +o.last || 0;
+    syncCfg.err   = o.err || '';
+  }catch(e){}
+}
+function syncSaveCfg(){
+  try{ localStorage.setItem(SKEY, JSON.stringify(syncCfg)); }catch(e){}
+}
+function syncReady(){ return !!(syncCfg.token && syncCfg.owner && syncCfg.repo); }
+
+/* 한글이 든 글을 인터넷으로 보낼 수 있는 형태로 바꾸고, 되돌린다.
+   흔히 쓰는 btoa 만 쓰면 한글에서 깨지므로 바이트로 먼저 풀어서 넘긴다. */
+function b64enc(str){
+  var by = new TextEncoder().encode(str), bin = '', i;
+  for(i=0;i<by.length;i++) bin += String.fromCharCode(by[i]);
+  return btoa(bin);
+}
+function b64dec(b64){
+  var bin = atob(String(b64).replace(/\s/g,'')), by = new Uint8Array(bin.length), i;
+  for(i=0;i<bin.length;i++) by[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(by);
+}
+
+function ghApi(path, opt){
+  opt = opt || {};
+  var init = { method: opt.method || 'GET', headers: {
+    'Authorization': 'Bearer ' + syncCfg.token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  } };
+  if(opt.body){ init.body = JSON.stringify(opt.body); init.headers['Content-Type'] = 'application/json'; }
+  return fetch('https://api.github.com' + path, init).then(function(r){
+    return r.text().then(function(t){
+      var j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){}
+      return { ok:r.ok, status:r.status, body:j };
+    });
+  });
+}
+/* 실패했을 때 「무엇이 잘못됐는지」를 사람 말로 돌려준다. 조용히 실패시키지 않는다. */
+function syncErrMsg(r){
+  if(r.status===401) return '열쇠가 맞지 않습니다.\n다시 만들어 붙여넣어 주세요.';
+  if(r.status===403) return 'GitHub 이 잠시 막았습니다.\n조금 뒤에 다시 맞춰집니다.';
+  if(r.status===404) return '창고를 찾지 못했습니다.\n저장소 이름과 열쇠 권한을 확인해 주세요.';
+  if(r.status===409 || r.status===422) return '상대 폰이 방금 올렸습니다.\n다시 맞추는 중입니다.';
+  return 'GitHub 이 응답하지 않았습니다. (' + r.status + ')';
+}
+
+/* 창고에 올릴 것만 고른다.
+   [주의] 밝기 · 마지막에 고른 결제수단 · 처음 안내 봤는지 · 열쇠는 **넣지 않는다.** */
+function syncPayload(){
+  var o = { ver: DB.ver, meta: DB.meta || {} };
+  SYNC_LISTS.forEach(function(k){ o[k] = DB[k] || []; });
+  SYNC_SETS.forEach(function(k){
+    if(k === 'budget'){ o.budget = DB.budget; o.catBudget = DB.catBudget; }
+    else o[k] = DB[k];
+  });
+  return o;
+}
+
+/* 열쇠가 닿는 저장소를 앱이 스스로 찾는다.
+   열쇠를 저장소 하나에만 주었으면 하나만 나오므로, 사람이 이름을 옮겨적지 않아도 된다. */
+function syncFindRepo(){
+  return ghApi('/user/repos?per_page=100&sort=updated').then(function(r){
+    if(!r.ok) return { err: syncErrMsg(r) };
+    var list = (r.body || []).filter(function(x){ return x && x.name && x.owner; });
+    if(!list.length) return { err:'이 열쇠로 볼 수 있는 저장소가 없습니다.\n열쇠를 만들 때 저장소를 골랐는지 확인해 주세요.' };
+    if(list.length === 1) return { owner:list[0].owner.login, repo:list[0].name };
+    return { many: list.slice(0,12).map(function(x){ return x.name; }) };
+  });
+}
+
+function syncPull(){
+  return ghApi('/repos/'+syncCfg.owner+'/'+syncCfg.repo+'/contents/'+SYNC_FILE).then(function(r){
+    if(r.status === 404) return { fresh:true };            /* 창고가 아직 비어 있다 */
+    if(!r.ok) return { err: syncErrMsg(r) };
+    var txt, j;
+    try{ txt = b64dec((r.body && r.body.content) || ''); }
+    catch(e){ return { err:'창고 내용을 읽지 못했습니다.' }; }
+    try{ j = JSON.parse(txt); }
+    catch(e){ return { err:'창고 내용이 깨져 있습니다.\n백업 파일로 되살려야 합니다.' }; }
+    return { data:j, sha:r.body.sha };
+  });
+}
+function syncPush(sha){
+  var body = { message: '가계부 ' + todayStr(),
+               content: b64enc(JSON.stringify(syncPayload())) };
+  if(sha) body.sha = sha;   /* <- 이게 「내가 본 그 버전 그대로냐」를 묻는 부분이다 */
+  return ghApi('/repos/'+syncCfg.owner+'/'+syncCfg.repo+'/contents/'+SYNC_FILE,
+               { method:'PUT', body:body });
+}
+
+/* 받아오기 -> 합치기 -> 올리기 를 한 번 돌린다.
+   상대가 그 사이에 올려서 거절당하면, 다시 받아 합쳐서 올린다(최대 4번). */
+function syncNow(quiet){
+  if(!syncReady()) return Promise.resolve({ err:'연결이 꺼져 있습니다.' });
+  if(syncBusy){ syncAgain = true; return Promise.resolve({ skip:true }); }
+  syncBusy = true;
+  var tries = 0;
+  function round(){
+    tries++;
+    return syncPull().then(function(p){
+      if(p.err) return { err:p.err };
+      var rep = { added:0, changed:0, sets:[] };
+      if(p.data){
+        rep = mergeInto(DB, p.data);
+        resnapSettings();       /* 받아온 것을 「내가 방금 고친 것」으로 세지 않게 */
+        save();
+      }
+      return syncPush(p.sha).then(function(w){
+        if(w.status === 409 || w.status === 422){
+          if(tries < 4) return round();
+          return { err:'상대 폰이 계속 올리고 있습니다.\n조금 뒤에 다시 맞춰집니다.' };
+        }
+        if(!w.ok) return { err: syncErrMsg(w) };
+        syncCfg.last = Date.now(); syncCfg.err = '';
+        syncShape = JSON.stringify(syncPayload());
+        syncSaveCfg();
+        return rep;
+      });
+    });
+  }
+  return round().then(function(r){
+    syncBusy = false;
+    if(r.err){ syncCfg.err = r.err; syncSaveCfg(); }
+    if(typeof drawSyncCard === 'function') drawSyncCard();
+    if(syncAgain){ syncAgain = false; syncSchedule(400); }
+    else if(!quiet){
+      if(r.err) alert('맞추지 못했습니다.\n\n' + r.err);
+      else toast((r.added || r.changed) ? ('맞췄습니다 · 새로 ' + r.added + '건') : '맞췄습니다');
+    }
+    return r;
+  })['catch'](function(e){
+    syncBusy = false;
+    syncCfg.err = '인터넷에 닿지 못했습니다.\n다음에 저절로 다시 맞춥니다.';
+    syncSaveCfg();
+    if(typeof drawSyncCard === 'function') drawSyncCard();
+    if(!quiet) alert('맞추지 못했습니다.\n\n' + syncCfg.err);
+    return { err: syncCfg.err };
+  });
+}
+
+/* 연달아 적을 때 그때그때 올리지 않고 **몇 초 몰아서** 한 번에 올린다. */
+function syncSchedule(ms){
+  if(!syncReady()) return;
+  clearTimeout(syncT);
+  syncT = setTimeout(function(){ syncNow(true); }, ms || 2500);
+}
+/* 저장할 때마다 「올릴 내용이 정말 바뀌었나」만 보고, 바뀌었을 때만 예약한다.
+   밝기만 바꿨을 때는 창고에 올리지 않는다. */
+function syncOnSave(){
+  if(!syncReady()) return;
+  var cur = JSON.stringify(syncPayload());
+  if(syncShape === cur) return;
+  syncShape = cur;
+  syncSchedule();
+}
+
+/* 남의 살림(theirs)을 내 살림(mine)에 합친다. mine 이 그 자리에서 고쳐진다.
+   돌려주는 것: 새로 들어온 건수 · 고쳐진 건수 · 바뀐 설정 묶음 이름. */
+function mergeInto(mine, theirs){
+  var report = { added:0, changed:0, sets:[] };
+  if(!theirs || typeof theirs !== 'object') return report;
+
+  SYNC_LISTS.forEach(function(key){
+    var list = mine[key] || (mine[key] = []);
+    var byId = {}, i;
+    for(i=0;i<list.length;i++) if(list[i] && list[i].id) byId[list[i].id] = i;
+    (theirs[key] || []).forEach(function(tr){
+      if(!tr || !tr.id) return;
+      var at = byId[tr.id];
+      if(at === undefined){
+        byId[tr.id] = list.length; list.push(tr); report.added++; return;
+      }
+      /* 최신이 이긴다. 「지웠다」도 하나의 고침이라 같은 규칙을 그대로 따른다. */
+      if((+tr.updated||0) > (+list[at].updated||0)){ list[at] = tr; report.changed++; }
+    });
+  });
+
+  var tmeta = theirs.meta || {};
+  if(!mine.meta) mine.meta = {};
+  SYNC_SETS.forEach(function(k){
+    if((+tmeta[k]||0) <= (+mine.meta[k]||0)) return;
+    if(k === 'budget'){
+      if(theirs.budget)    mine.budget    = theirs.budget;
+      if(theirs.catBudget) mine.catBudget = theirs.catBudget;
+    }else if(theirs[k] != null){
+      mine[k] = theirs[k];
+    }
+    mine.meta[k] = +tmeta[k];
+    report.sets.push(k);
+  });
+  return report;
+}
 
 /* 밝기: 'auto'면 표시를 떼서 폰 설정을 따라가게 하고,
    'light'/'dark'면 문서에 표시를 붙여 그 색으로 고정한다. */
@@ -884,6 +1228,23 @@ function josa(word, withB, without){
   if(code>=0xAC00 && code<=0xD7A3) return word + ((code-0xAC00)%28 ? withB : without);
   return word + without;
 }
+/* 「통계에서 빼기」가 켜진 분류인가.
+   각자 용돈처럼 이미 나눠 가진 돈이라 다시 세면 두 번 세는 셈이 되는 것들. */
+function isExclCat(name){
+  var i;
+  for(i=0;i<DB.cats.length;i++) if(DB.cats[i].n===name) return !!DB.cats[i].excl;
+  return false;
+}
+function isExclTx(t){ return t.type==='expense' && isExclCat(t.cat); }
+/* 그 달에 통계에서 뺀 돈이 얼마인가 */
+function exclSum(ym){
+  var sum=0, names={};
+  liveTx().forEach(function(t){
+    if(ymOf(t.date)!==ym || !isExclTx(t)) return;
+    sum+=t.amount; names[t.cat]=1;
+  });
+  return { sum:sum, names:Object.keys(names) };
+}
 function catOf(name){
   var i, list=DB.cats.concat(INCOME_CATS);
   for(i=0;i<list.length;i++) if(list[i].n===name) return list[i];
@@ -903,12 +1264,16 @@ function liveRules(){ return (DB.rules||[]).filter(function(r){ return !r.delete
    ============================================================================ */
 var KIND_LABEL = {
   bank:'통장', card:'카드', cash:'현금', savings:'적금·계', invest:'투자',
-  other:'기타 자산', mortgage:'주택담보대출', credit:'신용대출·마통'
+  other:'기타 자산', mortgage:'나눠 갚는 대출', credit:'이자만 내는 대출'
 };
 var KIND_DEBT    = { mortgage:1, credit:1 };
 var KIND_BALANCE = { bank:1, savings:1, invest:1, other:1 };   /* 기준잔액 + 이후 거래 */
 var KIND_PAY     = { card:1, bank:1, cash:1 };                 /* 지출할 때 고를 수 있는 것 */
-var KIND_MOVE    = { bank:1, savings:1, invest:1, cash:1 };    /* 옮김의 출발·도착 */
+/* 옮김의 출발·도착.
+   `credit`(전세대출·마통)을 넣은 이유: 갚은 것을 적어야 빚이 줄어드는 게 보인다.
+   🚨 `mortgage`(주담대)는 **일부러 뺐다.** 회차 계산으로 잔액이 저절로 줄기 때문에
+      옮김으로 또 적으면 이중으로 세게 된다. */
+var KIND_MOVE    = { bank:1, savings:1, invest:1, cash:1, credit:1 };
 
 function assetById(id){
   var i;
@@ -964,9 +1329,51 @@ function mortgageState(a){
   return out;
 }
 /* 잔고 = 기준일에 적어둔 금액 + 그 뒤로 오간 거래 전부 */
+/* 「그 달에 갚은 원금」. mortgageState 는 오늘 기준만 주므로,
+   회차만 그 달 기준으로 다시 세어 원금분을 낸다. */
+function mortgagePrincipalIn(a, ym){
+  var P=+a.principal||0, n=+a.months||0, r=(+a.rate||0)/100/12;
+  if(P<=0 || n<=0 || !a.start) return 0;
+  var d=new Date(+ym.slice(0,4), +ym.slice(5,7)-1, 1);
+  var k=monthsBetween(a.start, d);
+  if(k<1 || k>n) return 0;
+  if(a.method==='원금균등') return P/n;
+  var M=(r===0) ? P/n : P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  var before=(r===0) ? P-M*(k-1) : P*Math.pow(1+r,k-1)-M*(Math.pow(1+r,k-1)-1)/r;
+  return Math.max(0, M - Math.max(0,before)*r);
+}
+
+/* 그 달에 「모은 돈」과 「갚은 빚」.
+   모은 돈 = 적금·투자로 옮긴 것 (거기서 뺀 것은 도로 뺀다)
+   갚은 빚 = 대출로 옮긴 것 + 주담대의 그 달 원금분 */
+function monthMoves(ym){
+  var saved=0, repaid=0;
+  liveTx().forEach(function(t){
+    if(t.type!=='transfer' || ymOf(t.date)!==ym) return;
+    var to=assetById(t.toId), fr=assetById(t.fromId);
+    if(to && (to.kind==='savings'||to.kind==='invest')) saved+=t.amount;
+    if(fr && (fr.kind==='savings'||fr.kind==='invest')) saved-=t.amount;
+    if(to && KIND_DEBT[to.kind]) repaid+=t.amount;
+  });
+  liveAssets().forEach(function(a){
+    if(a.kind==='mortgage') repaid+=mortgagePrincipalIn(a, ym);
+  });
+  return { saved:Math.round(saved), repaid:Math.round(repaid) };
+}
+
 function balanceOf(a){
   if(a.kind==='mortgage') return -mortgageState(a).balance;
-  if(a.kind==='credit')   return -(+a.balance||0);
+  if(a.kind==='credit'){
+    /* 적어둔 잔액에서, 기준일 이후 갚은 만큼 빼고 더 빌린 만큼 더한다.
+       (돌려주는 값은 음수다 — 빚이므로) */
+    var cb=-(+a.balance||0), cs=a.asOf||'0000-00-00', cd=0;
+    liveTx().forEach(function(t){
+      if(t.date < cs || t.type!=='transfer') return;
+      if(t.toId===a.id)   cd+=t.amount;   /* 갚았다 → 빚이 준다 */
+      if(t.fromId===a.id) cd-=t.amount;   /* 더 빌렸다 */
+    });
+    return Math.min(0, cb+cd);
+  }
   if(!KIND_BALANCE[a.kind]) return 0;
   var base=+a.balance||0, since=a.asOf||'0000-00-00', sum=0;
   liveTx().forEach(function(t){
@@ -986,37 +1393,63 @@ function cardSpentIn(assetId, ym){
   return s;
 }
 function netWorth(){
-  var plus=0, minus=0, byOwner=[0,0,0];
+  var plus=0, minus=0, byOwner=[0,0,0], negBanks=[];
   liveAssets().forEach(function(a){
     if(a.kind==='card'||a.kind==='cash') return;
     var v=balanceOf(a);
+    /* 마이너스통장·대출은 원래 빚이므로 그대로 센다.
+       🚨 통장·적금·투자·기타가 마이너스인 것은 「빚」이 아니라
+          「기준 금액을 아직 안 적은 것」이다. 빚으로 세면 순자산이 거짓말을 한다.
+          그래서 0으로 보고, 그런 통장이 있다는 사실만 화면에 알린다. */
+    if(v<0 && !KIND_DEBT[a.kind]){ negBanks.push(a.name||KIND_LABEL[a.kind]); return; }
     if(v<0) minus+=-v; else { plus+=v; byOwner[ownerOf(a)]+=v; }
   });
   var cardSum=0, ym=ymOf(todayStr());
   liveAssets().forEach(function(a){ if(a.kind==='card') cardSum+=cardSpentIn(a.id,ym); });
-  return { plus:plus, minus:minus, net:plus-minus, byOwner:byOwner, card:cardSum };
+  return { plus:plus, minus:minus, net:plus-minus, byOwner:byOwner, card:cardSum, negBanks:negBanks };
 }
 
 /* ============================================================================
    4. 반복 규칙 — 매달 저절로 생기는 거래
       앱을 열 때 "빠진 달"을 찾아 거래를 만든다. 만든 거래에는 규칙 표시가 붙는다.
    ============================================================================ */
-function runRules(){
+/* rebuildId 를 주면 그 규칙만 처음부터 다시 만든다.
+   🚨 평소에는 「지운 기록」도 중복으로 본다 — 일부러 지운 달이 매번 되살아나면
+      끝없이 지워야 하기 때문. 그런데 그러면 규칙을 고친 뒤 옛 기록을 지웠을 때
+      다시 만들 길이 없어져 막다른 길이 된다(2026-08-24 실사용에서 걸림).
+      그래서 「다시 만들기」를 골랐을 때만 지운 것을 무시한다. */
+/* 반복이 만드는 기록의 「이름표」(고유번호)를 정해진 값으로 만든다.
+   왜 이렇게 하나 — 반복 기록은 폰이 스스로 만든다. 이름표를 그때그때 아무 값으로
+   붙이면, 남편 폰과 아내 폰이 각각 만든 「8월 청약」이 서로 다른 기록으로 보여서
+   두 폰을 맞출 때 **두 배가 된다.** 같은 규칙·같은 달이면 어느 폰에서 만들어도
+   같은 이름표가 나오게 해두면, 맞출 때 저절로 한 건으로 합쳐진다. */
+function ruleTxId(ruleId, ym){ return 'R' + ruleId + '_' + ym; }
+function runRules(rebuildId){
   var made=0, today=todayStr(), nowYM=ymOf(today);
   liveRules().forEach(function(r){
+    if(rebuildId && r.id!==rebuildId) return;
     if(r.active===false) return;
+    /* 금액이 매달 다른 것은 기록을 만들지 않는다 — 얼마인지 모르는데 지어내면 안 된다.
+       대신 홈의 「이번 달 챙길 것」에 뜬다. */
+    if(r.varAmt) return;
     if(!r.amount || !r.since) return;
+    /* 「언제까지」가 있으면 거기서 멈춘다. 비어 있으면 이번 달까지.
+       할부금처럼 끝나는 것을 등록해도 2년치가 쌓이지 않게 하려는 것. */
+    var last = (r.until && r.until<nowYM) ? r.until : nowYM;
     var ym=r.since, guard=0;
-    while(ym<=nowYM && guard++<400){
+    while(ym<=last && guard++<400){
       var d=Math.min(+r.day||1, daysInMonth(ym));
       var date=ym+'-'+pad2(d);
       if(date<=today){
         var dup=false, i;
         for(i=0;i<DB.tx.length;i++){
-          if(DB.tx[i].ruleId===r.id && ymOf(DB.tx[i].date)===ym){ dup=true; break; }
+          if(DB.tx[i].ruleId!==r.id) continue;
+          if(ymOf(DB.tx[i].date)!==ym) continue;
+          if(rebuildId && DB.tx[i].deleted) continue;   /* 다시 만들 때는 지운 것을 없는 셈 */
+          dup=true; break;
         }
         if(!dup){
-          DB.tx.push({ id:uid(), ts:Date.now()+made, date:date, type:r.kind,
+          DB.tx.push({ id:ruleTxId(r.id, ym), ts:Date.now()+made, date:date, type:r.kind,
             amount:+r.amount, cat:r.cat||(r.kind==='income'?'급여':'기타'),
             payId:(r.kind==='expense'? r.fromId : ''),
             fromId:(r.kind==='transfer'? r.fromId : ''),
@@ -1032,6 +1465,33 @@ function runRules(){
   });
   if(made){ save(); }
   return made;
+}
+
+/* 이 반복이 지금까지 만들어 놓은 기록 (지운 것 빼고) */
+function ruleMadeCount(ruleId){
+  var n=0;
+  DB.tx.forEach(function(t){ if(t.ruleId===ruleId && !t.deleted) n++; });
+  return n;
+}
+/* 이 반복으로 만든 기록을 전부 지우고 처음부터 다시 만든다 */
+function rebuildRule(ruleId){
+  var wiped=0, keep=[];
+  DB.tx.forEach(function(t){
+    if(t.ruleId===ruleId && !t.deleted){
+      wiped++;
+      /* 정해진 이름표를 가진 것은 곧바로 「같은 이름표」로 다시 만들어진다.
+         그래서 지움표시로 남겨두면 같은 이름표가 두 개가 되어 버린다.
+         → 그런 것은 아예 빼고 새로 만든다(맞출 때 「고침」으로 보인다).
+         옛 방식(아무 값) 이름표는 다른 폰에도 있으므로 지움표시로 남겨 알린다. */
+      if(t.id === ruleTxId(ruleId, ymOf(t.date))) return;
+      t.deleted=true; t.updated=Date.now();
+    }
+    keep.push(t);
+  });
+  DB.tx = keep;
+  save();
+  var made=runRules(ruleId);
+  return { wiped:wiped, made:made };
 }
 
 /* ============================================================================
@@ -1062,16 +1522,24 @@ function monthSum(ym){
   var i=0,o=0;
   liveTx().forEach(function(t){
     if(ymOf(t.date)!==ym) return;
+    if(isExclTx(t)) return;                    /* 통계에서 빼기로 한 분류 */
     if(t.type==='income') i+=t.amount;
     else if(t.type==='expense') o+=t.amount;   /* 옮김은 쓴 돈이 아니다 */
   });
   return {in:i, out:o, net:i-o};
 }
+/* 홈도 달을 옮겨 볼 수 있어야 한다.
+   지난달 결산을 하려면 그 달의 갈라 보기·예산·고정변동을 봐야 하기 때문. */
+var homeYM=ymOf(todayStr());
 function renderHome(){
-  var ym=ymOf(todayStr());
+  var ym=homeYM, thisYM=ymOf(todayStr()), isNow=(ym===thisYM);
   $('#home-ym-lbl').textContent=ymLabel(ym);
+  $('#h-ym').textContent=ymLabel(ym);
+  $('#h-today').style.display = isNow ? 'none' : '';
+  $('#h-next').style.visibility = (ym>=thisYM) ? 'hidden' : '';
   var s=monthSum(ym), prev=monthSum(ymShift(ym,-1));
 
+  $('#h-spent-lbl').textContent = isNow ? '이번 달 쓴 돈' : (ymLabel(ym)+'에 쓴 돈');
   $('#h-spent').textContent=wonx(s.out);
   var vs=$('#h-vs');
   if(prev.out>0){
@@ -1087,25 +1555,129 @@ function renderHome(){
   $('#h-net').textContent=shortWon(s.net);
   $('#h-net').style.color=s.net>=0?'var(--txt)':'var(--minus)';
 
-  /* 고정으로 나간 돈 / 내가 쓴 돈 */
+  /* 현금흐름을 끝맺는 줄 — 「남은 돈이 어디로 갔나」.
+     저축은 옮김이라 수입에도 지출에도 안 잡힌다. 그래서 여기서 따로 말해준다. */
+  var mv=monthMoves(ym), sv=$('#h-saved');
+  if(mv.saved>0){
+    var rate = s.in>0 ? Math.round(mv.saved/s.in*100) : 0;
+    sv.innerHTML='남은 돈 가운데 <b>'+wonx(mv.saved)+'</b>을 모았습니다.'
+               + (s.in>0 ? '<br>번 돈의 <b>'+rate+'%</b>쯤입니다.' : '');
+  }else if(mv.saved<0){
+    sv.innerHTML='적금·투자에서 <b>'+wonx(-mv.saved)+'</b>을 뺐습니다.';
+  }else{
+    sv.innerHTML='이번 달은 아직 모은 돈이 없습니다.<br>적금으로 옮기면 여기에 나옵니다.';
+  }
+
+  /* 고정비 / 변동비 */
   var fix=0, vari=0;
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==ym) return;
+    if(isExclTx(t)) return;
     if(isFixed(t)) fix+=t.amount; else vari+=t.amount;
   });
+  var ex=exclSum(ym);
   $('#h-fix').textContent=shortWon(fix);
   $('#h-var').textContent=shortWon(vari);
   $('#h-var').style.color = vari ? 'var(--minus)' : 'var(--txt)';
   var fn=$('#h-fixnote');
   if(!fix && !vari) fn.innerHTML='';
-  else if(!fix) fn.innerHTML='<b>고정으로 나간 돈이 0원</b>입니다.<br>'
-                           + '월급·자동이체를 「반복」에<br>등록하면 여기로 갈립니다.';
-  else fn.innerHTML='고정은 어차피 나갈 돈입니다.<br>'
-                  + '줄일 수 있는 건 <b>내가 쓴 돈</b> 쪽입니다.';
+  else if(!fix) fn.innerHTML='<b>고정비가 0원</b>입니다.<br>'
+                           + '엑셀에서 가져온 기록은<br>전부 「변동비」로 잡힙니다.<br>'
+                           + '보험·공과금처럼 매달 같은 것은<br>「반복」에 등록하면 갈립니다.';
+  else fn.innerHTML='고정비는 어차피 나갈 돈입니다.<br>'
+                  + '줄일 수 있는 건 <b>변동비</b> 쪽입니다.';
+  if(ex.sum){
+    fn.innerHTML += (fn.innerHTML?'<br><br>':'')
+      + '<b>'+ex.names.join('·')+'</b>으로 나간 <b>'+wonx(ex.sum)+'</b>은<br>'
+      + '위 숫자에서 빼고 셌습니다.<br>'
+      + '통계에서 빼기로 해둔 분류입니다.';
+  }
 
   renderBars(ym);
   renderBudget(ym);
   renderUpcoming(ym);
+
+  /* 이번 달에 아무것도 없으면 홈이 통째로 0원이 된다.
+     가져오기로 옛날 기록만 들어온 경우가 그렇다 — 어디에 있는지 알려준다. */
+  var thisMonthN=0, lastYM='';
+  liveTx().forEach(function(t){
+    if(ymOf(t.date)===ym) thisMonthN++;
+    if(t.date<=todayStr() && ymOf(t.date)>lastYM) lastYM=ymOf(t.date);
+  });
+  var eb=$('#h-empty');
+  if(isNow && !thisMonthN && lastYM && lastYM!==ym){
+    eb.style.display='';
+    eb.innerHTML='';
+    eb.appendChild(el('div','tiny muted',
+      '<b>이번 달은 아직 기록이 없습니다.</b><br>'
+    + '마지막 기록은 <b>'+ymLabel(lastYM)+'</b>입니다.<br>'
+    + '위의 숫자들이 0원인 것은 그 때문입니다.'));
+    var gb2=el('button','btn pri', ymLabel(lastYM)+' 보러 가기');
+    gb2.style.margin='12px 0 0 0';
+    gb2.onclick=function(){ homeYM=lastYM; renderHome(); };
+    eb.appendChild(gb2);
+  }else{
+    eb.style.display='none';
+  }
+
+  /* 순자산과 「이번 달 앞으로」는 지금 시점의 값이라 지난 달에는 뜻이 없다 */
+  var upCard=$('#h-up');
+  if(!isNow && upCard) upCard.style.display='none';
+  var nwCard=$('#h-networth') ? $('#h-networth').parentNode : null;
+  if(nwCard) nwCard.style.display = isNow ? '' : 'none';
+
+  /* 「금액이 매달 다른 것」 중 아직 안 적은 것 */
+  var td=$('#h-todo'); td.innerHTML=''; td.style.display='none';
+  if(isNow){
+    var todo=[];
+    liveRules().forEach(function(r){
+      if(!r.varAmt || r.active===false) return;
+      if(r.since && r.since>ym) return;
+      if(r.until && r.until<ym) return;
+      var dd=Math.min(+r.day||1, daysInMonth(ym));
+      if(ym+'-'+pad2(dd) > todayStr()) return;      /* 아직 날짜가 안 됐다 */
+      /* 🚨 분류·결제수단만으로는 못 가른다 — 전세대출 이자도 「주거+공과금통장」이라
+         관리비를 적은 것으로 오인했다. 그래서 그 반복의 것이라는 표시로 정확히 본다. */
+      var done=liveTx().some(function(t){ return !t.deleted && t.ruleId===r.id && ymOf(t.date)===ym; });
+      if(!done) todo.push(r);
+    });
+    if(todo.length){
+      td.style.display='';
+      td.appendChild(el('h2',null,'이번 달 챙길 것'));
+      td.appendChild(el('div','tiny muted',
+        '금액이 매달 달라서<br>앱이 대신 적을 수 없는 것입니다.'));
+      todo.forEach(function(r){
+        var bb=el('button','btn');
+        bb.style.cssText='margin:10px 0 0 0;text-align:left';
+        bb.innerHTML='<b>'+(r.title||'이름 없음')+'</b> · 매달 '+r.day+'일 &nbsp;›';
+        bb.onclick=function(){
+          openSheet(null);
+          draft.type='expense'; draft.cat=r.cat||'';
+          if(r.fromId) draft.payId=r.fromId;
+          if(r.who===0||r.who===1) draft.who=r.who;
+          draft.memo=r.title||'';
+          draft.ruleId=r.id;        /* 이 반복의 것이라고 표시 */
+          drawSheet();
+        };
+        td.appendChild(bb);
+      });
+    }
+  }
+
+  /* 반복이 만든 것만 있고 직접 적은 기록이 하나도 없는 달은 「남은 돈」이 크게 흑자로 보인다.
+     그건 잘 산 게 아니라 안 적은 것이다 — 그렇게 말해준다. */
+  var mine=0, byRule=0;
+  liveTx().forEach(function(t){
+    if(ymOf(t.date)!==ym) return;
+    if(t.ruleId) byRule++; else mine++;
+  });
+  if(byRule>0 && mine===0){
+    var warn=el('div','notice');
+    warn.innerHTML='<b>이 달은 반복으로 만든 것뿐입니다.</b><br>'
+                 + '직접 적은 기록이 하나도 없습니다.<br>'
+                 + '그래서 「남은 돈」이<br>실제보다 많아 보입니다.';
+    eb.style.display=''; eb.innerHTML=''; eb.appendChild(warn);
+  }
 
   var nw=netWorth();
   $('#h-networth').textContent=wonx(nw.net);
@@ -1117,12 +1689,41 @@ function renderHome(){
     sub.textContent='가진 것 '+shortWon(nw.plus)+' − 갚을 것 '+shortWon(nw.minus);
   }
 
-  var rec=liveTx().slice().sort(function(a,b){
+  /* 최근 내역을 날짜별로 묶고 그날 합계를 같이 보여준다.
+     🔑 그냥 6건을 잘라 담으면 「합계는 −5만인데 줄은 −9천 하나만 보이는」 상태가 생긴다.
+        그래서 묶음(하루) 단위로 담고, 6줄을 넘으면 거기서 멈춘다.
+        첫 묶음은 길어도 무조건 넣는다 — 안 그러면 아무것도 안 보이는 날이 생긴다. */
+  var all=liveTx().slice().sort(function(a,b){
     return a.date<b.date?1:a.date>b.date?-1:(b.ts||0)-(a.ts||0);
-  }).slice(0,6);
+  });
   var rb=$('#h-recent'); rb.innerHTML='';
-  if(!rec.length) rb.appendChild(el('div','empty','아래 파란 ＋ 버튼을 눌러<br>첫 지출을 적어보세요.'));
-  else rec.forEach(function(t){ rb.appendChild(txLine(t)); });
+  if(!all.length){
+    rb.appendChild(el('div','empty','아래 파란 ＋ 버튼을 눌러<br>첫 지출을 적어보세요.'));
+  }else{
+    var byDay={}, dayOrder=[];
+    all.forEach(function(t){
+      if(!byDay[t.date]){ byDay[t.date]=[]; dayOrder.push(t.date); }
+      byDay[t.date].push(t);
+    });
+    var shown=0, di;
+    for(di=0; di<dayOrder.length; di++){
+      var d=dayOrder[di], list=byDay[d];
+      if(shown>0 && shown+list.length>6) break;
+      var dsum=0;
+      list.forEach(function(x){                 /* 옮김은 합계에 안 넣는다 */
+        if(x.type==='income') dsum+=x.amount;
+        else if(x.type==='expense') dsum-=x.amount;
+      });
+      var g=el('div','daygroup');
+      var dh=el('div','dayhead');
+      dh.appendChild(el('span',null,dayLabel(d)));
+      dh.appendChild(el('span','num',(dsum>=0?'+':'−')+won(Math.abs(dsum))));
+      g.appendChild(dh);
+      list.forEach(function(t){ g.appendChild(txLine(t)); });
+      rb.appendChild(g);
+      shown+=list.length;
+    }
+  }
 
   var lg=$('#h-legend'); lg.innerHTML='';
   DB.people.forEach(function(nm,i){
@@ -1138,7 +1739,7 @@ function renderHome(){
         반복으로 저절로 만들어진 기록에는 표시(ruleId)가 붙으므로,
         표시가 없는 옮김 = 사람이 그때그때 손으로 채운 것이다.
    ──────────────────────────────────────────────────────────────── */
-/* 반복 규칙이 저절로 만든 것 = 고정으로 나간 돈.
+/* 반복 규칙이 저절로 만든 것 = 고정비.
    손으로 찍은 것 = 내가 그때그때 쓴 돈.
    ⚠️ 손으로 찍은 고정비(관리비를 매번 손으로 적는 등)는 변동으로 잡힌다.
       그건 「반복」에 등록하면 고정으로 넘어간다. */
@@ -1149,6 +1750,7 @@ function groupSpending(ym, by){
   var map={}, total=0;
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==ym) return;
+    if(isExclTx(t)) return;
     var key, label, emo='';
     if(by==='pay'){
       key = t.payId||'(안 고름)';
@@ -1183,17 +1785,18 @@ function budgetSpent(ym){
   var ids=(DB.budget.payIds||[]), all=!ids.length, sum=0;
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==ym) return;
+    if(isExclTx(t)) return;
     if(all || ids.indexOf(t.payId)>=0) sum+=t.amount;
   });
   return sum;
 }
 /* 생활비 통장으로 「손으로」 옮겨 채운 것 — 매달 정해진 이체는 뺀다 */
 function budgetTopups(ym){
-  var acc=DB.budget.acctId, n=0, sum=0;
-  if(!acc) return { on:false, n:0, sum:0 };
+  var accs=(DB.budget.acctIds||[]), n=0, sum=0;
+  if(!accs.length) return { on:false, n:0, sum:0 };
   liveTx().forEach(function(t){
     if(t.type!=='transfer' || ymOf(t.date)!==ym) return;
-    if(t.toId!==acc || t.ruleId) return;
+    if(accs.indexOf(t.toId)<0 || t.ruleId) return;
     n++; sum+=t.amount;
   });
   return { on:true, n:n, sum:sum };
@@ -1299,8 +1902,14 @@ function renderBars(ym){
   }
 }
 $$('#h-by button').forEach(function(b){
-  b.onclick=function(){ homeBy=b.dataset.b; renderBars(ymOf(todayStr())); };
+  b.onclick=function(){ homeBy=b.dataset.b; renderBars(homeYM); };
 });
+$('#h-prev').onclick=function(){ homeYM=ymShift(homeYM,-1); renderHome(); };
+$('#h-next').onclick=function(){
+  if(homeYM>=ymOf(todayStr())) return;
+  homeYM=ymShift(homeYM,1); renderHome();
+};
+$('#h-today').onclick=function(){ homeYM=ymOf(todayStr()); renderHome(); };
 
 function renderBudget(ym){
   var c=$('#h-budget'); c.innerHTML='';
@@ -1400,8 +2009,9 @@ function renderUpcoming(ym){
 var bdraft=null;
 function openBudget(){
   bdraft={ amount:(+DB.budget.amount||''), payIds:(DB.budget.payIds||[]).slice(),
-           acctId:(DB.budget.acctId||''),
-           catBudget:JSON.parse(JSON.stringify(DB.catBudget||{})) };
+           acctIds:(DB.budget.acctIds||[]).slice(),
+           catBudget:JSON.parse(JSON.stringify(DB.catBudget||{})),
+           excl:(function(){ var o={}; DB.cats.forEach(function(c){ if(c.excl) o[c.n]=1; }); return o; })() };
   drawBudget();
   $('#bsheet').style.display='flex';
   document.body.style.overflow='hidden';
@@ -1442,25 +2052,32 @@ function drawBudget(){
 
   b.appendChild(fldLabel('생활비 통장'));
   var ch2=el('div','chips');
-  var none=el('button', bdraft.acctId?'':'on', '안 고름');
-  none.onclick=function(){ bdraft.acctId=''; drawBudget(); };
-  ch2.appendChild(none);
   banks().forEach(function(a){
-    var btn=el('button', bdraft.acctId===a.id?'on':'', a.name||'통장');
-    btn.onclick=function(){ bdraft.acctId=a.id; drawBudget(); };
+    var on=(bdraft.acctIds||[]).indexOf(a.id)>=0;
+    var btn=el('button', on?'on':'', a.name||'통장');
+    btn.onclick=function(){
+      var i=bdraft.acctIds.indexOf(a.id);
+      if(i>=0) bdraft.acctIds.splice(i,1); else bdraft.acctIds.push(a.id);
+      drawBudget();
+    };
     ch2.appendChild(btn);
   });
   b.appendChild(ch2);
   b.appendChild(el('div','notice',
-    '생활비가 부족해서<br>이 통장으로 급히 옮긴 돈을<br>따로 세어서 보여줍니다.<br>'
-  + '매달 정해진 이체는<br>거기서 빠집니다.'));
+    '<b>여러 개 고를 수 있습니다.</b><br>'
+  + '생활비가 부족해서<br>이 통장들로 급히 옮긴 돈을<br>따로 세어서 보여줍니다.<br>'
+  + '매달 정해진 이체는<br>거기서 빠집니다.<br><br>'
+  + '아무것도 안 고르면<br>이 계산을 하지 않습니다.'));
   b.appendChild(el('div','fld'));
 
   /* 분류마다 한도 — 비워두면 한도 없음 */
   b.appendChild(fldLabel('분류마다 한도 정하기 (안 정해도 됩니다)'));
   b.appendChild(el('div','notice',
     '여기 적는 값은 <b>계산된 것이 아니라<br>내가 정하는 목표</b>입니다.<br>'
-  + '홈의 「분류별」에서<br>얼마나 남았는지 같이 보입니다.'));
+  + '홈의 「분류별」에서<br>얼마나 남았는지 같이 보입니다.<br><br>'
+  + '<b>「제외」를 켠 분류</b>는<br>쓴 돈 합계에서 아예 빠집니다.<br>'
+  + '각자 용돈처럼 <b>이미 나눠 가진 돈</b>을<br>또 세지 않으려고 두는 것입니다.<br>'
+  + '내역 목록에는 그대로 남습니다.'));
   DB.cats.forEach(function(c){
     var row=el('div'); row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:9px';
     var lab=el('div','tiny');
@@ -1476,14 +2093,27 @@ function drawBudget(){
       if(!bdraft.catBudget) bdraft.catBudget={};
       if(v>0) bdraft.catBudget[c.n]=v; else delete bdraft.catBudget[c.n];
     };
+    if(bdraft.excl[c.n]){ i.disabled=true; i.value=''; i.placeholder='—'; i.style.opacity='.4'; }
     row.appendChild(i);
+    /* 통계에서 빼기 — 켜면 한도 칸이 꺼진다(뺄 것에 한도를 정할 이유가 없다) */
+    var ex=el('button');
+    var on=!!bdraft.excl[c.n];
+    ex.style.cssText='flex:none;width:54px;padding:11px 0;border-radius:12px;font-size:12.5px;'
+      + 'font-weight:700;border:1px solid '+(on?'var(--accent)':'var(--line)')+';'
+      + 'background:'+(on?'var(--accent)':'var(--card)')+';color:'+(on?'#fff':'var(--sub)');
+    ex.textContent='제외';
+    ex.onclick=function(){
+      if(bdraft.excl[c.n]) delete bdraft.excl[c.n]; else bdraft.excl[c.n]=1;
+      drawBudget();
+    };
+    row.appendChild(ex);
     b.appendChild(row);
   });
   b.appendChild(el('div','fld'));
 
   var off=el('button','btn dan','생활비 정하기 끄기');
   off.onclick=function(){
-    DB.budget={ amount:0, payIds:[], acctId:'' };
+    DB.budget={ amount:0, payIds:[], acctIds:[] };
     save(); closeBudget(); toast('껐습니다'); renderHome();
     /* 분류별 한도는 그대로 남긴다 — 생활비 총액과 별개로 쓰는 사람이 있다 */
   };
@@ -1493,8 +2123,11 @@ $('#bs-cancel').onclick=closeBudget;
 $('#bs-save').onclick=function(){
   var amt=+String(bdraft.amount).replace(/[^0-9]/g,'');
   if(!(amt>0)){ toast('생활비 금액을 적어주세요'); return; }
-  DB.budget={ amount:amt, payIds:bdraft.payIds.slice(), acctId:bdraft.acctId };
+  DB.budget={ amount:amt, payIds:bdraft.payIds.slice(), acctIds:(bdraft.acctIds||[]).slice() };
   DB.catBudget=JSON.parse(JSON.stringify(bdraft.catBudget||{}));
+  DB.cats.forEach(function(c){
+    if(bdraft.excl[c.n]) c.excl=true; else delete c.excl;
+  });
   save(); closeBudget(); toast('저장했습니다'); renderHome();
 };
 
@@ -1631,7 +2264,7 @@ function openSheet(tx){
        그래서 아직 살아 있는 것인지 확인하고, 아니면 잊는다. */
     var lastPay = DB.last.payId;
     if(lastPay && !p.some(function(a){ return a.id===lastPay; })) lastPay='';
-    draft={ type:'expense', amount:0, cat:'', payId:(lastPay||(p[0]?p[0].id:'')),
+    draft={ type:'expense', amount:0, cat:'', ruleId:'', payId:(lastPay||(p[0]?p[0].id:'')),
             memo:'', who:DB.last.who||0, date:todayStr(),
             fromId:(b[0]?b[0].id:''), toId:(b[1]?b[1].id:''),
             target:(DB.last.target||DEF_TARGET) };
@@ -1652,7 +2285,7 @@ function fldLabel(txt){
   d.style.cssText='font-size:14px;font-weight:700;color:var(--sub);margin:0 0 7px 2px';
   d.innerHTML=txt; return d;
 }
-function chipRow(list, curId, onPick, colorByOwner){
+function chipRow(list, curId, onPick, colorByOwner, groupByOwner){
   var ch=el('div','chips');
   if(!list.length){
     /* 고를 것이 하나도 없는데 「골라주세요」라고만 하면 막다른 길이 된다.
@@ -1667,6 +2300,31 @@ function chipRow(list, curId, onPick, colorByOwner){
       + 'background:var(--accent);color:#fff;font-weight:700;font-size:15px';
     go1.onclick=function(){ closeSheet(); go('asset'); openGuide(); };
     ch.appendChild(go1);
+    return ch;
+  }
+  /* 결제수단이 여러 개면 평평하게 늘어놓으면 못 찾는다.
+     명의(남편/아내/공동)로 묶고, 그 안에서 카드 → 통장 → 현금 순으로 놓는다. */
+  if(groupByOwner && list.length>4){
+    /* 🚨 0 을 쓰면 안 된다 — 자바스크립트에서 0 은 「값 없음」으로 취급돼
+       `ORD[kind]||9` 가 9 로 떨어진다. 그래서 1부터 매긴다. */
+    var ORD={card:1, cash:2, bank:3};
+    [0,1,2].forEach(function(w){
+      var mine=list.filter(function(a){ return ownerOf(a)===w; });
+      if(!mine.length) return;
+      mine.sort(function(x,y){ return (ORD[x.kind]||9)-(ORD[y.kind]||9); });
+      var lab=el('div','tiny');
+      lab.style.cssText='width:100%;margin:2px 0 4px 2px;font-weight:700;color:'
+        + (w===2?'var(--sub)':'var(--p'+w+')');
+      lab.textContent = w===2 ? '공동' : (DB.people[w]||('사람'+(w+1)));
+      ch.appendChild(lab);
+      mine.forEach(function(a){
+        var cls2=(curId===a.id?'on ':'') + (w===2?'':'p'+w);
+        var btn2=el('button', cls2,
+          (a.kind==='cash'?'💵 ':a.kind==='bank'?'🏦 ':'💳 ') + (a.name||KIND_LABEL[a.kind]));
+        btn2.onclick=function(){ onPick(a.id); };
+        ch.appendChild(btn2);
+      });
+    });
     return ch;
   }
   list.forEach(function(a){
@@ -1722,7 +2380,7 @@ function drawSheet(){
     b.appendChild(catGrid(visibleList(DB.cats), true));
     b.appendChild(el('div','fld'));
     b.appendChild(fldLabel('무엇으로 결제'));
-    b.appendChild(chipRow(payables(), draft.payId, function(id){ draft.payId=id; drawSheet(); }, true));
+    b.appendChild(chipRow(payables(), draft.payId, function(id){ draft.payId=id; drawSheet(); }, true, true));
     var pa=assetById(draft.payId);
     if(pa && pa.kind==='card'){
       var link = pa.linkId ? assetName(pa.linkId) : '';
@@ -1969,10 +2627,13 @@ function commitTx(keepOpen){
     DB.tx.push({ id:uid(), ts:Date.now(), date:draft.date, type:draft.type,
       amount:draft.amount, cat:draft.cat, payId:draft.payId, memo:draft.memo,
       who:draft.who, target:draft.target, fromId:draft.fromId, toId:draft.toId,
+      ruleId:(draft.ruleId||undefined),
       updated:Date.now(), deleted:false });
   }
   if(draft.type==='expense') DB.last={ payId:draft.payId, who:draft.who, target:draft.target };
-  save();
+  /* 저장이 안 됐으면 「저장했습니다」라고 말하지 않는다.
+     시트도 닫지 않는다 — 닫으면 적은 내용이 화면에서도 사라진다. */
+  if(!save()) return;
   if(keepOpen && !editingId){
     toast('저장했습니다. 이어서 적으세요');
     draft.amount=0; draft.cat=''; draft.memo='';
@@ -2005,6 +2666,18 @@ function renderAsset(){
   $('#a-minus').textContent=shortWon(nw.minus);
   $('#a-card').textContent=shortWon(nw.card);
 
+  /* 이번 달 움직임 — 「형편」 다음에 「이번 달 뭘 했나」 */
+  var mv2=monthMoves(ym);
+  $('#a-saved').textContent=shortWon(mv2.saved);
+  $('#a-repaid').textContent=shortWon(mv2.repaid);
+  $('#a-grew').textContent=shortWon(mv2.saved+mv2.repaid);
+  var mnote=$('#a-move-note');
+  var hasMort=liveAssets().some(function(a){ return a.kind==='mortgage'; });
+  mnote.innerHTML='<b>모은 돈</b>은 적금·투자로 옮긴 것,<br>'
+                + '<b>갚은 빚</b>은 대출로 옮긴 것입니다.<br>'
+                + '둘 다 쓴 돈이 아니라<br><b>우리 몫이 늘어난 것</b>입니다.'
+                + (hasMort ? '<br><br>주담대는 따로 안 적어도<br>매달 갚은 원금이 여기 들어갑니다.' : '');
+
   var oc=$('#a-owner'); oc.innerHTML='';
   var any=liveAssets().some(function(a){ return KIND_BALANCE[a.kind]; });
   $('#a-owner-card').style.display=any?'':'none';
@@ -2032,6 +2705,14 @@ function renderAsset(){
   var hasHome=liveAssets().some(function(a){ return a.kind==='other'; });
   var msg='통장 잔고는 <b>적어둔 기준 금액에<br>그 뒤 내역을 더한 값</b>입니다.<br>'
         + '실제 잔고와 어긋나면<br>기준 금액을 다시 적어주세요.';
+  if(nw.negBanks && nw.negBanks.length){
+    msg+='<br><br><b>잔고가 마이너스인 통장이 '+nw.negBanks.length+'개 있습니다.</b><br>'
+       + nw.negBanks.slice(0,4).join(' · ')
+       + (nw.negBanks.length>4 ? ' 외 '+(nw.negBanks.length-4)+'개' : '') + '<br>'
+       + '기준 금액을 안 적어서 그렇습니다.<br>'
+       + '<b>빚으로 세지 않고 있습니다.</b><br>'
+       + '통장을 눌러 지금 잔액을 적어주세요.';
+  }
   if(hasMortgage && !hasHome){
     msg+='<br><br><b>지금 집값이 빠져 있습니다.</b><br>그래서 순자산이 실제보다 낮게 보입니다.';
   }
@@ -2072,7 +2753,11 @@ function assetCard(a, ym){
   dot.style.cssText='width:11px;height:11px;border-radius:50%;flex:none;background:'+(w===2?'var(--sub)':'var(--p'+w+')');
   h.appendChild(dot);
   h.appendChild(el('div','nm', a.name||KIND_LABEL[a.kind]));
-  h.appendChild(el('div','tag', KIND_LABEL[a.kind]));
+  /* 이자 정보가 없는 「이자만 내는 대출」은 사실 대출이 아니라 그냥 갚을 돈이다.
+     누나 몫처럼 — 대출이라고 적으면 틀린 말이 된다. */
+  var tagName = KIND_LABEL[a.kind];
+  if(a.kind==='credit' && !(+a.payAmt>0) && !(+a.rate>0)) tagName='줄 돈';
+  h.appendChild(el('div','tag', tagName));
   c.appendChild(h);
 
   if(a.kind==='card'){
@@ -2096,20 +2781,37 @@ function assetCard(a, ym){
     i2.style.width=(s.total?Math.min(100,s.paid/s.total*100):0)+'%';
     pr.appendChild(i2); c.appendChild(pr);
     c.appendChild(kv('갚은 회차', s.paid+' / '+s.total+'회'));
+    if(s.paid>0) c.appendChild(kv('몇 달째', s.paid+'달째 · 매달 원금 '+won(s.principal)+'원씩'));
     c.appendChild(kv('이번 달 낼 돈', wonx(s.monthly)));
     c.appendChild(kv('  그중 이자', wonx(s.interest)));
     c.appendChild(kv('  그중 원금', wonx(s.principal)));
     if(s.endYM) c.appendChild(kv('다 갚는 때', s.endYM));
     c.appendChild(kv('명의', ownerName(a)));
   }else if(a.kind==='credit'){
-    var b3=el('div','big num', wonx(+a.balance||0)); b3.style.color='var(--minus)';
+    var b3=el('div','big num', wonx(-balanceOf(a))); b3.style.color='var(--minus)';
     c.appendChild(b3);
-    c.appendChild(el('div','tiny muted','남은 잔액 (직접 적은 값)'));
-    if(+a.rate){
-      c.appendChild(kv('연 이자율', a.rate+'%'));
-      c.appendChild(kv('한 달 이자', '약 '+wonx((+a.balance||0)*(+a.rate)/100/12)));
+    /* 이자만 내고 있으면 원금이 그대로라는 걸 그 자리에 적는다.
+       🚨 「갚아도 안 줄어든다」고 쓰면 틀린다 — 원금을 갚으면(옮김) 실제로 줄어든다. */
+    var ip=+a.payAmt||0;
+    c.appendChild(el('div','tiny muted',
+      ip>0 ? '남은 원금 · <b>이자만 내고 있어 원금은 그대로입니다</b>'
+           : '남은 원금 (직접 적은 값)'));
+    if(ip>0){
+      c.appendChild(kv('매달 내는 이자',
+        (+a.payDay ? ('매달 '+(+a.payDay)+'일 · ') : '') + wonx(ip)));
+      if(a.payFrom){
+        var mn=monthsBetween(a.payFrom+'-01', new Date())+1;
+        c.appendChild(kv('몇 달째', mn+'달째 ('+ymLabel(a.payFrom)+'부터)'));
+      }
     }
+    if(+a.rate) c.appendChild(kv('연 이자율', a.rate+'%'));
     c.appendChild(kv('명의', ownerName(a)));
+    if(ip>0 && a.payFrom){
+      c.appendChild(el('div','tiny muted',
+        '<b>지금까지 낸 이자는 안 보여줍니다.</b><br>'
+      + '금리가 중간에 바뀌면<br>곱셈으로는 틀린 값이 나옵니다.<br>'
+      + '이자를 「반복」으로 적어두면<br>내역에서 실제로 낸 것을 볼 수 있습니다.'));
+    }
   }else{
     var bal=balanceOf(a);
     c.appendChild(el('div','big num', wonx(bal)));
@@ -2177,8 +2879,10 @@ function renderGoal(){
   var box=$('#a-goal'); box.innerHTML='';
   if(!goalOn()){
     box.appendChild(el('div','tiny muted',
-      '집 잔금처럼 <b>언제까지 얼마</b>가 필요한 일을 적어두면,<br>'
-    + '지금 모으는 속도로 되는지 알려드립니다.<br>'
+      '집 잔금처럼 <b>언제까지 얼마</b>가<br>'
+    + '필요한 일을 적어두면,<br>'
+    + '지금 모으는 속도로<br>'
+    + '되는지 알려드립니다.<br>'
     + '아직 정해둔 목표가 없습니다.'));
     return;
   }
@@ -2474,7 +3178,7 @@ function drawAsset(){
          : adraft.kind==='savings' ? '예: 가족계, 청약저축'
          : adraft.kind==='invest'  ? '예: 연금저축펀드'
          : adraft.kind==='other'   ? '예: 우리집, 자동차'
-         : adraft.kind==='credit'  ? '예: 마이너스통장'
+         : adraft.kind==='credit'  ? '예: 지금 전세집(버팀목), 누나 몫'
          : '예: 우리집 주담대';
   b.appendChild(fldLabel('이름'));
   b.appendChild(inp('name', ph, 'text'));
@@ -2523,12 +3227,37 @@ function drawAsset(){
     b.appendChild(el('div','notice','매달 갚은 만큼<br>남은 원금이 저절로 줄어듭니다.<br>중간에 목돈을 갚았다면<br>「처음 빌린 금액」을 줄여<br>다시 적어주세요.'));
   }
   else if(adraft.kind==='credit'){
-    b.appendChild(fldLabel('지금 남은 잔액 (원)'));
-    b.appendChild(inp('balance','예: 15000000','tel'));
+    b.appendChild(fldLabel('남은 원금 (원)'));
+    b.appendChild(inp('balance','예: 152000000','tel'));
+    b.appendChild(el('div','fld'));
+    b.appendChild(fldLabel('위 금액이 언제 기준인가요'));
+    b.appendChild(inp('asOf','','date'));
+    b.appendChild(el('div','fld'));
+    var r4=el('div','row2');
+    var q1=el('div'); q1.appendChild(fldLabel('매달 내는 이자 (원)')); q1.appendChild(inp('payAmt','예: 390000','tel'));
+    var q2=el('div'); q2.appendChild(fldLabel('매달 며칠에'));
+    var dsel=el('select');
+    var o0=el('option',null,'— 모름 —'); o0.value=''; dsel.appendChild(o0);
+    for(var dd=1; dd<=31; dd++){
+      var oo=el('option',null,dd+'일'); oo.value=String(dd);
+      if(+adraft.payDay===dd) oo.selected=true;
+      dsel.appendChild(oo);
+    }
+    dsel.onchange=function(){ adraft.payDay=dsel.value; };
+    q2.appendChild(dsel);
+    r4.appendChild(q1); r4.appendChild(q2); b.appendChild(r4);
+    b.appendChild(el('div','fld'));
+    b.appendChild(fldLabel('지금 이자를 언제부터 내고 있나 (몰라도 됩니다)'));
+    b.appendChild(inp('payFrom','','month'));
     b.appendChild(el('div','fld'));
     b.appendChild(fldLabel('연 이자율 (%) — 몰라도 됩니다'));
-    b.appendChild(inp('rate','예: 5.2','text'));
-    b.appendChild(el('div','notice','마이너스 통장처럼<br>잔액이 오르내리는 것은<br>가끔 앱에 들어와<br>이 숫자만 고쳐주면 됩니다.'));
+    b.appendChild(inp('rate','예: 3.1','text'));
+    b.appendChild(el('div','notice',
+      '전세대출처럼 <b>이자만 내는 것</b>이<br>여기 들어갑니다.<br>'
+    + '매달 내는 이자를 적어두면<br><b>몇 달째 내고 있는지</b>가<br>카드에 같이 나옵니다.<br><br>'
+    + '이자·금리를 <b>비워두면</b><br>「줄 돈」으로 표시됩니다.<br>(누나 몫처럼 대출이 아닌 것)<br><br>'
+    + '원금을 갚았을 때는<br><b>「옮김」으로 적으면</b><br>이 날짜 뒤부터 원금이 줄어듭니다.<br>'
+    + '그러면 살림 탭의<br><b>「갚은 빚」</b>에도 들어갑니다.'));
   }
   else{
     b.appendChild(fldLabel('지금 들어 있는 돈 (원)'));
@@ -2573,6 +3302,21 @@ $('#as-save').onclick=function(){
 };
 $('#as-del').onclick=function(){
   if(!aEditId) return;
+  /* 통장을 지우면 그 통장을 결제통장으로 쓰던 카드가 「없는 통장」을 가리키게 된다.
+     그러면 그 카드로 쓴 돈이 어느 통장에서도 안 빠진다 — 아무 말 없이.
+     그래서 미리 알리고, 계속하면 연결을 끊는다. */
+  var delA=assetById(aEditId);
+  var hooked=(delA && delA.kind==='bank')
+    ? liveAssets().filter(function(x){ return x.kind==='card' && x.linkId===aEditId; })
+    : [];
+  if(hooked.length){
+    if(!confirm('이 통장에서 빠지는 카드가 '+hooked.length+'장 있습니다.\n'
+              + '('+hooked.map(function(c){ return c.name||'카드'; }).join(', ')+')\n\n'
+              + '지우면 그 카드로 쓴 돈이\n어느 통장에서도 빠지지 않게 됩니다.\n\n'
+              + '계속하면 카드의 연결을 비워 두겠습니다.\n'
+              + '나중에 다른 통장으로 채우면 지난 내역까지 다시 계산됩니다.')) return;
+    hooked.forEach(function(c){ c.linkId=''; c.updated=Date.now(); });
+  }
   if(!confirm('이 항목을 지울까요?\n적어둔 내역은 그대로 남습니다.')) return;
   var i;
   for(i=0;i<DB.assets.length;i++) if(DB.assets[i].id===aEditId){ DB.assets[i].deleted=true; DB.assets[i].updated=Date.now(); }
@@ -2590,7 +3334,9 @@ $('#rs-close').onclick=function(){ $('#rsheet').style.display='none'; document.b
 function drawRules(){
   var b=$('#rs-body'); b.innerHTML='';
   b.appendChild(el('div','notice',
-    '매달 같은 날 오가는 돈을<br>한 번만 등록해두면<br>그 뒤로는 저절로 기록됩니다.<br>월급·자동이체·공과금이 여기에 들어갑니다.'));
+    '매달 같은 날 오가는 돈을<br>한 번만 등록해두면<br>그 뒤로는 저절로 기록됩니다.<br>'
+  + '월급·자동이체·공과금이 여기에 들어갑니다.<br><br>'
+  + '반복을 <b>고쳐서 저장하면</b><br>이미 만든 기록도<br>새 내용으로 다시 만들지<br>물어봅니다.'));
   var rules=liveRules();
   if(!rules.length){
     b.appendChild(el('div','empty','아직 등록한 반복이 없습니다.<br>아래 버튼으로 하나 넣어보세요.'));
@@ -2603,7 +3349,8 @@ function drawRules(){
     h.appendChild(el('div','nm', r.title||'(이름 없음)'));
     h.appendChild(el('div','tag', KL[r.kind]||''));
     c.appendChild(h);
-    var big=el('div','big num', wonx(r.amount));
+    var big=el('div','big num', r.varAmt ? '금액이 매달 다름' : wonx(r.amount));
+    if(r.varAmt) big.style.fontSize='18px';
     if(r.kind==='expense') big.style.color='var(--minus)';
     if(r.kind==='income') big.style.color='var(--plus)';
     c.appendChild(big);
@@ -2612,7 +3359,9 @@ function drawRules(){
     if(r.kind==='income')   c.appendChild(kv('들어오는 통장', assetName(r.toId)));
     if(r.kind==='expense')  c.appendChild(kv('빠지는 곳', assetName(r.fromId)));
     c.appendChild(kv('시작한 달', ymLabel(r.since)));
+    if(r.until) c.appendChild(kv('끝나는 달', ymLabel(r.until)));
     c.appendChild(kv('상태', r.active===false?'멈춤':'돌아가는 중'));
+    c.appendChild(kv('만들어 둔 기록', ruleMadeCount(r.id)+'건'));
     c.onclick=function(){ openRule(r); };
     b.appendChild(c);
   });
@@ -2625,7 +3374,7 @@ function openRule(r){
   else{
     rEditId=null;
     rdraft={ title:'', kind:'transfer', day:25, amount:0, fromId:(bk[0]?bk[0].id:''),
-             toId:(bk[1]?bk[1].id:''), cat:'', who:0, since:ymOf(todayStr()), active:true };
+             toId:(bk[1]?bk[1].id:''), cat:'', who:0, since:ymOf(todayStr()), until:'', active:true };
     $('#es-title').textContent='반복 추가'; $('#es-del').style.display='none';
   }
   drawRule();
@@ -2658,6 +3407,7 @@ function drawRule(){
   var c1=el('div'); c1.appendChild(fldLabel('금액 (원)'));
   var ai=el('input'); ai.type='tel'; ai.inputMode='numeric'; ai.value=rdraft.amount||'';
   ai.oninput=function(){ rdraft.amount=parseInt(String(ai.value).replace(/[^0-9]/g,''),10)||0; };
+  if(rdraft.varAmt){ ai.disabled=true; ai.value=''; ai.placeholder='매달 다름'; ai.style.opacity='.4'; }
   c1.appendChild(ai);
   var c2=el('div'); c2.appendChild(fldLabel('매달 며칠'));
   var dpick=el('select');
@@ -2669,6 +3419,22 @@ function drawRule(){
   dpick.onchange=function(){ rdraft.day=parseInt(dpick.value,10); };
   c2.appendChild(dpick);
   r2.appendChild(c1); r2.appendChild(c2); b.appendChild(r2);
+  /* 관리비처럼 달마다 금액이 다른 것 */
+  var vseg=el('div','seg'); vseg.style.cssText='grid-template-columns:repeat(2,1fr);margin-top:10px';
+  [[false,'금액이 매달 같다'],[true,'금액이 매달 다르다']].forEach(function(o){
+    var btn=el('button', (!!rdraft.varAmt)===o[0]?'on':'', o[1]);
+    btn.onclick=function(){ rdraft.varAmt=o[0]; drawRule(); };
+    vseg.appendChild(btn);
+  });
+  b.appendChild(vseg);
+  if(rdraft.varAmt){
+    b.appendChild(el('div','notice',
+      '금액을 안 적습니다.<br><b>기록도 안 만듭니다.</b><br><br>'
+    + '대신 그 날짜가 지나면<br>홈에 <b>「이번 달 챙길 것」</b>으로 뜹니다.<br>'
+    + '눌러서 그때 금액을 적으면 됩니다.<br><br>'
+    + '관리비처럼 <b>달마다 금액이 다른 것</b>에 씁니다.<br>'
+    + '0원으로 박아두면 거짓말이 됩니다.'));
+  }
   b.appendChild(el('div','fld'));
 
   if(rdraft.kind==='transfer'){
@@ -2708,6 +3474,16 @@ function drawRule(){
     b.appendChild(el('div','fld'));
   }
 
+  b.appendChild(fldLabel('언제까지 (할부처럼 끝나는 것만 적으세요)'));
+  var ui=el('input'); ui.type='month'; ui.value=rdraft.until||'';
+  ui.onchange=function(){ rdraft.until=ui.value||''; drawRule(); };
+  b.appendChild(ui);
+  b.appendChild(el('div','tiny muted',
+    '비워두면 <b>끝나는 날 없이</b> 계속 만듭니다.<br>'
+  + '월급·통신비처럼 계속 나가는 것은<br>비워두면 됩니다.<br>'
+  + '가전 할부금처럼 <b>끝이 있는 것</b>은<br>마지막 달을 적어주세요.'));
+  b.appendChild(el('div','fld'));
+
   b.appendChild(fldLabel('언제부터 (이 달부터 기록을 만듭니다)'));
   var si=el('input'); si.type='month'; si.value=rdraft.since;
   si.onchange=function(){ if(si.value) rdraft.since=si.value; };
@@ -2727,21 +3503,54 @@ function drawRule(){
 }
 $('#es-save').onclick=function(){
   var d=rdraft;
-  if(!d.amount){ toast('금액을 적어주세요'); return; }
+  if(!d.varAmt && !d.amount){ toast('금액을 적어주세요'); return; }
   if(d.kind==='transfer' && (!d.fromId||!d.toId)){ toast('어디서 어디로인지 골라주세요'); return; }
   if(d.kind==='transfer' && d.fromId===d.toId){ toast('같은 곳으로는 못 옮깁니다'); return; }
   if(d.kind==='income' && !d.toId){ toast('들어올 통장을 골라주세요'); return; }
   if(d.kind==='expense' && !d.fromId){ toast('무엇으로 빠지는지 골라주세요'); return; }
+  if(d.until && d.since && d.until < d.since){ toast('「언제까지」가 「언제부터」보다 빠릅니다'); return; }
   if(!d.title) d.title = d.kind==='income'?'수입':(d.kind==='transfer'?'자동이체':'정기지출');
+  /* 「언제부터」를 오래 전으로 잘못 고르면 지난 기록이 수십 건 한꺼번에 생긴다.
+     반복을 지워도 만들어진 기록은 남으므로, 만들기 전에 몇 건인지 알린다. */
+  var willMake=0, wym=d.since, wtoday=todayStr(), wnow=ymOf(wtoday), wguard=0;
+  if(d.varAmt){ wym=wnow; }   /* 만들지 않으므로 예고할 것도 없다 */
+  while(wym<=wnow && wguard++<400){
+    var wd=Math.min(+d.day||1, daysInMonth(wym));
+    if(wym+'-'+pad2(wd) <= wtoday) willMake++;
+    wym=ymShift(wym,1);
+  }
+  if(willMake>6){
+    if(!confirm('시작한 달이 '+d.since+' 입니다.\n\n'
+              + '지금 저장하면 지난 기록이\n최대 '+willMake+'건 한꺼번에 만들어집니다.\n'
+              + '(이미 만든 달은 다시 만들지 않습니다)\n\n'
+              + '⚠️ 반복을 나중에 지워도\n만들어진 기록은 그대로 남습니다.\n\n'
+              + '계속할까요?')) return;
+  }
   d.updated=Date.now();
+  /* 고치는 경우, 이미 만들어 둔 기록은 옛 내용 그대로 남는다.
+     그걸 새 내용으로 맞추고 싶은지 물어야 한다 — 안 물으면 손으로 지우게 되고,
+     손으로 지우면 다시 만들 길이 없어 막다른 길이 된다. */
+  var rebuild=false, had=0;
+  if(rEditId){
+    had = ruleMadeCount(rEditId);
+    if(had>0){
+      rebuild = confirm('이 반복으로 이미 만들어 둔 기록이 '+had+'건 있습니다.\n\n'
+        + '그 기록들은 고치기 전 내용 그대로입니다.\n\n'
+        + '[확인] 옛 기록을 지우고 새 내용으로 다시 만듭니다\n'
+        + '[취소] 옛 기록은 그대로 두고, 앞으로 생길 것만 새 내용으로 만듭니다');
+    }
+  }
   if(rEditId){
     var i;
     for(i=0;i<DB.rules.length;i++) if(DB.rules[i].id===rEditId){ d.id=rEditId; d.deleted=false; DB.rules[i]=d; }
   }else{ d.id=uid(); d.deleted=false; DB.rules.push(d); }
   save();
-  var made=runRules();
+  var made=0, wiped=0;
+  if(rebuild){ var rr=rebuildRule(rEditId); wiped=rr.wiped; made=rr.made; }
+  else made=runRules();
   $('#esheet').style.display='none';
-  toast(made?('저장하고 '+made+'건 기록했습니다'):'저장했습니다');
+  toast(rebuild ? ('옛 기록 '+wiped+'건을 지우고 '+made+'건 다시 만들었습니다')
+                : (made?('저장하고 '+made+'건 기록했습니다'):'저장했습니다'));
   drawRules(); renderAsset();
 };
 $('#es-del').onclick=function(){
@@ -2982,18 +3791,21 @@ function moveInList(which, name, dir){
   save(); renderSet();
 }
 /* 아이콘 고르는 판. 고르면 콜백으로 넘겨준다. */
+/* 아이콘 판. 화면이 **6열**이므로 묶음마다 개수를 **6의 배수**로 둔다.
+   예전에는 8개짜리 묶음이 많아 마지막 줄에 2칸만 차서 오른쪽이 비어 보였다. */
 var EMOJI_SETS=[
-  {t:'먹는 것', v:['🍚','🍜','🍔','🍕','🍗','🍣','🥗','🍰','☕','🍺','🍎','🥤']},
-  {t:'사는 것', v:['🛒','🧻','🧴','🧺','🛍','🎁','🧧','💐']},
-  {t:'다니는 것', v:['🚌','🚕','🚗','⛽','🚇','✈️','🅿️','🚲']},
-  {t:'집', v:['🏠','🏡','🛋','💡','🔧','🚿','🪑','🧯']},
-  {t:'몸', v:['💊','🏥','🦷','👓','💪','🧘','🩺','🧴']},
-  {t:'꾸미기', v:['👕','👗','👟','💄','✂️','💅','👜','⌚']},
+  {t:'먹는 것', v:['🍚','🍜','🍔','🍕','🍗','🍣','🥗','🍰','☕','🍺','🍎','🥤',
+                   '🍽','🍲','🍞','🍦','🥩','🍫']},
+  {t:'사는 것', v:['🛒','🧻','🧴','🧺','🛍','🎁','🧧','💐','🏪','🎀','💎','🪥']},
+  {t:'다니는 것', v:['🚌','🚕','🚗','⛽','🚇','✈️','🅿️','🚲','🚆','🛴','🚏','🛵']},
+  {t:'집', v:['🏠','🏡','🛋','💡','🔧','🚿','🪑','🧯','🧹','🚪','🛏','🪴']},
+  {t:'몸', v:['💊','🏥','🦷','👓','💪','🧘','🩺','🤰','🩹','💉','😷','🛌']},
+  {t:'꾸미기', v:['👕','👗','👟','💄','✂️','💅','👜','⌚','🧢','🕶','💍','🧣']},
   {t:'노는 것', v:['🎬','🎮','🎤','⚽','🏕','📷','🎳','🎧','📺','🎫','🎨','🎂']},
-  {t:'배우기', v:['📚','✏️','🎓','💻','🖊','🧮']},
-  {t:'사람', v:['👫','🙋','🙋‍♀️','👶','🧸','🐾','🤝','👨‍👩‍👧']},
-  {t:'돈', v:['🏦','💳','💰','📈','🛡','🧾','💵','📱']},
-  {t:'그 밖에', v:['📦','❓','⭐','🔖','🔔','🌱','🎯','🧊']}
+  {t:'배우기', v:['📚','✏️','🎓','💻','🖊','🧮','📝','📖','🔬','🌐','🗂','🎒']},
+  {t:'사람', v:['👫','🙋','🙋‍♀️','👶','🧸','🐾','🤝','👨‍👩‍👧','👴','👵','🐶','🐱']},
+  {t:'돈', v:['🏦','💳','💰','📈','🛡','🧾','💵','📱','🪙','📉','🏧','✉️']},
+  {t:'그 밖에', v:['📦','❓','⭐','🔖','🔔','🌱','🎯','🔁','⚙️','🧩','🔒','✅']}
 ];
 var emojiPick=null;
 function pickEmoji(cur, cb){
@@ -3201,11 +4013,19 @@ function syncWhoMap(){
   var vals=whoValues(), fresh={};
   vals.forEach(function(v){
     if(whoMap[v]===0||whoMap[v]===1){ fresh[v]=whoMap[v]; return; }
-    /* 앱에 적어둔 이름과 글자가 겹치면 그쪽으로 미리 골라둔다 */
+    /* 앱에 적어둔 이름과 글자가 겹칠 때만 미리 골라둔다.
+       🚨 안 겹치면 「아무것도 안 고른 상태」로 둔다(-1).
+          예전에는 첫 번째 사람으로 찍어뒀는데, 화면에는 버튼이 켜진 것처럼 보여서
+          사용자가 이미 골라진 줄 알고 넘어갔고 153건이 통째로 한 사람이 됐다. */
     if(DB.people[1] && (v.indexOf(DB.people[1])>=0 || DB.people[1].indexOf(v)>=0)) fresh[v]=1;
-    else fresh[v]=0;
+    else if(DB.people[0] && (v.indexOf(DB.people[0])>=0 || DB.people[0].indexOf(v)>=0)) fresh[v]=0;
+    else fresh[v]=-1;
   });
   whoMap=fresh;
+}
+/* 아직 안 고른 이름들 */
+function whoUnset(){
+  return whoValues().filter(function(v){ return whoMap[v]!==0 && whoMap[v]!==1; });
 }
 /* 파일에 적힌 결제수단 이름(예: 「롯데카드(카뱅)」)을 우리 앱의 무엇으로 넣을지 이어주는 표.
    규칙은 하나다 — **이름이 같으면 같은 것.**
@@ -3340,9 +4160,18 @@ function drawMap(){
   var wv=whoValues();
   if(wv.length){
     b.appendChild(fldLabel('파일 속 사람을 우리 앱의 누구로 넣을까요'));
+    if(whoUnset().length){
+      b.appendChild(el('div','notice',
+        '<b>아직 안 고른 이름이 '+whoUnset().length+'개 있습니다.</b><br>'
+      + '파일에 적힌 이름이 앱의 이름과<br>달라서 자동으로 못 맞췄습니다.<br>'
+      + '전부 고르기 전에는<br>가져올 수 없습니다.'));
+    }
     wv.forEach(function(v){
+      var unset=(whoMap[v]!==0 && whoMap[v]!==1);
       var row=el('div'); row.style.marginBottom='9px';
-      row.appendChild(el('div','tiny muted','파일에 적힌 이름 : <b>'+v+'</b>'));
+      row.appendChild(el('div','tiny muted',
+        '파일에 적힌 이름 : <b>'+v+'</b>'
+      + (unset ? ' <b style="color:var(--minus)">· 아직 안 골랐습니다</b>' : '')));
       var seg=el('div','seg'); seg.style.gridTemplateColumns='repeat(2,1fr)'; seg.style.marginTop='6px';
       [0,1].forEach(function(i){
         var btn=el('button', whoMap[v]===i?'on':'', DB.people[i]||('사람'+(i+1)));
@@ -3474,11 +4303,32 @@ function rowToTx(r){
   return { date:date, type:type, amount:amt.n, cat:cat, payName:payName,
            memo:memo, who:who, target:target };
 }
-function dupKey(t){ return t.date+'|'+t.type+'|'+t.amount+'|'+t.cat+'|'+(t.memo||''); }
+/* 「이미 있는 것」을 가리는 열쇠.
+   예전에는 날짜·종류·금액·분류·메모만 봤는데, 실제 파일에서 이런 것들이 지워졌다.
+     · 같은 날 같은 금액을 **시댁과 처가댁에 각각** 낸 것  → 대상이 다르다
+     · 같은 계약금을 **현금과 통장으로 나눠** 낸 것        → 결제수단이 다르다
+   그래서 대상·누가·결제수단·들어온 통장까지 열쇠에 넣는다. */
+function dupKey(t){
+  return t.date+'|'+t.type+'|'+t.amount+'|'+t.cat+'|'+(t.memo||'')
+       +'|'+(t.target||DEF_TARGET)+'|'+(t.who===1?1:0)
+       +'|'+(t.payId?assetName(t.payId):'')
+       +'|'+(t.toId ?assetName(t.toId ):'');
+}
 $('#ms-go').onclick=function(){
+  /* 사람을 안 고른 채로 넣으면 통째로 한 사람이 된다 — 아예 막는다 */
+  if(mapDraft.who>=0 && whoUnset().length){
+    alert('아직 누구인지 안 고른 이름이 있습니다.\n\n'
+        + whoUnset().join(', ') + '\n\n'
+        + '전부 고른 뒤에 가져와 주세요.\n'
+        + '안 고르고 넣으면 한 사람 것으로 몰립니다.');
+    return;
+  }
   if(mapDraft.date<0||mapDraft.amount<0){ toast('날짜와 금액 열은 꼭 골라야 합니다'); return; }
+  /* 열쇠가 똑같은 줄이 파일에 두 번 나올 수 있다(같은 날 같은 것을 두 번 낸 경우).
+     예전에는 「있으면 무조건 건너뛰기」라 두 번째가 통째로 사라졌다.
+     그래서 **앱에 이미 있는 개수만큼만** 건너뛴다. */
   var seen={}, i;
-  liveTx().forEach(function(t){ seen[dupKey(t)]=1; });
+  liveTx().forEach(function(t){ var k=dupKey(t); seen[k]=(seen[k]||0)+1; });
   /* 맞추기 표대로 카드·통장을 만들거나 이미 있는 것에 붙인다.
      카드가 결제통장을 가리켜야 하므로 통장·현금을 먼저 만든다. */
   var madeCount=0, madeBanks=0;
@@ -3517,11 +4367,14 @@ $('#ms-go').onclick=function(){
   for(i=0;i<csvRows.length;i++){
     var r=rowToTx(csvRows[i]);
     if(!r){ bad++; continue; }
-    var k=dupKey(r);
-    if(seen[k]){ skipped++; continue; }
-    seen[k]=1;
     var pid = r.payName ? (payIds[r.payName]||'') : '';
     var pAs = pid ? assetById(pid) : null;
+    /* 결제수단을 맞춘 뒤라야 열쇠가 기존 거래와 같은 기준이 된다 */
+    var k=dupKey({ date:r.date, type:r.type, amount:r.amount, cat:r.cat, memo:r.memo,
+                   target:r.target, who:r.who,
+                   payId:(r.type==='expense'? pid : ''),
+                   toId:(r.type==='income' && pAs && pAs.kind==='bank' ? pid : '') });
+    if(seen[k]>0){ seen[k]--; skipped++; continue; }
     /* 수입은 「어느 통장으로 들어왔나」로 넣는다 — 통장으로 맞춘 것일 때만. */
     DB.tx.push({ id:uid(), ts:Date.now()+i, date:r.date, type:r.type, amount:r.amount,
                  cat:r.cat,
@@ -3566,11 +4419,121 @@ $('#s-file').onchange=function(){
       var d=JSON.parse(rd.result);
       if(!d.tx) throw new Error('형식');
       if(!confirm('지금 데이터를 이 파일 내용으로 덮어씁니다. 계속할까요?')) return;
-      DB=d; normalize(); save(); applyTheme(); runRules();
+      DB=d; normalize(); resnapSettings(); save(); applyTheme(); runRules();
       toast('가져왔습니다'); go('home');
     }catch(e){ alert('가계부 백업 파일이 아닌 것 같습니다.'); }
   };
   rd.readAsText(f);
+};
+/* 마지막으로 주고받은 시점을 짧게. 「방금」 「3분 전」 처럼. */
+function syncWhen(ts){
+  if(!ts) return '기록 없음';
+  var d = Math.floor((Date.now() - ts) / 1000);
+  if(d < 60)    return '방금';
+  if(d < 3600)  return Math.floor(d/60) + '분 전';
+  if(d < 86400) return Math.floor(d/3600) + '시간 전';
+  return Math.floor(d/86400) + '일 전';
+}
+/* 지금 상태를 한 줄로. 홈과 설정이 같은 말을 쓰게 여기 한 곳에서 만든다. */
+function syncLabel(){
+  if(!syncReady())  return { txt:'동기화 꺼짐',  bad:false, off:true };
+  if(syncBusy)      return { txt:'동기화 중…',   bad:false };
+  if(syncCfg.err)   return { txt:'동기화 실패',  bad:true };
+  return { txt:'동기화 완료 · ' + syncWhen(syncCfg.last), bad:false };
+}
+/* 홈의 상태 줄과 설정의 카드를 같이 갱신한다. */
+function drawSync(){
+  var st = syncLabel();
+
+  var line = $('#h-sync');
+  if(line){
+    if(st.off) line.style.display = 'none';
+    else{
+      line.style.display = '';
+      line.style.color = st.bad ? 'var(--minus)' : 'var(--sub)';
+      line.textContent = (st.bad ? '● ' + st.txt + ' — 눌러서 다시 시도' : '● ' + st.txt);
+    }
+  }
+
+  var off = $('#sy-box-off'), on = $('#sy-box-on');
+  if(!off || !on) return;
+  if(st.off){ off.style.display=''; on.style.display='none'; return; }
+  off.style.display='none'; on.style.display='';
+  var h = '창고 <b>' + syncCfg.owner + ' / ' + syncCfg.repo + '</b><br>'
+        + '<b style="color:' + (st.bad ? 'var(--minus)' : 'inherit') + '">' + st.txt + '</b>';
+  if(st.bad && syncCfg.err) h += '<br><span class="muted">' + String(syncCfg.err).replace(/\n/g,'<br>') + '</span>';
+  $('#sy-state').innerHTML = h;
+}
+/* 예전 이름으로 부르는 곳이 있어도 같이 동작하게 둔다. */
+function drawSyncCard(){ drawSync(); }
+$('#h-sync').onclick = function(){ syncNow(false).then(drawSync); };
+$('#sy-on').onclick = function(){
+  var tk = ($('#sy-token').value || '').trim();
+  var rp = ($('#sy-repo').value || '').trim();
+  if(!tk){ alert('열쇠를 붙여넣어 주세요.'); return; }
+  syncCfg.token = tk; syncCfg.err = '';
+  var btn = this; btn.disabled = true; btn.textContent = '확인하는 중…';
+  function done(msg){
+    btn.disabled = false; btn.textContent = '연결 켜기';
+    if(msg) alert(msg);
+    drawSyncCard();
+  }
+  function go(owner, repo){
+    syncCfg.owner = owner; syncCfg.repo = repo; syncSaveCfg();
+    $('#sy-token').value = '';
+    syncNow(true).then(function(r){
+      btn.disabled = false; btn.textContent = '연결 켜기';
+      drawSyncCard();
+      if(r && r.err) alert('연결은 저장했지만 맞추지 못했습니다.\n\n' + r.err);
+      else{
+        toast('연결했습니다');
+        alert('연결했습니다.\n\n'
+            + '창고: ' + owner + ' / ' + repo + '\n\n'
+            + '아내분 폰에서도 같은 열쇠를 넣으면\n'
+            + '두 폰이 서로 맞춰집니다.');
+      }
+    });
+  }
+  if(rp){
+    /* 「주인/저장소」로 적었으면 그대로 쓴다.
+       앱이 저장소를 못 찾거나 열쇠로 계정을 확인 못 해도 이 길로는 반드시 연결된다.
+       (막다른 길을 남기지 않기 위한 마지막 길) */
+    if(rp.indexOf('/') >= 0){
+      var two = rp.split('/');
+      go(two[0].trim(), two[1].trim());
+      return;
+    }
+    /* 이름만 적었으면 주인 이름은 열쇠에게 물어본다 */
+    ghApi('/user').then(function(r){
+      if(!r.ok || !r.body || !r.body.login){
+        syncCfg.token='';
+        done('열쇠로 GitHub 계정을 확인하지 못했습니다.\n\n'
+           + '저장소 칸에\n「내아이디/저장소이름」 형태로\n적어 주시면 그대로 씁니다.');
+        return;
+      }
+      go(r.body.login, rp);
+    })['catch'](function(){ syncCfg.token=''; done('인터넷에 닿지 못했습니다.'); });
+    return;
+  }
+  syncFindRepo().then(function(f){
+    if(f.err){ syncCfg.token=''; done(f.err); return; }
+    if(f.many){
+      done('이 열쇠로 저장소가 여러 개 보입니다.\n\n'
+         + f.many.join('\n') + '\n\n'
+         + '어느 것을 창고로 쓸지\n「저장소 이름」 칸에 적어 주세요.');
+      return;
+    }
+    go(f.owner, f.repo);
+  })['catch'](function(){ syncCfg.token=''; done('인터넷에 닿지 못했습니다.'); });
+};
+$('#sy-now').onclick = function(){
+  var btn = this; btn.disabled = true; btn.textContent = '맞추는 중…';
+  syncNow(false).then(function(){ btn.disabled = false; btn.textContent = '지금 맞추기'; drawSyncCard(); });
+};
+$('#sy-disconnect').onclick = function(){
+  if(!confirm('연결을 끊을까요?\n\n적어둔 내역은 그대로 남습니다.\n창고의 내용도 지워지지 않습니다.')) return;
+  syncCfg = { token:'', owner:'', repo:'', last:0, err:'' };
+  syncSaveCfg(); drawSyncCard(); toast('연결을 껐습니다');
 };
 $('#s-wipe').onclick=function(){
   if(!confirm('적어둔 내역과 자산이 전부 사라집니다. 정말 지울까요?')) return;
@@ -3585,6 +4548,11 @@ load();
 applyTheme();
 runRules();
 go('home');
+/* 창고 열쇠를 읽어 두고, 연결돼 있으면 곧바로 받아온다.
+   앱을 열 때 받아오는 것이 「상대가 적었는데 나는 안 적은 날」을 메워주는 유일한 길이다. */
+syncLoadCfg();
+if(syncReady()){ syncShape = JSON.stringify(syncPayload()); syncNow(true); }
+drawSync();
 /* 통장·카드가 하나도 없고 아직 「다 했어요」를 안 눌렀으면 안내부터 띄운다. */
 if(guideNeeded()) openGuide();
 </script>
