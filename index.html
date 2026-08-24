@@ -952,6 +952,10 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    🚨 밝기 · 마지막에 고른 결제수단 · 처음 안내 봤는지는 **맞추지 않는다.**
       폰마다 달라야 하는 것이라, 맞추면 남의 폰 화면색과 입력 습관이 바뀐다.
    ──────────────────────────────────────────────────────────────────────────── */
+/* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
+   폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
+var APP_BUILD = '08-24 c';
+
 var SYNC_LISTS = ['tx','assets','rules'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
 
@@ -3730,7 +3734,11 @@ function renderSet(){
   $('#s-p1').value=DB.people[1]||'';
   drawListEditor($('#s-cats'), 'cat');
   drawListEditor($('#s-targets'), 'target');
-  $('#s-ver').textContent='우리 가계부 · 1단계 (폰 안에만 저장) · 내역 '+liveTx().length+'건';
+  /* 판 번호를 적어둔다.
+     폰은 앱 파일을 한동안 저장해 두고 쓰기 때문에, 새로 올려도 옛 화면이 그대로일 때가 있다.
+     그때 「데이터가 안 온 건가, 앱이 옛 건가」를 가릴 방법이 없으면 헤맨다.
+     두 폰의 이 숫자가 같은지만 보면 된다. */
+  $('#s-ver').textContent='우리 가계부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건';
 }
 /* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
    따로 만들면 나중에 반드시 한쪽만 고쳐져서 어긋난다.
