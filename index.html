@@ -954,7 +954,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    ──────────────────────────────────────────────────────────────────────────── */
 /* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
    폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-24 c';
+var APP_BUILD = '08-24 d';
 
 var SYNC_LISTS = ['tx','assets','rules'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1145,6 +1145,37 @@ function syncNow(quiet){
 }
 
 /* 연달아 적을 때 그때그때 올리지 않고 **몇 초 몰아서** 한 번에 올린다. */
+/* 창고를 지금 내용으로 **덮는다.** 합치지 않는다.
+   「백업 파일로 되돌리기」 전용이다.
+
+   왜 필요한가: 보통 맞추기는 「받아와서 합치고 올리기」인데,
+   되돌린 직후에도 그 「합치기」가 먼저 돌아서
+   창고에 있던 옛 분류 묶음이 방금 되돌린 것을 그 자리에서 덮어버린다.
+   묶음 시각을 아무리 새로 찍어도, 창고 쪽 시각이 더 크면 진다.
+   되돌리기는 「이 파일이 이제 진짜다」라는 뜻이므로 합치지 않고 덮는 것이 맞다.
+   (2026-08-24 · 되돌려도 자꾸 📦 로 돌아가던 원인) */
+function syncOverwrite(){
+  if(!syncReady()) return Promise.resolve({ off:true });
+  if(syncBusy) return Promise.resolve({ skip:true });
+  syncBusy = true;
+  return syncPull().then(function(p){
+    if(p.err){ return { err:p.err }; }
+    return syncPush(p.sha).then(function(w){
+      if(!w.ok) return { err: syncErrMsg(w) };
+      syncCfg.last = Date.now(); syncCfg.err = '';
+      syncShape = JSON.stringify(syncPayload());
+      syncSaveCfg();
+      return { ok:true };
+    });
+  })['catch'](function(){
+    return { err:'인터넷에 닿지 못했습니다.' };
+  }).then(function(r){
+    syncBusy = false;
+    if(r.err){ syncCfg.err = r.err; syncSaveCfg(); }
+    if(typeof drawSyncCard === 'function') drawSyncCard();
+    return r;
+  });
+}
 function syncSchedule(ms){
   if(!syncReady()) return;
   clearTimeout(syncT);
@@ -4581,7 +4612,19 @@ $('#s-file').onchange=function(){
       var _now=Date.now();
       SYNC_SETS.forEach(function(k){ DB.meta[k]=_now; });
       resnapSettings(); save(); applyTheme(); runRules();
-      toast('가져왔습니다'); go('home');
+      go('home');
+      /* 되돌리기는 창고를 **덮는다.** 합치면 창고의 옛 묶음이 도로 이긴다. */
+      if(syncReady()){
+        toast('가져왔습니다 · 창고에 올리는 중…');
+        syncOverwrite().then(function(r){
+          if(r && r.err) alert('창고에 올리지 못했습니다.\n\n' + r.err
+            + '\n\n인터넷을 확인하고 설정에서 「지금 맞추기」를 눌러주세요.');
+          else toast('창고까지 맞췄습니다');
+          go('home');
+        });
+      }else{
+        toast('가져왔습니다');
+      }
     }catch(e){ alert('가계부 백업 파일이 아닌 것 같습니다.'); }
   };
   rd.readAsText(f);
