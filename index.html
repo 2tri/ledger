@@ -1364,7 +1364,13 @@ function mortgagePrincipalIn(a, ym){
 
 /* 그 달에 「모은 돈」과 「갚은 빚」.
    모은 돈 = 적금·투자로 옮긴 것 (거기서 뺀 것은 도로 뺀다)
-   갚은 빚 = 대출로 옮긴 것 + 주담대의 그 달 원금분 */
+             − 그 달에 빚을 내서 들어온 돈
+   갚은 빚 = 대출로 옮긴 것 + 주담대의 그 달 원금분
+
+   🔑 빚에서 나온 돈을 빼는 이유 —
+   청년도약적금에 매달 70만이 들어가는데 그 중 20만은 누나 돈이고 빚으로 잡힌다.
+   그걸 안 빼면 「70만을 모았다」가 되는데, 실제로 우리가 모은 것은 50만이다.
+   빌려서 넣은 것은 모은 것이 아니다. (2026-08-24 사용자 지적) */
 function monthMoves(ym){
   var saved=0, repaid=0;
   liveTx().forEach(function(t){
@@ -1372,6 +1378,7 @@ function monthMoves(ym){
     var to=assetById(t.toId), fr=assetById(t.fromId);
     if(to && (to.kind==='savings'||to.kind==='invest')) saved+=t.amount;
     if(fr && (fr.kind==='savings'||fr.kind==='invest')) saved-=t.amount;
+    if(fr && KIND_DEBT[fr.kind]) saved-=t.amount;
     if(to && KIND_DEBT[to.kind]) repaid+=t.amount;
   });
   liveAssets().forEach(function(a){
