@@ -4562,7 +4562,17 @@ $('#s-file').onchange=function(){
       var d=JSON.parse(rd.result);
       if(!d.tx) throw new Error('형식');
       if(!confirm('지금 데이터를 이 파일 내용으로 덮어씁니다. 계속할까요?')) return;
-      DB=d; normalize(); resnapSettings(); save(); applyTheme(); runRules();
+      DB=d; normalize();
+      /* 되돌리기는 「이 파일이 이제 진짜다」라는 뜻이다.
+         분류·대상·이름·예산·목표는 낱개가 아니라 **묶음 시각**으로 맞춰지는데,
+         그 시각을 지금으로 찍지 않으면 창고에 있던 옛 묶음이 더 최신으로 보여
+         **방금 되돌린 분류가 도로 덮인다.**
+         (2026-08-24 실제로 겪음 — 거래는 새 분류를 가리키는데 목록엔 그 분류가 없어
+          내역이 죄다 📦 로 보였다) */
+      if(!DB.meta) DB.meta={};
+      var _now=Date.now();
+      SYNC_SETS.forEach(function(k){ DB.meta[k]=_now; });
+      resnapSettings(); save(); applyTheme(); runRules();
       toast('가져왔습니다'); go('home');
     }catch(e){ alert('가계부 백업 파일이 아닌 것 같습니다.'); }
   };
