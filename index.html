@@ -44,7 +44,9 @@
   --cardline:1px solid var(--line);
   --fab-r:18px;
 }
-/* 「자동」일 때만 폰 설정을 따라간다.
+/* 예전에 「폰 설정 따라」가 있던 시절의 규칙이다. 2026-08-25 에 그 선택지를 없애서
+   이제 문서에는 늘 data-theme 이 붙지만, 이 규칙은 그대로 둬도 맞게 작동한다
+   (어둡게일 때만 걸리고, 밝게일 때는 비켜난다).
    사용자가 「밝게」를 고르면 data-theme="light" 가 붙어 이 규칙이 비켜난다. */
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -107,13 +109,49 @@ select{appearance:none;-webkit-appearance:none;
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   background:var(--card);border-top:1px solid var(--line);
   padding-bottom:var(--safe-b);
-  display:grid;grid-template-columns:repeat(4,1fr);
+  display:grid;grid-template-columns:repeat(5,1fr);
 }
 #nav.hidden{display:none}
 #nav button{height:var(--nav-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   font-size:12px;color:var(--dim);font-weight:700}
 #nav button .ic{font-size:21px;line-height:1}
+/* 탭이 5개가 되면서 글자가 좁아진다. 줄바꿈을 막아 두 줄로 깨지지 않게 한다. */
+#nav button{white-space:nowrap}
 #nav button.on{color:var(--accent)}
+
+
+/* ── 일정 달력 ────────────────────────────────────────────────
+   칸은 전부 같은 크기여야 하고(grid-auto-rows:1fr) 경계선이 있어야 한다.
+   경계가 없으면 어디까지가 하루인지 손가락이 헷갈린다. */
+.calh{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:0}
+.calh div{padding:8px 0;text-align:center;font-size:13px;font-weight:800;color:var(--sub)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;
+  border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
+  background:var(--card);margin-bottom:14px}
+.cal .cd{min-height:56px;padding:6px 0 5px;text-align:center;
+  border-right:1px solid var(--line);border-top:1px solid var(--line)}
+.cal .cd:nth-child(7n){border-right:none}
+.cal .cd:nth-child(-n+7){border-top:none}
+.cal .cd.off .dnum{color:var(--dim)}
+.cal .cd.sel{background:var(--accent-soft)}
+.cal .dnum{display:inline-block;min-width:25px;line-height:25px;border-radius:999px;
+  font-size:15px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
+.cal .cd.sun .dnum{color:var(--minus)}
+.cal .cd.sat .dnum{color:var(--accent)}
+.cal .cd.today .dnum{background:var(--accent);color:#fff}
+.cal .dots{display:flex;justify-content:center;gap:3px;height:7px;margin-top:2px}
+.cal .dot{width:6px;height:6px;border-radius:50%}
+.ev-row{display:flex;align-items:center;gap:10px;padding:13px 14px;background:var(--card);
+  border-radius:var(--r2);border:var(--cardline);margin-bottom:8px;width:100%;text-align:left}
+.ev-row .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.ev-row .nm{flex:1;font-size:16px;font-weight:700;letter-spacing:-.4px}
+.leg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 10px;margin-bottom:16px;padding:0 2px}
+.leg span{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--sub);
+  font-weight:600;white-space:nowrap}
+.leg i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+/* 아무것도 없는 날은 글이 짧아서 ＋ 단추가 글씨를 덮는다.
+   글을 위로 올리고 아래에 자리를 비워 겹치지 않게 한다. */
+#c-day .empty{padding:22px 10px 96px}
 
 #fab{
   position:fixed;z-index:41;right:calc(50% - 260px + 18px);
@@ -434,6 +472,26 @@ select{appearance:none;-webkit-appearance:none;
     <div id="l-body"></div>
   </section>
 
+  <!-- ══════════ 일정 ══════════ -->
+  <section class="page" id="pg-cal">
+    <div class="head"><h1>일정</h1></div>
+    <div class="monthbar">
+      <button id="c-prev">‹</button>
+      <div class="ym num" id="c-label"></div>
+      <button id="c-next">›</button>
+    </div>
+    <div class="calh" id="c-head"></div>
+    <div class="cal" id="c-grid"></div>
+    <div class="leg">
+      <span><i style="background:var(--p1)"></i>기념일</span>
+      <span><i style="background:var(--accent)"></i>약속·할 일</span>
+      <span><i style="background:var(--minus)"></i>돈 나가는 날</span>
+      <span><i style="background:var(--plus)"></i>돈 들어오는 날</span>
+    </div>
+    <div id="c-warn"></div>
+    <div id="c-day"></div>
+  </section>
+
   <!-- ══════════ 자산 ══════════ -->
   <section class="page" id="pg-asset">
     <div class="head"><h1>살림</h1></div>
@@ -496,8 +554,7 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card">
       <h2>화면 밝기</h2>
-      <div class="seg" id="s-theme" style="grid-template-columns:repeat(3,1fr);margin-bottom:0">
-        <button data-t="auto">폰 설정 따라</button>
+      <div class="seg" id="s-theme" style="grid-template-columns:repeat(2,1fr);margin-bottom:0">
         <button data-t="light">밝게</button>
         <button data-t="dark">어둡게</button>
       </div>
@@ -670,6 +727,7 @@ select{appearance:none;-webkit-appearance:none;
   <nav id="nav">
     <button data-go="home" class="on"><span class="ic">🏠</span>홈</button>
     <button data-go="list"><span class="ic">📋</span>내역</button>
+    <button data-go="cal"><span class="ic">📅</span>일정</button>
     <button data-go="asset"><span class="ic">🏦</span>살림</button>
     <button data-go="set"><span class="ic">⚙️</span>설정</button>
   </nav>
@@ -747,6 +805,19 @@ select{appearance:none;-webkit-appearance:none;
   <div class="sh-body" id="es-body"></div>
   <div class="sh-pad" style="padding:12px 16px">
     <button class="btn pri" id="es-save" style="margin:0">저장</button>
+  </div>
+</div>
+
+<!-- ══════════ 일정 편집 시트 ══════════ -->
+<div id="vsheet" style="position:fixed;inset:0;z-index:65;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="vs-cancel">취소</button>
+    <div class="ttl" id="vs-title">일정 추가</div>
+    <button id="vs-del" class="del" style="display:none">삭제</button>
+  </div>
+  <div class="sh-body" id="vs-body"></div>
+  <div class="sh-pad" style="padding:12px 16px">
+    <button class="btn pri" id="vs-save" style="margin:0">저장</button>
   </div>
 </div>
 
@@ -832,7 +903,7 @@ var DB = null;
 function blankDB(){
   return { ver:2, people:['남편','아내'], cats:cloneList(DEFAULT_CATS),
            targets:cloneList(DEFAULT_TARGETS),
-           tx:[], assets:[], rules:[], last:{payId:'', who:0}, theme:'auto',
+           tx:[], assets:[], rules:[], events:[], last:{payId:'', who:0}, theme:phoneTheme(),
            guideDone:false, budget:{amount:0, payIds:[], acctIds:[]}, catBudget:{},
            goal:{on:false, name:'', need:0, date:'', ids:[]} };
 }
@@ -864,8 +935,12 @@ function normalize(){
   if(!DB.tx) DB.tx=[];
   if(!DB.assets) DB.assets=[];
   if(!DB.rules) DB.rules=[];
+  if(!DB.events) DB.events=[];
   if(!DB.last) DB.last={payId:'', who:0};
-  if(!DB.theme) DB.theme='auto';
+  /* 「폰 설정 따라」를 없앴다(2026-08-25).
+     그냥 지우면 밝기가 갑자기 바뀌므로, **지금 그 폰에 보이고 있는 색 그대로** 굳힌다.
+     밝기는 두 폰이 서로 맞추지 않는 항목이라 폰마다 따로 정해진다. */
+  if(!DB.theme || DB.theme==='auto') DB.theme=phoneTheme();
   if(DB.guideDone==null) DB.guideDone=false;
   if(!DB.goal) DB.goal={on:false, name:'', need:0, date:'', ids:[]};
   if(!DB.goal.ids) DB.goal.ids=[];
@@ -954,9 +1029,9 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    ──────────────────────────────────────────────────────────────────────────── */
 /* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
    폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-25 a';
+var APP_BUILD = '08-25 c';
 
-var SYNC_LISTS = ['tx','assets','rules'];
+var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
 
 /* 설정 묶음이 「지금 어떤 모습인가」를 글자로 만들어 두는 것.
@@ -1228,12 +1303,17 @@ function mergeInto(mine, theirs){
   return report;
 }
 
-/* 밝기: 'auto'면 표시를 떼서 폰 설정을 따라가게 하고,
-   'light'/'dark'면 문서에 표시를 붙여 그 색으로 고정한다. */
+/* 그 폰이 지금 어두운 색을 쓰고 있는지 본다. 못 물어보면 밝게로 친다. */
+function phoneTheme(){
+  try{
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? 'dark' : 'light';
+  }catch(e){ return 'light'; }
+}
+/* 밝기: 사용자가 고른 색으로 고정한다.
+   예전에는 'auto'(폰 설정 따라)가 있었지만 2026-08-25 에 없앴다. */
 function applyTheme(){
-  var t = DB.theme || 'auto';
-  if(t==='auto') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.setAttribute('data-theme', DB.theme==='dark' ? 'dark' : 'light');
 }
 
 /* ============================================================================
@@ -1571,6 +1651,7 @@ function go(p){
   window.scrollTo(0,0);
   if(p==='home') renderHome();
   if(p==='list') renderList();
+  if(p==='cal')  renderCal();
   if(p==='asset') renderAsset();
   if(p==='set') renderSet();
 }
@@ -2714,7 +2795,12 @@ function commitTx(keepOpen){
     closeSheet(); go(curPage);
   }
 }
-$('#fab').onclick=function(){ openSheet(null); };
+/* ＋ 단추는 지금 보고 있는 화면에 맞춰 하는 일이 달라진다.
+   일정 탭에서 ＋ 를 눌렀는데 「지출 적기」가 뜨면 엉뚱하기 때문. */
+$('#fab').onclick=function(){
+  if(curPage==='cal'){ openEvent(null); return; }
+  openSheet(null);
+};
 $('#sh-cancel').onclick=closeSheet;
 $('#sh-done').onclick=function(){ commitTx(); };
 $('#sh-del').onclick=function(){
@@ -3774,7 +3860,7 @@ $('#gs-done').onclick=function(){
    13. 설정
    ============================================================================ */
 function renderSet(){
-  $$('#s-theme button').forEach(function(b){ b.classList.toggle('on',(DB.theme||'auto')===b.dataset.t); });
+  $$('#s-theme button').forEach(function(b){ b.classList.toggle('on',(DB.theme||'light')===b.dataset.t); });
   $('#s-p0').value=DB.people[0]||'';
   $('#s-p1').value=DB.people[1]||'';
   drawListEditor($('#s-cats'), 'cat');
@@ -4599,6 +4685,381 @@ $('#ms-go').onclick=function(){
                    + '기준 금액이 0원입니다.\n'
                    + '돈 탭에서 지금 잔액을 적어주세요.' : ''));
   go('home');
+};
+
+
+/* ============================================================================
+   9. 일정 — 달력 위에 기념일·약속을 얹는다.
+      돈 나가는 날은 따로 적지 않는다. 이미 등록해 둔 「반복해서 나가는 돈」의
+      날짜를 그대로 가져다 얹는다. 같은 것을 두 번 적게 만들면 안 되기 때문.
+   ============================================================================ */
+
+/* 음력 → 양력 표.
+   🚨 여기는 **비어 있는 것이 정상이다.** 음력을 양력으로 바꾸려면 천문 관측에
+      바탕한 표가 있어야 한다. 표 없이 어림으로 채우면 「정확한 날짜처럼 보이는
+      틀린 날짜」가 되어, 부모님 생신을 엉뚱한 날에 알려주게 된다.
+      그래서 표에 없는 해는 **달력에 아예 띄우지 않고, 없다고 화면에 적는다.**
+   채우는 모양: LUNAR_SOLAR['음력월-일'] = { '연도':'양력날짜', ... };
+   (여기에 진짜 같은 날짜를 예시로 적지 말 것 — 표에 든 값과 헷갈린다) */
+/* 채운 날짜는 **계산으로 구하고 대조까지 마친 값**이다(2026-08-25).
+   만든 것: 도구/음력변환.py (Meeus 천문계산, 한국 시각 기준)
+   대조한 것 13건 — 설날 2023~2026 · 추석 2023~2025 · 대보름 2025 ·
+     2027년 설날 2/7 · 부처님오신날 5/13 · 추석 9/15 ·
+     사용자가 superkts 변환기로 직접 확인한 음력 10/5 의 2026·2027년치
+   범위는 2026~2045. 지난 해는 안 넣는다(사용자: "과거는 어렵겟다 너무많고").
+   윤달은 **평달 기준**(사용자: "윤달은 모르겟어 평달로해").
+   ⚠️ 2031년에 윤4월이 있다. 아버지 생신은 평달 4월로 넣었다.
+   🚨 이 표를 손으로 고치지 말 것. 도구를 다시 돌려서 만든다. */
+var LUNAR_SOLAR = {
+  /* 음력 4월 16일 — 남편 아버지 생신 */
+  '04-16': {
+    '2026':'2026-06-01', '2027':'2027-05-21', '2028':'2028-05-10', '2029':'2029-05-28',
+    '2030':'2030-05-17', '2031':'2031-06-05', '2032':'2032-05-24', '2033':'2033-05-14',
+    '2034':'2034-06-02', '2035':'2035-05-23', '2036':'2036-05-11', '2037':'2037-05-30',
+    '2038':'2038-05-19', '2039':'2039-05-08', '2040':'2040-05-26', '2041':'2041-05-15',
+    '2042':'2042-06-03', '2043':'2043-05-24', '2044':'2044-05-13', '2045':'2045-06-01'
+  },
+  /* 음력 9월 10일 — 남편 외할아버지 기일 */
+  '09-10': {
+    '2026':'2026-10-20', '2027':'2027-10-09', '2028':'2028-10-27', '2029':'2029-10-17',
+    '2030':'2030-10-06', '2031':'2031-10-25', '2032':'2032-10-13', '2033':'2033-10-02',
+    '2034':'2034-10-21', '2035':'2035-10-10', '2036':'2036-10-28', '2037':'2037-10-18',
+    '2038':'2038-10-08', '2039':'2039-10-27', '2040':'2040-10-15', '2041':'2041-10-04',
+    '2042':'2042-10-23', '2043':'2043-10-12', '2044':'2044-10-30', '2045':'2045-10-19'
+  },
+  /* 음력 10월 5일 — 남편 외할머니 생신 */
+  '10-05': {
+    '2026':'2026-11-13', '2027':'2027-11-02', '2028':'2028-11-20', '2029':'2029-11-10',
+    '2030':'2030-10-31', '2031':'2031-11-19', '2032':'2032-11-07', '2033':'2033-10-27',
+    '2034':'2034-11-15', '2035':'2035-11-04', '2036':'2036-11-22', '2037':'2037-11-11',
+    '2038':'2038-11-01', '2039':'2039-11-20', '2040':'2040-11-09', '2041':'2041-10-29',
+    '2042':'2042-11-17', '2043':'2043-11-06', '2044':'2044-11-23', '2045':'2045-11-13'
+  }
+};
+
+function liveEvents(){ return (DB.events||[]).filter(function(e){ return !e.deleted; }); }
+
+/* 이 일정이 「그 해」에 실제로 걸리는 양력 날짜.
+   모르면 빈 글자를 돌려준다 — 모르는 것을 지어내지 않는다. */
+function evDateIn(e, year){
+  if(e.kind === 'plan') return e.date || '';
+  if(e.lunar){
+    var m = LUNAR_SOLAR[e.lmd];
+    return (m && m[String(year)]) || '';
+  }
+  return e.md ? (year + '-' + e.md) : '';
+}
+/* 그 하루에 걸린 일정들 */
+function dayEvents(ds){
+  var year = +ds.slice(0,4), out = [];
+  liveEvents().forEach(function(e){ if(evDateIn(e, year) === ds) out.push(e); });
+  return out;
+}
+/* 그 달에 반복규칙이 돈을 움직이는 날. { 25:['out','in'] } 모양.
+   날짜를 고르는 방법은 실제로 기록을 만드는 곳(runRules)과 똑같이 맞춘다 —
+   달력에 뜬 날과 실제로 기록되는 날이 다르면 안 되기 때문. */
+function moneyDays(ym){
+  var out = {}, dim = daysInMonth(ym);
+  liveRules().forEach(function(r){
+    if(r.active === false) return;
+    if(r.since && ym < r.since) return;
+    if(r.until && ym > r.until) return;
+    var d = Math.min(+r.day || 1, dim);
+    if(!out[d]) out[d] = [];
+    out[d].push(r.kind === 'income' ? 'in' : 'out');
+  });
+  return out;
+}
+function evColor(e){ return e.kind === 'anniv' ? 'var(--p1)' : 'var(--accent)'; }
+
+var calYM  = ymOf(todayStr());
+var calSel = todayStr();
+
+function renderCal(){
+  var y = +calYM.slice(0,4), mo = +calYM.slice(5,7);
+  $('#c-label').textContent = ymLabel(calYM);
+
+  /* 요일 줄 */
+  var head = $('#c-head'); head.innerHTML = '';
+  ['일','월','화','수','목','금','토'].forEach(function(w, i){
+    var d = el('div', null, w);
+    if(i === 0) d.style.color = 'var(--minus)';
+    if(i === 6) d.style.color = 'var(--accent)';
+    head.appendChild(d);
+  });
+
+  /* 날짜 칸 */
+  var g = $('#c-grid'); g.innerHTML = '';
+  var first = new Date(y, mo - 1, 1).getDay();
+  var dim   = daysInMonth(calYM);
+  var money = moneyDays(calYM);
+  var today = todayStr();
+  var i;
+  for(i = 0; i < first; i++) g.appendChild(el('div', 'cd off'));
+  for(i = 1; i <= dim; i++){
+    var ds  = calYM + '-' + pad2(i);
+    var dow = new Date(y, mo - 1, i).getDay();
+    var cls = 'cd';
+    if(dow === 0) cls += ' sun';
+    if(dow === 6) cls += ' sat';
+    if(ds === today)  cls += ' today';
+    if(ds === calSel) cls += ' sel';
+    var cell = el('button', cls);
+    cell.appendChild(el('div', 'dnum', String(i)));
+
+    /* 점은 최대 세 개까지만 찍는다. 더 찍으면 칸이 무너진다. */
+    var dots = el('div', 'dots'), colors = [];
+    dayEvents(ds).forEach(function(e){ colors.push(evColor(e)); });
+    (money[i] || []).forEach(function(k){
+      colors.push(k === 'in' ? 'var(--plus)' : 'var(--minus)');
+    });
+    var seen = {}, uniq = [];
+    colors.forEach(function(c){ if(!seen[c]){ seen[c] = 1; uniq.push(c); } });
+    uniq.slice(0,3).forEach(function(c){
+      var t = el('i', 'dot'); t.style.background = c; dots.appendChild(t);
+    });
+    cell.appendChild(dots);
+    (function(pick){ cell.onclick = function(){ calSel = pick; renderCal(); }; })(ds);
+    g.appendChild(cell);
+  }
+  var tail = (7 - ((first + dim) % 7)) % 7;
+  for(i = 0; i < tail; i++) g.appendChild(el('div', 'cd off'));
+
+  drawCalWarn();
+  drawCalDay();
+}
+
+/* 음력 표가 없어서 달력에 못 띄운 일정을 **감추지 않고** 그대로 알린다.
+   조용히 사라지면 「등록했는데 안 뜬다」가 되어 더 나쁘다. */
+function drawCalWarn(){
+  var w = $('#c-warn'); w.innerHTML = '';
+  var y = +calYM.slice(0,4);
+  var miss = liveEvents().filter(function(e){
+    return e.kind === 'anniv' && e.lunar && !evDateIn(e, y);
+  });
+  if(!miss.length) return;
+  var names = miss.map(function(e){ return e.title || '(이름 없음)'; }).join(' · ');
+  /* 짧게 적는다. 길면 ＋ 단추가 뒷줄을 덮는다.
+     「왜 비워 뒀는지」는 일정 등록창에서 음력을 고르는 순간 이미 설명한다. */
+  w.appendChild(el('div', 'notice',
+    '<b>음력 날짜표가 아직 없습니다.</b><br>'
+  + '아래 일정은 달력에 안 뜹니다.<br>'
+  + '<b>' + names + '</b>'));
+}
+
+function drawCalDay(){
+  var b = $('#c-day'); b.innerHTML = '';
+  var p = calSel.split('-');
+  var dow = ['일','월','화','수','목','금','토'][new Date(+p[0], +p[1]-1, +p[2]).getDay()];
+  b.appendChild(fldLabel(Number(p[1]) + '월 ' + Number(p[2]) + '일 (' + dow + ')'));
+
+  var list = dayEvents(calSel);
+  list.forEach(function(e){
+    var row = el('button', 'ev-row');
+    var t = el('i', 'dot'); t.style.background = evColor(e);
+    row.appendChild(t);
+    var box = el('div'); box.style.flex = '1';
+    box.appendChild(el('div', 'nm', e.title || '(이름 없음)'));
+    var sub = [];
+    sub.push(e.kind === 'anniv' ? (e.lunar ? '매년 · 음력' : '매년') : '이 날 하루');
+    sub.push(e.who === 2 ? '공동' : (DB.people[e.who] || ''));
+    if(e.memo) sub.push(e.memo);
+    box.appendChild(el('div', 'tiny muted', sub.join(' · ')));
+    row.appendChild(box);
+    (function(ev){ row.onclick = function(){ openEvent(ev); }; })(e);
+    b.appendChild(row);
+  });
+
+  /* 그날 오가는 돈 — 반복규칙에서 가져온 것.
+     여기서는 고칠 수 없다. 원본은 「살림 → 반복해서 나가는 돈」에 있다. */
+  var dim = daysInMonth(calYM), dnum = +p[2];
+  var rules = liveRules().filter(function(r){
+    if(r.active === false) return false;
+    if(r.since && calYM < r.since) return false;
+    if(r.until && calYM > r.until) return false;
+    return Math.min(+r.day || 1, dim) === dnum;
+  });
+  rules.forEach(function(r){
+    var row = el('div', 'ev-row');
+    var t = el('i', 'dot');
+    t.style.background = (r.kind === 'income') ? 'var(--plus)' : 'var(--minus)';
+    row.appendChild(t);
+    var box = el('div'); box.style.flex = '1';
+    box.appendChild(el('div', 'nm', r.title || '(이름 없음)'));
+    box.appendChild(el('div', 'tiny muted',
+      (r.varAmt ? '금액이 매달 다름' : wonx(r.amount)) + ' · 반복'));
+    row.appendChild(box);
+    b.appendChild(row);
+  });
+
+  if(!list.length && !rules.length){
+    b.appendChild(el('div', 'empty',
+      '이 날은 아무것도 없습니다.<br>아래 ＋ 를 눌러 넣어보세요.'));
+  }
+}
+
+$('#c-prev').onclick = function(){
+  var y = +calYM.slice(0,4), m = +calYM.slice(5,7) - 1;
+  if(m < 1){ m = 12; y--; }
+  calYM = y + '-' + pad2(m); renderCal();
+};
+$('#c-next').onclick = function(){
+  var y = +calYM.slice(0,4), m = +calYM.slice(5,7) + 1;
+  if(m > 12){ m = 1; y++; }
+  calYM = y + '-' + pad2(m); renderCal();
+};
+
+/* ── 일정 넣고 고치기 ─────────────────────────────────────────── */
+var evdraft = null, evEditId = null;
+
+function openEvent(e){
+  if(e){
+    evEditId = e.id;
+    evdraft = JSON.parse(JSON.stringify(e));
+    $('#vs-title').textContent = '일정 고치기';
+    $('#vs-del').style.display = '';
+  }else{
+    evEditId = null;
+    evdraft = { title:'', kind:'anniv', md:calSel.slice(5), lunar:false,
+                lmd:'01-01', date:calSel, who:2, memo:'' };
+    $('#vs-title').textContent = '일정 추가';
+    $('#vs-del').style.display = 'none';
+  }
+  drawEvent();
+  $('#vsheet').style.display = 'flex';
+}
+$('#vs-cancel').onclick = function(){ $('#vsheet').style.display = 'none'; };
+
+function mdPicker(cur, onPick){
+  var wrap = el('div', 'row2');
+  var c1 = el('div'), c2 = el('div');
+  var msel = el('select'), dsel = el('select'), i, o;
+  for(i = 1; i <= 12; i++){
+    o = el('option', null, i + '월'); o.value = pad2(i);
+    if(cur.slice(0,2) === pad2(i)) o.selected = true;
+    msel.appendChild(o);
+  }
+  for(i = 1; i <= 31; i++){
+    o = el('option', null, i + '일'); o.value = pad2(i);
+    if(cur.slice(3,5) === pad2(i)) o.selected = true;
+    dsel.appendChild(o);
+  }
+  msel.onchange = dsel.onchange = function(){ onPick(msel.value + '-' + dsel.value); };
+  c1.appendChild(fldLabel('월')); c1.appendChild(msel);
+  c2.appendChild(fldLabel('일')); c2.appendChild(dsel);
+  wrap.appendChild(c1); wrap.appendChild(c2);
+  return wrap;
+}
+
+function drawEvent(){
+  var b = $('#vs-body'); b.innerHTML = '';
+  var d = evdraft;
+
+  b.appendChild(fldLabel('무엇인가요'));
+  var seg = el('div', 'seg'); seg.style.gridTemplateColumns = 'repeat(2,1fr)';
+  [['anniv','매년 기념일'],['plan','그날 하루']].forEach(function(pp){
+    var btn = el('button', d.kind === pp[0] ? 'on' : '', pp[1]);
+    btn.onclick = function(){ d.kind = pp[0]; drawEvent(); };
+    seg.appendChild(btn);
+  });
+  b.appendChild(seg);
+
+  b.appendChild(fldLabel('이름'));
+  var ti = el('input');
+  ti.value = d.title || '';
+  ti.placeholder = d.kind === 'anniv' ? '예: 어머니 생신' : '예: 치과 예약';
+  ti.maxLength = 20;
+  ti.oninput = function(){ d.title = ti.value; };
+  b.appendChild(ti);
+  b.appendChild(el('div', 'fld'));
+
+  if(d.kind === 'anniv'){
+    b.appendChild(fldLabel('양력인가요 음력인가요'));
+    var lseg = el('div', 'seg'); lseg.style.gridTemplateColumns = 'repeat(2,1fr)';
+    [[false,'양력'],[true,'음력']].forEach(function(o){
+      var btn = el('button', (!!d.lunar) === o[0] ? 'on' : '', o[1]);
+      btn.onclick = function(){ d.lunar = o[0]; drawEvent(); };
+      lseg.appendChild(btn);
+    });
+    b.appendChild(lseg);
+    if(d.lunar){
+      b.appendChild(mdPicker(d.lmd || '01-01', function(v){ d.lmd = v; }));
+      b.appendChild(el('div', 'notice',
+        '<b>음력은 아직 달력에 안 뜹니다.</b><br>'
+      + '음력을 양력으로 바꾸려면<br>정해진 표가 있어야 하는데<br>'
+      + '그 표를 아직 안 넣었습니다.<br><br>'
+      + '지금 적어두시면 저장은 됩니다.<br>표를 넣는 순간 저절로 뜹니다.'));
+    }else{
+      b.appendChild(mdPicker(d.md || '01-01', function(v){ d.md = v; }));
+    }
+  }else{
+    b.appendChild(fldLabel('날짜'));
+    var di = el('input'); di.type = 'date'; di.value = d.date || calSel;
+    di.onchange = function(){ d.date = di.value; };
+    b.appendChild(di);
+  }
+  b.appendChild(el('div', 'fld'));
+
+  b.appendChild(fldLabel('누구 일인가요'));
+  var ch = el('div', 'chips');
+  DB.people.forEach(function(nm, i){
+    var btn = el('button', (d.who === i ? 'on ' : '') + 'p' + i, nm);
+    btn.onclick = function(){ d.who = i; drawEvent(); };
+    ch.appendChild(btn);
+  });
+  var both = el('button', d.who === 2 ? 'on' : '', '공동');
+  both.onclick = function(){ d.who = 2; drawEvent(); };
+  ch.appendChild(both);
+  b.appendChild(ch);
+  b.appendChild(el('div', 'fld'));
+
+  b.appendChild(fldLabel('메모 (안 적어도 됩니다)'));
+  var mi = el('input');
+  mi.value = d.memo || '';
+  mi.maxLength = 40;
+  mi.oninput = function(){ d.memo = mi.value; };
+  b.appendChild(mi);
+}
+
+$('#vs-save').onclick = function(){
+  var d = evdraft;
+  if(!String(d.title || '').trim()){ toast('이름을 적어주세요'); return; }
+  if(d.kind === 'plan' && !d.date){ toast('날짜를 골라주세요'); return; }
+  if(!DB.events) DB.events = [];
+  if(evEditId){
+    var cur = null, i;
+    for(i = 0; i < DB.events.length; i++) if(DB.events[i].id === evEditId) cur = DB.events[i];
+    if(cur){
+      cur.title = d.title; cur.kind = d.kind; cur.md = d.md; cur.lunar = !!d.lunar;
+      cur.lmd = d.lmd; cur.date = d.date; cur.who = d.who; cur.memo = d.memo;
+      cur.updated = Date.now();
+    }
+  }else{
+    DB.events.push({ id:uid(), title:d.title, kind:d.kind, md:d.md, lunar:!!d.lunar,
+                     lmd:d.lmd, date:d.date, who:d.who, memo:d.memo,
+                     updated:Date.now(), deleted:false });
+  }
+  if(!save()) return;
+  $('#vsheet').style.display = 'none';
+  if(d.kind === 'plan' && d.date){ calSel = d.date; calYM = ymOf(d.date); }
+  toast('저장했습니다');
+  renderCal();
+};
+
+$('#vs-del').onclick = function(){
+  if(!evEditId) return;
+  if(!confirm('이 일정을 지울까요?')) return;
+  var i;
+  for(i = 0; i < DB.events.length; i++){
+    if(DB.events[i].id === evEditId){
+      DB.events[i].deleted = true;
+      DB.events[i].updated = Date.now();
+    }
+  }
+  if(!save()) return;
+  $('#vsheet').style.display = 'none';
+  toast('지웠습니다');
+  renderCal();
 };
 
 /* 통째로 백업 */
