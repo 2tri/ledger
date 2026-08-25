@@ -195,9 +195,6 @@ select{appearance:none;-webkit-appearance:none;
 .lename{flex:1;min-width:0;height:48px;border:none;background:transparent;
   font-size:15px;font-weight:700;color:var(--txt);padding:0 11px;letter-spacing:-.3px}
 .lename:focus{outline:none;background:var(--line2)}
-.lecnt{flex:none;align-self:center;padding:0 8px;font-size:12.5px;font-weight:700;
-  color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
-.lecnt.zero{color:var(--dim);opacity:.55}
 .lebtn{width:38px;height:48px;flex:none;font-size:15px;font-weight:700;
   color:var(--sub);border-left:1px solid var(--line)}
 .lebtn.del{color:var(--minus)}
@@ -525,26 +522,10 @@ select{appearance:none;-webkit-appearance:none;
         그림을 누르면 아이콘을 고릅니다.<br>
         이름은 눌러서 바로 고칠 수 있습니다.<br>
         ↑↓ 로 순서를 바꿉니다.<br>
-        옆의 숫자는 그 분류로 적어둔 건수입니다.<br>
-        <b>이름을 이미 있는 분류로 바꾸면 합쳐집니다.</b><br>
-        예를 들어 「배달」을 「식비」로 바꾸면<br>
-        배달로 적어둔 것이 식비로 옮겨집니다.
+        이미 적어둔 내역은 지워지지 않습니다.
       </div>
       <button class="btn ghost" id="s-cat-reset" style="margin-top:9px">처음 분류로 되돌리기</button>
     </div>
-
-    <div class="card">
-      <h2>메모로 찾아 분류 바꾸기</h2>
-      <div class="tiny muted" style="line-height:1.6;margin-bottom:10px">
-        같은 것인데 분류가 흩어져 있을 때 씁니다.<br>
-        예를 들어 「배달」로 찾으면<br>
-        식비·여행에 흩어진 배달비를 한 번에 모읍니다.<br>
-        지출만 바뀝니다. 수입은 건드리지 않습니다.
-      </div>
-      <input id="s-find" placeholder="찾을 말 (예: 배달)" maxlength="20">
-      <div id="s-find-res" style="margin-top:10px"></div>
-    </div>
-
 
     <div class="card">
       <h2>누구에게 · 무엇을 위해</h2>
@@ -952,10 +933,6 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    🚨 밝기 · 마지막에 고른 결제수단 · 처음 안내 봤는지는 **맞추지 않는다.**
       폰마다 달라야 하는 것이라, 맞추면 남의 폰 화면색과 입력 습관이 바뀐다.
    ──────────────────────────────────────────────────────────────────────────── */
-/* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
-   폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-24 d';
-
 var SYNC_LISTS = ['tx','assets','rules'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
 
@@ -1145,37 +1122,6 @@ function syncNow(quiet){
 }
 
 /* 연달아 적을 때 그때그때 올리지 않고 **몇 초 몰아서** 한 번에 올린다. */
-/* 창고를 지금 내용으로 **덮는다.** 합치지 않는다.
-   「백업 파일로 되돌리기」 전용이다.
-
-   왜 필요한가: 보통 맞추기는 「받아와서 합치고 올리기」인데,
-   되돌린 직후에도 그 「합치기」가 먼저 돌아서
-   창고에 있던 옛 분류 묶음이 방금 되돌린 것을 그 자리에서 덮어버린다.
-   묶음 시각을 아무리 새로 찍어도, 창고 쪽 시각이 더 크면 진다.
-   되돌리기는 「이 파일이 이제 진짜다」라는 뜻이므로 합치지 않고 덮는 것이 맞다.
-   (2026-08-24 · 되돌려도 자꾸 📦 로 돌아가던 원인) */
-function syncOverwrite(){
-  if(!syncReady()) return Promise.resolve({ off:true });
-  if(syncBusy) return Promise.resolve({ skip:true });
-  syncBusy = true;
-  return syncPull().then(function(p){
-    if(p.err){ return { err:p.err }; }
-    return syncPush(p.sha).then(function(w){
-      if(!w.ok) return { err: syncErrMsg(w) };
-      syncCfg.last = Date.now(); syncCfg.err = '';
-      syncShape = JSON.stringify(syncPayload());
-      syncSaveCfg();
-      return { ok:true };
-    });
-  })['catch'](function(){
-    return { err:'인터넷에 닿지 못했습니다.' };
-  }).then(function(r){
-    syncBusy = false;
-    if(r.err){ syncCfg.err = r.err; syncSaveCfg(); }
-    if(typeof drawSyncCard === 'function') drawSyncCard();
-    return r;
-  });
-}
 function syncSchedule(ms){
   if(!syncReady()) return;
   clearTimeout(syncT);
@@ -1399,13 +1345,7 @@ function mortgagePrincipalIn(a, ym){
 
 /* 그 달에 「모은 돈」과 「갚은 빚」.
    모은 돈 = 적금·투자로 옮긴 것 (거기서 뺀 것은 도로 뺀다)
-             − 그 달에 빚을 내서 들어온 돈
-   갚은 빚 = 대출로 옮긴 것 + 주담대의 그 달 원금분
-
-   🔑 빚에서 나온 돈을 빼는 이유 —
-   청년도약적금에 매달 70만이 들어가는데 그 중 20만은 누나 돈이고 빚으로 잡힌다.
-   그걸 안 빼면 「70만을 모았다」가 되는데, 실제로 우리가 모은 것은 50만이다.
-   빌려서 넣은 것은 모은 것이 아니다. (2026-08-24 사용자 지적) */
+   갚은 빚 = 대출로 옮긴 것 + 주담대의 그 달 원금분 */
 function monthMoves(ym){
   var saved=0, repaid=0;
   liveTx().forEach(function(t){
@@ -1413,7 +1353,6 @@ function monthMoves(ym){
     var to=assetById(t.toId), fr=assetById(t.fromId);
     if(to && (to.kind==='savings'||to.kind==='invest')) saved+=t.amount;
     if(fr && (fr.kind==='savings'||fr.kind==='invest')) saved-=t.amount;
-    if(fr && KIND_DEBT[fr.kind]) saved-=t.amount;
     if(to && KIND_DEBT[to.kind]) repaid+=t.amount;
   });
   liveAssets().forEach(function(a){
@@ -1873,12 +1812,12 @@ function upcomingRules(ym){
   var today=todayStr(), out=[];
   if(ymOf(today)!==ym) return out;
   liveRules().forEach(function(r){
-    if(r.active===false || !r.amount) return;
+    if(r.active===false || (!r.amount && !r.varAmt)) return;
     if(r.since && r.since>ym) return;
     var d=Math.min(+r.day||1, daysInMonth(ym));
     var date=ym+'-'+pad2(d);
     if(date<=today) return;
-    out.push({ date:date, day:d, title:(r.title||'이름 없음'), kind:r.kind, amount:+r.amount });
+    out.push({ date:date, day:d, title:(r.title||'이름 없음'), kind:r.kind, amount:+r.amount, varAmt:!!r.varAmt });
   });
   out.sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:0; });
   return out;
@@ -2043,8 +1982,11 @@ function renderUpcoming(ym){
   var list=upcomingRules(ym), card=$('#h-up');
   if(!list.length){ card.style.display='none'; return; }
   card.style.display='';
-  var out=0;
-  list.forEach(function(u){ if(u.kind==='expense') out+=u.amount; });
+  var out=0, varCount=0;
+  list.forEach(function(u){
+    if(u.varAmt) varCount++;
+    else if(u.kind==='expense') out+=u.amount;
+  });
   $('#h-up-out').textContent=wonx(out);
 
   var box=$('#h-up-list'); box.innerHTML='';
@@ -2052,16 +1994,23 @@ function renderUpcoming(ym){
     var r=el('div','kv');
     var lab = u.day+'일 · '+u.title;
     r.appendChild(el('span',null,lab));
-    var dir = u.kind==='income' ? '들어옴' : u.kind==='transfer' ? '옮김' : '나감';
-    var amt=el('b','num', wonx(u.amount)+' '+dir);
-    amt.style.color = u.kind==='income' ? 'var(--plus)'
-                    : u.kind==='transfer' ? 'var(--sub)' : 'var(--minus)';
+    var amt;
+    if(u.varAmt){
+      amt=el('b','num', '금액 미정 · 적어야 함');
+      amt.style.color='var(--sub)';
+    }else{
+      var dir = u.kind==='income' ? '들어옴' : u.kind==='transfer' ? '옮김' : '나감';
+      amt=el('b','num', wonx(u.amount)+' '+dir);
+      amt.style.color = u.kind==='income' ? 'var(--plus)'
+                      : u.kind==='transfer' ? 'var(--sub)' : 'var(--minus)';
+    }
     r.appendChild(amt);
     box.appendChild(r);
   });
   var note=$('#h-up-note');
   var more = list.length>5 ? ('그 밖에 '+(list.length-5)+'건이 더 있습니다.<br>') : '';
-  note.innerHTML = more
+  var varNote = varCount ? ('<b>금액 미정</b>인 '+varCount+'건은<br>실제 금액을 알면 그때 직접 적으세요.<br>') : '';
+  note.innerHTML = more + varNote
     + '반복으로 등록해 둔 것 중<br>아직 날짜가 안 지난 것입니다.<br>'
     + '내 통장 사이 <b>옮김은</b><br>나갈 돈에 <b>넣지 않았습니다.</b>';
 }
@@ -3190,7 +3139,11 @@ function drawDetail(){
   b.appendChild(el('div',null,'<div style="height:12px"></div>'));
 }
 $('#ds-close').onclick=function(){ $('#dsheet').style.display='none'; document.body.style.overflow=''; renderAsset(); };
-$('#ds-edit').onclick=function(){ var a=assetById(detailId); if(a) openAsset(a); };
+$('#ds-edit').onclick=function(){
+  var a=assetById(detailId); if(!a) return;
+  $('#dsheet').style.display='none';   /* 상세 화면(z-index 63)이 수정 화면(61)보다 위라 안 가리면 수정 화면이 숨는다 */
+  openAsset(a);
+};
 
 /* ============================================================================
    11. 통장·카드 등록·수정
@@ -3765,11 +3718,7 @@ function renderSet(){
   $('#s-p1').value=DB.people[1]||'';
   drawListEditor($('#s-cats'), 'cat');
   drawListEditor($('#s-targets'), 'target');
-  /* 판 번호를 적어둔다.
-     폰은 앱 파일을 한동안 저장해 두고 쓰기 때문에, 새로 올려도 옛 화면이 그대로일 때가 있다.
-     그때 「데이터가 안 온 건가, 앱이 옛 건가」를 가릴 방법이 없으면 헤맨다.
-     두 폰의 이 숫자가 같은지만 보면 된다. */
-  $('#s-ver').textContent='우리 가계부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건';
+  $('#s-ver').textContent='우리 가계부 · 1단계 (폰 안에만 저장) · 내역 '+liveTx().length+'건';
 }
 /* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
    따로 만들면 나중에 반드시 한쪽만 고쳐져서 어긋난다.
@@ -3793,13 +3742,6 @@ function drawListEditor(box, which){
     ni.onchange=function(){ renameInList(which, c.n, ni.value, ni); };
     row.appendChild(ni);
 
-    /* 몇 건 쓰였는지 옆에 적는다. 0건이면 흐리게 —
-       늘어난 분류를 줄일 때 「지워도 되는 것」이 한눈에 보여야 하기 때문. */
-    var used=countUsing(which, c.n);
-    var cnt=el('div','lecnt', used? (used+'건') : '0건');
-    if(!used) cnt.classList.add('zero');
-    row.appendChild(cnt);
-
     var up=el('button','lebtn','↑');
     up.disabled = (i===0);
     up.onclick=function(){ moveInList(which, c.n, -1); };
@@ -3820,125 +3762,16 @@ function drawListEditor(box, which){
 }
 /* 이름 바꾸기 — 이미 적어둔 내역의 이름도 같이 바꿔준다.
    안 바꾸면 옛 내역이 없는 분류를 가리키게 되어 목록에서 사라진 것처럼 보인다. */
-/* ── 메모로 찾아 분류 바꾸기 ──────────────────────────────────
-   분류끼리 합치는 것만으로는 못 모으는 경우가 있다.
-   예: 배달비가 식비·여행·생활용품에 흩어져 있는 것.
-   그럴 때 메모 글자로 찾아서 한 번에 옮긴다. 지출만 건드린다. */
-function findByMemo(word){
-  word=(word||'').trim();
-  if(!word) return [];
-  var w=word.toLowerCase();
-  return liveTx().filter(function(t){
-    return t.type==='expense' && (t.memo||'').toLowerCase().indexOf(w)>=0;
-  });
-}
-function drawFind(){
-  var box=$('#s-find-res'); box.innerHTML='';
-  var word=$('#s-find').value.trim();
-  if(!word) return;
-  var hits=findByMemo(word);
-  if(!hits.length){
-    box.appendChild(el('div','tiny muted','찾은 것이 없습니다.'));
-    return;
-  }
-  var sum=0, by={};
-  hits.forEach(function(t){
-    sum+=t.amount;
-    var c=t.cat||'기타';
-    by[c]=(by[c]||0)+1;
-  });
-  var head=el('div','tiny');
-  head.style.cssText='font-weight:800;font-size:15px;margin-bottom:6px';
-  head.textContent=hits.length+'건 · '+wonx(sum);
-  box.appendChild(head);
-
-  Object.keys(by).sort(function(a,b){ return by[b]-by[a]; }).forEach(function(c){
-    box.appendChild(kv('지금 「'+c+'」', by[c]+'건'));
-  });
-
-  box.appendChild(el('div','tiny muted','<div style="height:8px"></div>어느 분류로 옮길까요'));
-  var ch=el('div','chips');
-  visibleList(DB.cats).forEach(function(c){
-    var btn=el('button', findTarget===c.n?'on':'', c.e+' '+c.n);
-    btn.onclick=function(){ findTarget=c.n; drawFind(); };
-    ch.appendChild(btn);
-  });
-  box.appendChild(ch);
-
-  if(findTarget){
-    var stay=hits.filter(function(t){ return (t.cat||'기타')===findTarget; }).length;
-    var move=hits.length-stay;
-    var go1=el('button','btn pri','「'+findTarget+'」로 '+move+'건 옮기기');
-    go1.style.marginTop='10px';
-    go1.disabled = !move;
-    if(!move) go1.style.opacity='.45';
-    go1.onclick=function(){
-      if(!move) return;
-      if(!confirm('「'+word+'」이(가) 든 지출 '+move+'건을\n'
-        + '「'+findTarget+'」로 옮길까요?\n\n'
-        + '되돌리기 어렵습니다. 걱정되면 취소하고\n'
-        + '설정에서 백업 파일을 먼저 만들어 주세요.')) return;
-      var n=0;
-      hits.forEach(function(t){
-        if((t.cat||'기타')===findTarget) return;
-        t.cat=findTarget; t.updated=Date.now(); n++;
-      });
-      save(); drawFind(); renderSet();
-      toast(n+'건을 옮겼습니다');
-    };
-    box.appendChild(go1);
-  }
-}
-var findTarget='';
-/* 그 이름으로 적어둔 내역이 몇 건인가. 합치기 전에 보여주는 숫자다. */
-function countUsing(which, name){
-  var isCat=(which==='cat'), n=0;
-  liveTx().forEach(function(t){
-    if(isCat ? (t.cat===name) : ((t.target||DEF_TARGET)===name)) n++;
-  });
-  return n;
-}
-/* 합치기 — 옛 이름으로 적어둔 것을 새 이름으로 옮기고 옛 이름을 없앤다.
-   한도와 반복 규칙도 같이 옮긴다. 한도가 양쪽에 다 있으면 새 쪽을 살린다
-   (사용자가 남기기로 한 분류의 한도가 더 최근 뜻이라고 본다). */
-function mergeInList(which, oldName, newName){
-  var isCat=(which==='cat');
-  var list = isCat ? DB.cats : DB.targets, i, moved=0;
-  DB.tx.forEach(function(t){
-    if(isCat){ if(t.cat===oldName){ t.cat=newName; t.updated=Date.now(); moved++; } }
-    else { if((t.target||DEF_TARGET)===oldName){ t.target=newName; t.updated=Date.now(); moved++; } }
-  });
-  if(isCat){
-    DB.rules.forEach(function(r){ if(r.cat===oldName) r.cat=newName; });
-    if(DB.catBudget){
-      if(DB.catBudget[newName]==null && DB.catBudget[oldName]!=null) DB.catBudget[newName]=DB.catBudget[oldName];
-      delete DB.catBudget[oldName];
-    }
-  }
-  for(i=list.length-1;i>=0;i--) if(list[i].n===oldName) list.splice(i,1);
-  save(); renderSet();
-  toast(moved ? ('합쳤습니다 · 내역 '+moved+'건이 옮겨졌습니다') : '합쳤습니다');
-}
 function renameInList(which, oldName, newName, inputEl){
   var isCat=(which==='cat');
   var list = isCat ? DB.cats : DB.targets, i;
   newName=(newName||'').trim();
   if(!newName){ toast('이름을 비워둘 수 없습니다'); if(inputEl) inputEl.value=oldName; return; }
   if(newName===oldName) return;
-  /* 이미 있는 이름으로 바꾸려 하면 「합치기」로 본다.
-     막아버리면 늘어난 분류를 줄일 방법이 없어진다.
-     다만 되돌리기 어려우므로 몇 건이 움직이는지 미리 세어 보여주고 묻는다. */
   for(i=0;i<list.length;i++){
     if(list[i].n===newName){
-      var n=countUsing(which, oldName);
-      var ok=confirm('「'+oldName+'」을(를) 「'+newName+'」에 합칠까요?\n\n'
-        + (n ? ('적어둔 내역 '+n+'건이 「'+newName+'」으로 옮겨집니다.\n')
-             : '옮길 내역은 없습니다.\n')
-        + '「'+oldName+'」은(는) 목록에서 없어집니다.\n\n'
-        + '되돌리기 어렵습니다. 걱정되면 취소하고\n'
-        + '설정에서 백업 파일을 먼저 만들어 주세요.');
-      if(!ok){ if(inputEl) inputEl.value=oldName; return; }
-      mergeInList(which, oldName, newName);
+      toast('이미 있는 이름입니다');
+      if(inputEl) inputEl.value=oldName;
       return;
     }
   }
@@ -4092,7 +3925,6 @@ function resetList(which){
   if(isCat) DB.cats=cloneList(def); else DB.targets=cloneList(def);
   save(); renderSet(); toast('되돌렸습니다');
 }
-$('#s-find').oninput=function(){ drawFind(); };
 $('#s-cat-reset').onclick=function(){ resetList('cat'); };
 $('#s-tgt-reset').onclick=function(){ resetList('target'); };
 
@@ -4601,30 +4433,8 @@ $('#s-file').onchange=function(){
       var d=JSON.parse(rd.result);
       if(!d.tx) throw new Error('형식');
       if(!confirm('지금 데이터를 이 파일 내용으로 덮어씁니다. 계속할까요?')) return;
-      DB=d; normalize();
-      /* 되돌리기는 「이 파일이 이제 진짜다」라는 뜻이다.
-         분류·대상·이름·예산·목표는 낱개가 아니라 **묶음 시각**으로 맞춰지는데,
-         그 시각을 지금으로 찍지 않으면 창고에 있던 옛 묶음이 더 최신으로 보여
-         **방금 되돌린 분류가 도로 덮인다.**
-         (2026-08-24 실제로 겪음 — 거래는 새 분류를 가리키는데 목록엔 그 분류가 없어
-          내역이 죄다 📦 로 보였다) */
-      if(!DB.meta) DB.meta={};
-      var _now=Date.now();
-      SYNC_SETS.forEach(function(k){ DB.meta[k]=_now; });
-      resnapSettings(); save(); applyTheme(); runRules();
-      go('home');
-      /* 되돌리기는 창고를 **덮는다.** 합치면 창고의 옛 묶음이 도로 이긴다. */
-      if(syncReady()){
-        toast('가져왔습니다 · 창고에 올리는 중…');
-        syncOverwrite().then(function(r){
-          if(r && r.err) alert('창고에 올리지 못했습니다.\n\n' + r.err
-            + '\n\n인터넷을 확인하고 설정에서 「지금 맞추기」를 눌러주세요.');
-          else toast('창고까지 맞췄습니다');
-          go('home');
-        });
-      }else{
-        toast('가져왔습니다');
-      }
+      DB=d; normalize(); resnapSettings(); save(); applyTheme(); runRules();
+      toast('가져왔습니다'); go('home');
     }catch(e){ alert('가계부 백업 파일이 아닌 것 같습니다.'); }
   };
   rd.readAsText(f);
