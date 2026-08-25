@@ -408,6 +408,8 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card" id="h-todo" style="display:none"></div>
 
+    <div class="card" id="h-events" style="display:none"></div>
+
     <div class="card" id="h-budget"></div>
 
     <div class="card" id="h-up" style="display:none">
@@ -1029,7 +1031,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    ──────────────────────────────────────────────────────────────────────────── */
 /* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
    폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-25 c';
+var APP_BUILD = '08-25 d';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1736,6 +1738,7 @@ function renderHome(){
   }
 
   renderBars(ym);
+  renderComingEvents();
   renderBudget(ym);
   renderUpcoming(ym);
 
@@ -1922,15 +1925,26 @@ function groupSpending(ym, by){
 }
 function budgetOn(){ return !!(DB.budget && +DB.budget.amount>0); }
 
-/* 생활비로 친 결제수단으로 그 달에 쓴 돈. 아무것도 안 골랐으면 지출 전체. */
+/* 생활비로 친 결제수단으로 그 달에 쓴 돈. 아무것도 안 골랐으면 지출 전체.
+
+   🚨 **고정비는 빼고 센다** (2026-08-25 고침).
+      생활비 카드로 할부금·구독료 같은 고정비도 같이 나간다. 그것까지 생활비로 세면
+      화면이 **정반대로 말한다** — 실측에서 「예산보다 132만 초과」라고 떴는데
+      진짜 생활비는 「6.7만 남음」이었다(생활비로 센 242만 중 139만이 고정비였다).
+      앱은 이미 isFixed() 로 고정/변동을 가를 줄 아는데 **예산만 그걸 안 쓰고 있었다.**
+      뺀 금액은 화면에 그대로 보여준다 — 조용히 빼면 왜 줄었는지 알 수 없기 때문. */
 function budgetSpent(ym){
-  var ids=(DB.budget.payIds||[]), all=!ids.length, sum=0;
+  return budgetParts(ym).spent;
+}
+function budgetParts(ym){
+  var ids=(DB.budget.payIds||[]), all=!ids.length, spent=0, fixed=0;
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==ym) return;
     if(isExclTx(t)) return;
-    if(all || ids.indexOf(t.payId)>=0) sum+=t.amount;
+    if(!(all || ids.indexOf(t.payId)>=0)) return;
+    if(isFixed(t)) fixed+=t.amount; else spent+=t.amount;
   });
-  return sum;
+  return { spent:spent, fixed:fixed };
 }
 /* 생활비 통장으로 「손으로」 옮겨 채운 것 — 매달 정해진 이체는 뺀다 */
 function budgetTopups(ym){
@@ -2085,6 +2099,13 @@ function renderBudget(ym){
 
   c.appendChild(kv('정한 생활비', wonx(budget)));
   c.appendChild(kv('지금까지 쓴 돈', wonx(spent)));
+  /* 뺀 고정비를 상시 보여준다. 조용히 빼면 왜 줄었는지 알 수 없다. */
+  var bp=budgetParts(ym);
+  if(bp.fixed>0){
+    var fx=kv('여기서 뺀 고정비', wonx(bp.fixed));
+    fx.style.color='var(--dim)';
+    c.appendChild(fx);
+  }
 
   var dl=daysLeftIn(ym);
   var note=el('div','tiny muted');
@@ -2092,9 +2113,18 @@ function renderBudget(ym){
   if(over){
     note.innerHTML='예산보다 <b>'+wonx(-left)+'</b> 더 썼습니다.<br>'
                  + '이번 달은 '+dl+'일 남았습니다.';
+    if(bp.fixed>0){
+      note.innerHTML += '<br><br>할부금·구독료 같은 <b>고정비 '+wonx(bp.fixed)+'</b>은<br>'
+                      + '여기에 안 넣었습니다.<br>어차피 나갈 돈이라<br>'
+                      + '「아껴 쓸 수 있는 돈」이 아니기 때문입니다.';
+    }
   }else if(dl>0){
     note.innerHTML='남은 '+dl+'일 동안<br><b>하루 '+wonx(Math.floor(left/dl))+'꼴</b>로 쓸 수 있습니다.<br>'
                  + '남은 돈을 남은 날수로<br>나눈 값입니다.';
+    if(bp.fixed>0){
+      note.innerHTML += '<br><br>할부금·구독료 같은 <b>고정비 '+wonx(bp.fixed)+'</b>은<br>'
+                      + '여기에 안 넣었습니다.';
+    }
   }else{
     note.innerHTML='지난 달을 보고 있습니다.';
   }
@@ -2670,18 +2700,50 @@ function focusMemo(){
   mi.focus();
 }
 /* 메모 칸 아래에 띄울 「전에 적었던 것」.
-   같은 분류에서 쓴 것을 먼저 보여주고, 모자라면 최근 것으로 채운다. */
+
+   🚨 예전에는 **최근 순**으로 골랐는데, 실제로 재보니 거의 도움이 안 됐다(2026-08-25).
+      반복 규칙이 매달 만드는 기록(블루핸즈·알뜰폰·쿠팡 월회비·유튜브)이 목록 끝에
+      쌓여서 「최근」자리를 통째로 차지했다. 그런데 그것들은 **저절로 만들어지니
+      손으로 적을 일이 없는 메모**다. 그래서 「장보기」를 골라도 「블루핸즈·알뜰폰」이
+      뜨고, 정작 9번이나 쓴 「편의점 술」은 안 떴다.
+
+   그래서 셋으로 바꿨다.
+     ㉠ 반복이 만든 기록(ruleId 있는 것)은 후보에서 뺀다
+     ㉡ **자주 쓴 순**으로 세운다 (같은 횟수면 최근 것이 앞)
+     ㉢ 같은 분류를 먼저 채우고, 모자라면 분류 상관없이 자주 쓴 것으로 채운다
+   실측: 손으로 적은 지출 160건 중 122건(76%)이 단추만 눌러 끝난다. */
 function recentMemos(cat, max){
-  var seen={}, same=[], other=[], i, t;
-  for(i=DB.tx.length-1; i>=0 && (same.length+other.length)<max*3; i--){
+  var cnt={}, last={}, i, t, m, n=0;
+  for(i=0;i<DB.tx.length;i++){
     t=DB.tx[i];
-    if(t.deleted || t.type==='transfer') continue;
-    var m=(t.memo||'').trim();
-    if(!m || seen[m]) continue;
-    seen[m]=1;
-    if(cat && t.cat===cat) same.push(m); else other.push(m);
+    if(t.deleted || t.type==='transfer' || t.ruleId) continue;
+    m=(t.memo||'').trim();
+    if(!m) continue;
+    var key=(t.cat||'')+'\u0000'+m;
+    cnt[key]=(cnt[key]||0)+1;
+    last[m]=n++;
+    if(!cnt[m]) cnt[m]=0;
+    cnt[m]++;
   }
-  return same.concat(other).slice(0,max);
+  /* 같은 분류에서 쓴 것 → 자주 쓴 순 */
+  function pick(prefix){
+    var out=[], k;
+    for(k in cnt){
+      if(prefix===null){ if(k.indexOf('\u0000')>=0) continue; out.push([k, cnt[k]]); }
+      else if(k.indexOf(prefix)===0) out.push([k.slice(prefix.length), cnt[k]]);
+    }
+    out.sort(function(a,b){
+      if(b[1]!==a[1]) return b[1]-a[1];
+      return (last[b[0]]||0)-(last[a[0]]||0);
+    });
+    return out.map(function(x){ return x[0]; });
+  }
+  var same = cat ? pick(cat+'\u0000') : [];
+  if(same.length>=max) return same.slice(0,max);
+  var seen={}, out=same.slice();
+  same.forEach(function(x){ seen[x]=1; });
+  pick(null).forEach(function(x){ if(!seen[x] && out.length<max){ seen[x]=1; out.push(x); } });
+  return out.slice(0,max);
 }
 function drawPad(){
   var p=$('#sh-pad'); p.innerHTML='';
@@ -4908,6 +4970,61 @@ $('#c-next').onclick = function(){
   if(m > 12){ m = 1; y++; }
   calYM = y + '-' + pad2(m); renderCal();
 };
+
+/* 홈에 띄우는 「다가오는 일정」.
+   일정 탭을 따로 안 열어도 눈에 들어오게 하려는 것.
+   오늘부터 14일 안에 오는 것만. 없으면 **칸 자체를 안 만든다**(빈 상자 금지).
+   🚨 음력은 표에 없는 해면 evDateIn 이 빈 값을 주므로 저절로 빠진다 —
+      모르는 날짜를 지어내서 띄우지 않는다. */
+function comingEvents(days){
+  var today = todayStr(), out = [], seen = {};
+  var t0 = new Date(+today.slice(0,4), +today.slice(5,7)-1, +today.slice(8,10));
+  liveEvents().forEach(function(e){
+    /* 올해와 내년 둘 다 본다 — 12월에 보면 1월 것이 걸리기 때문 */
+    [0,1].forEach(function(k){
+      var ds = evDateIn(e, t0.getFullYear() + k);
+      if(!ds) return;
+      /* 🚨 「그날 하루」 일정은 해와 상관없이 같은 날짜를 돌려주므로
+            두 번 도는 사이에 **똑같은 것이 두 줄로 뜬다**(2026-08-25 실측으로 잡음). */
+      var key = e.id + '@' + ds;
+      if(seen[key]) return;
+      seen[key] = 1;
+      var d1 = new Date(+ds.slice(0,4), +ds.slice(5,7)-1, +ds.slice(8,10));
+      var gap = Math.round((d1 - t0) / 86400000);
+      if(gap < 0 || gap > days) return;
+      out.push({ e:e, ds:ds, gap:gap });
+    });
+  });
+  out.sort(function(a,b){ return a.gap - b.gap; });
+  return out;
+}
+function renderComingEvents(){
+  var c = $('#h-events');
+  c.innerHTML = ''; c.style.display = 'none';
+  var list = comingEvents(14);
+  if(!list.length) return;
+  c.style.display = '';
+  c.appendChild(el('h2', null, '다가오는 일정'));
+  list.forEach(function(x){
+    var row = el('button', 'ev-row');
+    row.style.marginBottom = '8px';
+    var dot = el('i', 'dot');
+    dot.style.background = evColor(x.e);
+    row.appendChild(dot);
+    var box = el('div'); box.style.flex = '1';
+    box.appendChild(el('div', 'nm', x.e.title || '(이름 없음)'));
+    var when = x.gap === 0 ? '오늘' : (x.gap === 1 ? '내일' : x.gap + '일 뒤');
+    var p = x.ds.split('-');
+    box.appendChild(el('div', 'tiny muted',
+      when + ' · ' + Number(p[1]) + '월 ' + Number(p[2]) + '일'
+      + (x.e.memo ? ' · ' + x.e.memo : '')));
+    row.appendChild(box);
+    (function(ds){
+      row.onclick = function(){ calYM = ymOf(ds); calSel = ds; go('cal'); };
+    })(x.ds);
+    c.appendChild(row);
+  });
+}
 
 /* ── 일정 넣고 고치기 ─────────────────────────────────────────── */
 var evdraft = null, evEditId = null;
