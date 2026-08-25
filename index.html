@@ -429,6 +429,10 @@ select{appearance:none;-webkit-appearance:none;
         <button data-b="who">사람별</button>
         <button data-b="target">대상별</button>
       </div>
+      <div class="seg" id="h-fixmode" style="grid-template-columns:repeat(2,1fr)">
+        <button data-fx="all">고정비까지</button>
+        <button data-fx="var" class="on">고정비 빼고</button>
+      </div>
       <div id="h-bars"></div>
       <div class="tiny muted" id="h-bars-note" style="margin-top:10px;line-height:1.7"></div>
     </div>
@@ -1031,7 +1035,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    ──────────────────────────────────────────────────────────────────────────── */
 /* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
    폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-25 d';
+var APP_BUILD = '08-25 e';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1896,6 +1900,11 @@ function groupSpending(ym, by){
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==ym) return;
     if(isExclTx(t)) return;
+    /* 🚨 고정비를 섞으면 1·2등이 늘 보험·주거(할부금)가 되어
+          「어디를 아낄 수 있나」를 못 알려준다. 실측(8월): 섞으면 배달·보험·주거 순인데
+          빼면 배달·여행·교통·장보기 순이 된다. 생활비 예산도 같은 이유로 고정비를 뺀다 —
+          **두 화면이 같은 기준으로 말해야 한다.** */
+    if(homeFix==='var' && isFixed(t)) return;
     var key, label, emo='';
     if(by==='pay'){
       key = t.payId||'(안 고름)';
@@ -1982,10 +1991,12 @@ function upcomingRules(ym){
 /* 이번 달 지출을 분류/카드/사람 기준으로 갈라 보여준다.
    분류별일 때 한도를 정해둔 줄은 남은 금액·초과 금액을 같이 적는다. */
 var homeBy='cat';
+var homeFix='var';        /* 'var'=고정비 빼고(기본) / 'all'=고정비까지 */
 function renderBars(ym){
   var box=$('#h-bars'); box.innerHTML='';
   var note=$('#h-bars-note'); note.innerHTML='';
   $$('#h-by button').forEach(function(b){ b.classList.toggle('on', b.dataset.b===homeBy); });
+  $$('#h-fixmode button').forEach(function(b){ b.classList.toggle('on', b.dataset.fx===homeFix); });
 
   var g=groupSpending(ym, homeBy);
   if(!g.rows.length){
@@ -2059,6 +2070,9 @@ function renderBars(ym){
 }
 $$('#h-by button').forEach(function(b){
   b.onclick=function(){ homeBy=b.dataset.b; renderBars(homeYM); };
+});
+$$('#h-fixmode button').forEach(function(b){
+  b.onclick=function(){ homeFix=b.dataset.fx; renderBars(homeYM); };
 });
 $('#h-prev').onclick=function(){ homeYM=ymShift(homeYM,-1); renderHome(); };
 $('#h-next').onclick=function(){
@@ -2558,6 +2572,27 @@ function drawSheet(){
     b.appendChild(chipRow(banks(), draft.toId, function(id){ draft.toId=id; drawSheet(); }, true));
     b.appendChild(el('div','fld'));
   }else{
+    /* 새로 적을 때만 띄운다. 고치는 중에 누르면 원래 값이 날아가 헷갈린다. */
+    if(!editingId){
+      var combos = topCombos(4);
+      if(combos.length){
+        b.appendChild(fldLabel('자주 쓰는 것 (누르면 셋이 한 번에)'));
+        var cw = el('div','chips'); cw.style.marginBottom='6px';
+        combos.forEach(function(c){
+          var on = (draft.cat===c.cat && draft.payId===c.payId && draft.who===c.who);
+          var who = (c.who===2) ? '공동' : (DB.people[c.who]||'');
+          var btn = el('button', on?'on':'', catOf(c.cat).e+' '+c.cat+' · '+assetName(c.payId)+' · '+who);
+          btn.onclick = function(){
+            draft.cat=c.cat; draft.payId=c.payId; draft.who=c.who;
+            drawSheet();
+          };
+          cw.appendChild(btn);
+        });
+        b.appendChild(cw);
+        b.appendChild(el('div','tiny muted','전에 자주 쓰던 조합입니다.'));
+        b.appendChild(el('div','fld'));
+      }
+    }
     b.appendChild(fldLabel('어디에 썼나'));
     b.appendChild(catGrid(visibleList(DB.cats), true));
     b.appendChild(el('div','fld'));
@@ -2744,6 +2779,32 @@ function recentMemos(cat, max){
   same.forEach(function(x){ seen[x]=1; });
   pick(null).forEach(function(x){ if(!seen[x] && out.length<max){ seen[x]=1; out.push(x); } });
   return out.slice(0,max);
+}
+/* 「자주 쓰는 조합」 — 분류 + 결제수단 + 누구 를 한 번에 넣는다.
+   왜 만들었나: 손으로 적은 지출 160건을 세어보니 **81건(50%)이 상위 6개 조합**이었다
+   (배달+롯데카드+남편 14번, 배달+토스 생활비+아내 12번 …). 매번 세 번 고르는 대신
+   한 번 눌러 끝내려는 것.
+   🚨 반복이 만든 기록은 뺀다 — 손으로 적을 일이 없어서 후보가 되면 안 된다. */
+function topCombos(max){
+  var cnt={}, last={}, i=0, out=[];
+  liveTx().forEach(function(t){
+    if(t.type!=='expense' || t.ruleId) return;
+    if(!t.cat || !t.payId) return;
+    if(!assetById(t.payId)) return;               /* 지워진 카드·통장은 뺀다 */
+    var w = (t.who===1?1:(t.who===0?0:2));
+    var k = t.cat+'\u0000'+t.payId+'\u0000'+w;
+    cnt[k]=(cnt[k]||0)+1; last[k]=i++;
+  });
+  var k;
+  for(k in cnt) out.push([k, cnt[k]]);
+  out.sort(function(a,b){
+    if(b[1]!==a[1]) return b[1]-a[1];
+    return last[b[0]]-last[a[0]];
+  });
+  return out.slice(0,max).map(function(x){
+    var p=x[0].split('\u0000');
+    return { cat:p[0], payId:p[1], who:+p[2], n:x[1] };
+  });
 }
 function drawPad(){
   var p=$('#sh-pad'); p.innerHTML='';
