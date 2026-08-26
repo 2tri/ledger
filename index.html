@@ -1120,7 +1120,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
       (2026-08-26 사용자 확정 — 같은 지적을 여러 번 받았다) */
 var APP_BUILD = '08-26 i';
 /* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리. */
-var APP_TOUCHED = '08-26 밤8';
+var APP_TOUCHED = '08-26 밤9';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -2460,10 +2460,27 @@ function drawBudget(){
   b.appendChild(fldLabel('분류마다 한도 정하기 (안 정해도 됩니다)'));
   b.appendChild(el('div','notice',
     '여기 적는 값은 <b>계산된 것이 아니라<br>내가 정하는 목표</b>입니다.<br>'
-  + '홈의 「분류별」에서<br>얼마나 남았는지 같이 보입니다.<br><br>'
-  + '<b>「제외」를 켠 분류</b>는<br>쓴 돈 합계에서 아예 빠집니다.<br>'
-  + '각자 용돈처럼 <b>이미 나눠 가진 돈</b>을<br>또 세지 않으려고 두는 것입니다.<br>'
+  + '홈의 「분류별」에서<br>얼마나 남았는지 같이 보입니다.'));
+  /* 🚨 2026-08-26 — 사용자가 고정비 분류에 「제외」를 켰다가 홈 숫자가 통째로 틀어졌다.
+     「생활비에서 고정비를 빼야지」라고 생각한 것인데 **그건 앱이 이미 자동으로 한다.**
+     여기 단추는 훨씬 센 것(홈 통계 전체에서 삭제)이라 뜻을 갈라 적어 준다. */
+  b.appendChild(el('div','notice',
+    '<b>🚫 고정비는 여기서 뺄 필요가 없습니다.</b><br>'
+  + '보험·주거·통신·공과금·구독료처럼<br>매달 정해져 나가는 돈은<br>'
+  + '<b>생활비 계산에서 이미 저절로 빠집니다.</b><br>'
+  + '여기를 누르면 <b>홈 화면 숫자에서도<br>통째로 사라져</b> 오히려 헷갈립니다.'));
+  b.appendChild(el('div','notice',
+    '<b>「통계 제외」는 언제 쓰나</b><br>'
+  + '각자 용돈처럼 <b>이미 나눠 가진 돈</b>을<br>또 세지 않으려 할 때만 씁니다.<br>'
+  + '켜면 <b>홈의 쓴 돈·고정비·변동비에서<br>모두 빠집니다.</b><br>'
   + '내역 목록에는 그대로 남습니다.'));
+  /* 이 달에 그 분류로 쓴 돈 — 켜면 얼마가 빠지는지 그 자리에서 보여주려고 미리 센다 */
+  var _bym = ymOf(todayStr()), _bsum = {}, _bfix = {};
+  liveTx().forEach(function(t){
+    if(t.type!=='expense' || ymOf(t.date)!==_bym) return;
+    _bsum[t.cat] = (_bsum[t.cat]||0) + t.amount;
+    if(isFixed(t)) _bfix[t.cat] = (_bfix[t.cat]||0) + t.amount;
+  });
   DB.cats.forEach(function(c){
     var row=el('div'); row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:9px';
     var lab=el('div','tiny');
@@ -2484,16 +2501,30 @@ function drawBudget(){
     /* 통계에서 빼기 — 켜면 한도 칸이 꺼진다(뺄 것에 한도를 정할 이유가 없다) */
     var ex=el('button');
     var on=!!bdraft.excl[c.n];
-    ex.style.cssText='flex:none;width:54px;padding:11px 0;border-radius:12px;font-size:12.5px;'
-      + 'font-weight:700;border:1px solid '+(on?'var(--accent)':'var(--line)')+';'
+    /* 🚨 「제외」 두 글자로는 무엇에서 빠지는지 안 드러난다(2026-08-26 사용자가 헷갈림).
+       「통계 제외」로 고쳐 적고 칸을 조금 넓혔다. */
+    ex.style.cssText='flex:none;width:66px;padding:11px 0;border-radius:12px;font-size:11.5px;'
+      + 'font-weight:700;line-height:1.3;'
+      + 'border:1px solid '+(on?'var(--accent)':'var(--line)')+';'
       + 'background:'+(on?'var(--accent)':'var(--card)')+';color:'+(on?'#fff':'var(--sub)');
-    ex.textContent='제외';
+    ex.innerHTML = on ? '통계<br>제외됨' : '통계<br>제외';
     ex.onclick=function(){
       if(bdraft.excl[c.n]) delete bdraft.excl[c.n]; else bdraft.excl[c.n]=1;
       drawBudget();
     };
     row.appendChild(ex);
     b.appendChild(row);
+
+    /* 켜져 있으면 **이 달에 얼마가 빠지는지** 그 자리에서 보여준다.
+       저장하고 홈에 가서야 숫자가 바뀐 걸 발견하면 원인을 못 찾는다. */
+    if(on && _bsum[c.n]){
+      var warn=el('div','tiny muted');
+      warn.style.cssText='margin:-4px 0 11px 2px;line-height:1.6';
+      warn.innerHTML = '홈 화면에서 <b>'+wonx(_bsum[c.n])+'</b>이 빠집니다.'
+        + (_bfix[c.n] ? '<br><b style="color:var(--minus)">그중 '+wonx(_bfix[c.n])
+                        + '은 고정비입니다 — 여기서 뺄 필요가 없습니다.</b>' : '');
+      b.appendChild(warn);
+    }
   });
   b.appendChild(el('div','fld'));
 
