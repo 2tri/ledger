@@ -10,11 +10,11 @@
      시트의 「취소」 버튼이 시계에 깔려 안 눌렸다(2026-08-20 사용자 신고).
      default 로 두면 iOS 가 알아서 상태바 아래에서 시작한다. -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="우리 가계부">
+<meta name="apple-mobile-web-app-title" content="가계부부">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
-<title>우리 가계부</title>
+<title>가계부부</title>
 <style>
 /* ============================================================
    색·크기 기본값
@@ -434,7 +434,7 @@ select{appearance:none;-webkit-appearance:none;
 
   <!-- ══════════ 홈 ══════════ -->
   <section class="page on" id="pg-home">
-    <div class="head"><h1>우리 가계부</h1><div class="spacer"></div>
+    <div class="head"><h1>가계부부</h1><div class="spacer"></div>
       <button class="tiny muted" id="home-ym-lbl" style="font-weight:700"></button></div>
     <button class="tiny muted" id="h-sync" style="display:none;width:100%;text-align:left;
       background:none;border:0;padding:0 0 9px 0;font-weight:700"></button>
@@ -1120,7 +1120,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
       (2026-08-26 사용자 확정 — 같은 지적을 여러 번 받았다) */
 var APP_BUILD = '08-26 i';
 /* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리. */
-var APP_TOUCHED = '08-26 밤7';
+var APP_TOUCHED = '08-26 밤8';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -4529,7 +4529,7 @@ function renderSet(){
      폰은 앱 파일을 한동안 저장해 두고 쓰기 때문에, 새로 올려도 옛 화면이 그대로일 때가 있다.
      그때 「데이터가 안 온 건가, 앱이 옛 건가」를 가릴 방법이 없으면 헤맨다.
      두 폰의 이 숫자가 같은지만 보면 된다. */
-  $('#s-ver').textContent='우리 가계부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건'
+  $('#s-ver').textContent='가계부부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건'
                         + ' · 손댄 때 '+APP_TOUCHED;
 }
 /* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
