@@ -145,6 +145,31 @@ select{appearance:none;-webkit-appearance:none;
   border-radius:var(--r2);border:var(--cardline);margin-bottom:8px;width:100%;text-align:left}
 .ev-row .dot{width:9px;height:9px;border-radius:50%;flex:none}
 .ev-row .nm{flex:1;font-size:16px;font-weight:700;letter-spacing:-.4px}
+#c-since{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+#c-since .since-row{width:100%;text-align:left;padding:11px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--card);color:var(--txt);font:inherit;font-size:14.5px}
+#c-since .since-row .num{font-weight:800;color:var(--p1)}
+/* 앞으로 올 날(D−)은 색을 달리해 「줄어드는 것」임을 드러낸다 */
+#c-since .since-row .num.soon{color:var(--accent)}
+/* 일정 편집의 체크 — 한 단어씩 세 칸을 나란히. 칸 크기는 전부 같다 */
+.evchks{display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;gap:8px}
+.evchk{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  padding:14px 6px;border:1px solid var(--line);border-radius:12px;
+  background:var(--card);color:var(--txt);font:inherit;font-size:15px;font-weight:700}
+.evchk .bx{flex:0 0 auto;width:20px;height:20px;border-radius:6px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
+  font-style:normal;color:#fff;background:transparent}
+.evchk.on{border-color:var(--accent);background:var(--accent-soft)}
+.evchk.on .bx{border-color:var(--accent);background:var(--accent)}
+/* 「챙길 것」 한 줄 — 왼쪽 동그라미가 이번 달에 했는지 안 했는지다 */
+.todo-row{display:flex;align-items:flex-start;gap:11px}
+.todo-row .todo-chk{flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:transparent;margin-top:1px}
+.todo-row.done .todo-chk{border-color:var(--plus);background:var(--plus);color:#fff}
+.todo-row .todo-body{flex:1;min-width:0}
+.todo-row.done .todo-body{opacity:.55}
+.todo-row.later .todo-body{opacity:.5}
 .leg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 10px;margin-bottom:16px;padding:0 2px}
 .leg span{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--sub);
   font-weight:600;white-space:nowrap}
@@ -170,8 +195,10 @@ select{appearance:none;-webkit-appearance:none;
 .bigamt{font-size:40px;font-weight:800;letter-spacing:-1.8px;line-height:1.12}
 .trio{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;
   border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-top:16px}
-.trio>div{padding:13px 6px;text-align:center;border-right:1px solid var(--line)}
-.trio>div:last-child{border-right:none}
+.trio>div,.trio>button{padding:13px 6px;text-align:center;border-right:1px solid var(--line);
+  display:block;width:100%}
+.trio>div:last-child,.trio>button:last-child{border-right:none}
+.trio>button:active{background:var(--accent-soft)}
 .trio .lbl{font-size:13px;color:var(--sub);margin-bottom:4px;font-weight:600}
 .trio .val{font-size:17px;font-weight:800;letter-spacing:-.6px}
 
@@ -263,11 +290,42 @@ select{appearance:none;-webkit-appearance:none;
    입력 시트
    ============================================================ */
 #sheet{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column}
+  /* 결제수단 고르기 — 사람 가로 탭 × 종류 세로 탭 × 목록 */
+  .pp-who{display:grid;grid-auto-rows:1fr;gap:0;margin-bottom:12px;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pp-who button{padding:12px 6px;border:0;border-right:1px solid var(--line);
+    background:var(--card);color:var(--sub);font:inherit;font-weight:700;font-size:15px}
+  .pp-who button:last-child{border-right:none}
+  .pp-who button.on{background:var(--accent);color:#fff}
+  .pp-grid{display:grid;grid-template-columns:88px 1fr;gap:10px;align-items:start}
+  .pp-kind{display:grid;grid-auto-rows:1fr;gap:0;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pp-kind button{padding:14px 4px;border:0;border-bottom:1px solid var(--line);
+    background:var(--card);color:var(--sub);font:inherit;font-weight:700;font-size:14px}
+  .pp-kind button:last-child{border-bottom:none}
+  .pp-kind button.on{background:var(--accent);color:#fff}
+  .pp-kind button:disabled{opacity:.34}
+  .pp-list{display:flex;flex-direction:column;gap:8px}
+  .pp-list button{width:100%;text-align:left;padding:14px 14px;border:1px solid var(--line);
+    border-radius:12px;background:var(--card);color:var(--txt);font:inherit;font-size:15.5px;
+    font-weight:700;line-height:1.4}
+  .pp-list button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+  .pp-list button .sub{display:block;font-weight:500;font-size:12.5px;opacity:.72;margin-top:2px}
+  /* 입력 화면에 남는 「지금 고른 것」 한 줄 */
+  .pickrow{width:100%;text-align:left;padding:15px 14px;border:1px solid var(--line);
+    border-radius:14px;background:var(--card);color:var(--txt);font:inherit;font-size:16px;
+    font-weight:700;display:flex;align-items:center;gap:8px}
+  .pickrow .arw{margin-left:auto;color:var(--dim);font-weight:700}
+  .pickrow.empty{color:var(--dim)}
 #sheet.on{display:flex}
 .sh-head{display:flex;align-items:center;gap:10px;background:var(--card);
   padding:calc(14px + var(--safe-t)) 16px 14px 16px}
 .sh-head .ttl{font-size:18px;font-weight:800;flex:1;text-align:center;letter-spacing:-.6px}
-.sh-head button{font-size:15.5px;font-weight:700;color:var(--accent);padding:6px 4px}
+/* 🚨 손가락으로 누르는 단추는 44×44 아래로 내려가면 안 된다.
+   예전엔 38×33 이라 폰에서 「눌러도 안 먹힌다」가 됐다(2026-08-26 사용자 보고).
+   게다가 삭제 옆 10px 에 완료가 붙어 있어 **삭제 대신 저장이 눌릴 수도** 있었다. */
+.sh-head button{font-size:15.5px;font-weight:700;color:var(--accent);
+  min-width:52px;min-height:44px;padding:10px 8px}
 .sh-head button.del{color:var(--minus)}
 .sh-body{flex:1;overflow-y:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
 .sh-pad{background:var(--card);padding-bottom:var(--safe-b);border-top:1px solid var(--line)}
@@ -391,15 +449,15 @@ select{appearance:none;-webkit-appearance:none;
       <div class="tiny muted" id="h-spent-lbl">이번 달 쓴 돈</div>
       <div class="bigamt num" id="h-spent">0원</div>
       <div class="tiny muted" id="h-vs" style="margin-top:4px"></div>
-      <div class="trio">
-        <div><div class="lbl">수입</div><div class="val num" id="h-in" style="color:var(--plus)">0</div></div>
-        <div><div class="lbl">지출</div><div class="val num" id="h-out" style="color:var(--minus)">0</div></div>
-        <div><div class="lbl">남은 돈</div><div class="val num" id="h-net">0</div></div>
+      <div class="trio" id="h-trio">
+        <button data-f="income"><div class="lbl">수입 ›</div><div class="val num" id="h-in" style="color:var(--plus)">0</div></button>
+        <button data-f="expense"><div class="lbl">지출 ›</div><div class="val num" id="h-out" style="color:var(--minus)">0</div></button>
+        <button data-f="all"><div class="lbl">남은 돈 ›</div><div class="val num" id="h-net">0</div></button>
       </div>
       <div class="tiny muted" id="h-saved" style="margin-top:10px;line-height:1.6"></div>
-      <div class="trio" style="margin-top:8px">
-        <div><div class="lbl">고정비</div><div class="val num" id="h-fix">0</div></div>
-        <div><div class="lbl">변동비</div><div class="val num" id="h-var">0</div></div>
+      <div class="trio" id="h-trio2" style="margin-top:8px;grid-template-columns:repeat(2,1fr)">
+        <button data-f="fixed"><div class="lbl">고정비 ›</div><div class="val num" id="h-fix">0</div></button>
+        <button data-f="var"><div class="lbl">변동비 ›</div><div class="val num" id="h-var">0</div></button>
       </div>
       <div class="tiny muted" id="h-fixnote" style="margin-top:9px;line-height:1.7"></div>
     </div>
@@ -408,10 +466,6 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card" id="h-todo" style="display:none"></div>
 
-    <div class="card" id="h-events" style="display:none"></div>
-
-    <div class="card" id="h-budget"></div>
-
     <div class="card" id="h-up" style="display:none">
       <h2>이번 달 앞으로</h2>
       <div class="tiny muted">앞으로 나갈 돈</div>
@@ -419,6 +473,9 @@ select{appearance:none;-webkit-appearance:none;
       <div id="h-up-list" style="margin-top:12px"></div>
       <div class="tiny muted" id="h-up-note" style="margin-top:10px;line-height:1.6"></div>
     </div>
+
+    <div class="card" id="h-budget"></div>
+
 
     <div class="card">
       <h2>어디에 많이 썼나</h2>
@@ -437,22 +494,20 @@ select{appearance:none;-webkit-appearance:none;
       <div class="tiny muted" id="h-bars-note" style="margin-top:10px;line-height:1.7"></div>
     </div>
 
-    <div class="card">
-      <h2>순자산</h2>
-      <div class="bigamt num" id="h-networth" style="font-size:27px">0원</div>
-      <div class="tiny muted" id="h-networth-sub" style="margin-top:4px"></div>
-    </div>
+    <!-- 「순자산」은 2026-08-26 에 홈에서 뺐다 — 살림 탭 맨 위에 똑같은 것이 있어
+         중복이었다. 「최근 내역」을 뺀 것과 같은 이유(사용자 요청). -->
 
-    <div class="card">
-      <h2>최근 내역</h2>
-      <div id="h-recent"></div>
-      <div class="legend" id="h-legend"></div>
-    </div>
+    <!-- 「최근 내역」은 뺐다(2026-08-26) — 내역 탭에 있는 것과 겹치고
+         홈이 4화면을 넘어가게 만들던 주범이었다. 사용자 요청. -->
   </section>
 
   <!-- ══════════ 내역 ══════════ -->
   <section class="page" id="pg-list">
-    <div class="head"><h1>내역</h1></div>
+    <div class="head">
+      <button id="l-back" style="display:none;background:none;border:0;padding:0 10px 0 0;
+        font-size:15px;font-weight:700;color:var(--accent)">‹ 홈</button>
+      <h1>내역</h1>
+    </div>
     <input id="l-q" placeholder="메모·분류·카드로 찾기" style="margin-bottom:12px">
     <div class="monthbar" id="l-monthbar">
       <button id="m-prev">‹</button>
@@ -469,10 +524,12 @@ select{appearance:none;-webkit-appearance:none;
       <button data-w="0">－</button>
       <button data-w="1">－</button>
     </div>
+    <!-- 「지출」만 보는 중에 「수입 0원」이 뜨면 헷갈린다(2026-08-26 지적).
+         그래서 지금 고른 갈래에 해당하는 줄만 보여준다. -->
     <div class="card" style="padding:10px 14px">
-      <div class="kv"><span>수입</span><b class="num" id="l-in" style="color:var(--plus)">0원</b></div>
-      <div class="kv"><span>지출</span><b class="num" id="l-out" style="color:var(--minus)">0원</b></div>
-      <div class="kv" style="border-top:1px solid var(--line2);margin-top:4px;padding-top:7px">
+      <div class="kv" id="l-in-row"><span>수입</span><b class="num" id="l-in" style="color:var(--plus)">0원</b></div>
+      <div class="kv" id="l-out-row"><span>지출</span><b class="num" id="l-out" style="color:var(--minus)">0원</b></div>
+      <div class="kv" id="l-net-row" style="border-top:1px solid var(--line2);margin-top:4px;padding-top:7px">
         <span>남은 돈</span><b class="num" id="l-net">0원</b></div>
     </div>
     <div id="l-body"></div>
@@ -481,6 +538,7 @@ select{appearance:none;-webkit-appearance:none;
   <!-- ══════════ 일정 ══════════ -->
   <section class="page" id="pg-cal">
     <div class="head"><h1>일정</h1></div>
+    <div id="c-since" style="display:none"></div>
     <div class="monthbar">
       <button id="c-prev">‹</button>
       <div class="ym num" id="c-label"></div>
@@ -746,10 +804,20 @@ select{appearance:none;-webkit-appearance:none;
     <button id="sh-cancel">취소</button>
     <div class="ttl" id="sh-title">지출 적기</div>
     <button id="sh-del" class="del" style="display:none">삭제</button>
-    <button id="sh-done" style="display:none">완료</button>
   </div>
   <div class="sh-body" id="sh-body"></div>
   <div class="sh-pad" id="sh-pad"></div>
+</div>
+
+<!-- ══════════ 결제수단 고르기 (Buboo 식 별도 화면) ══════════ -->
+<!-- 🚨 z-index 67 — 입력 시트(#sheet, 60) 위에 떠야 한다.
+     낮게 주면 열리긴 하는데 뒤에 숨어서 「눌러도 반응이 없다」로 보인다(2026-08-25 사고). -->
+<div id="psheet" style="position:fixed;inset:0;z-index:67;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="ps-cancel">취소</button>
+    <div class="ttl" id="ps-title">무엇으로 결제</div>
+  </div>
+  <div class="sh-body" id="ps-body"></div>
 </div>
 
 <!-- ══════════ 자산 편집 시트 ══════════ -->
@@ -942,6 +1010,15 @@ function normalize(){
   if(!DB.assets) DB.assets=[];
   if(!DB.rules) DB.rules=[];
   if(!DB.events) DB.events=[];
+  /* 일정의 「종류」를 성질 두 개(해마다·D+)로 바꿨다(2026-08-26).
+     옛 백업을 불러올 때 손으로 고치지 않아도 되게 여기서 자동으로 채운다.
+     🚨 kind 는 지우지 않는다 — 옛 판으로 되돌아가야 할 때 되살릴 근거가 된다. */
+  DB.events.forEach(function(e){
+    if(e.yearly==null) e.yearly = (e.kind==='anniv');
+    if(e.dplus==null)  e.dplus  = (e.kind==='since');
+    /* 여러 날에 걸치는 것(여행 등). 옛 기록에는 end 가 아예 없으므로 전부 하루짜리다. */
+    if(!e.end) e.end = '';
+  });
   if(!DB.last) DB.last={payId:'', who:0};
   /* 「폰 설정 따라」를 없앴다(2026-08-25).
      그냥 지우면 밝기가 갑자기 바뀌므로, **지금 그 폰에 보이고 있는 색 그대로** 굳힌다.
@@ -1033,9 +1110,17 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    🚨 밝기 · 마지막에 고른 결제수단 · 처음 안내 봤는지는 **맞추지 않는다.**
       폰마다 달라야 하는 것이라, 맞추면 남의 폰 화면색과 입력 습관이 바뀐다.
    ──────────────────────────────────────────────────────────────────────────── */
-/* 이 앱 파일이 언제 것인지. 올릴 때마다 손으로 올린다.
-   폰과 PC 가 같은 판을 쓰는지 설정 맨 아래에서 눈으로 맞춰보기 위한 것. */
-var APP_BUILD = '08-25 e';
+/* 이 앱 파일이 언제 것인지. 폰과 PC 가 같은 판을 쓰는지
+   설정 맨 아래에서 눈으로 맞춰보기 위한 것.
+
+   🚨 **판번호는 「폰에 들어간 판」을 뜻한다. 「고친 횟수」가 아니다.**
+      고칠 때마다 올리면 폰에 없는 번호가 계속 생겨서 그 판정이 망가진다.
+      ➡️ **사용자가 「폰에 넣었다」고 말한 다음 고칠 때 비로소 다음 글자로 올린다.**
+      ➡️ 그 사이에 고친 것은 **아래 APP_TOUCHED(마지막 손댄 때)만** 갱신한다.
+      (2026-08-26 사용자 확정 — 같은 지적을 여러 번 받았다) */
+var APP_BUILD = '08-26 i';
+/* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리. */
+var APP_TOUCHED = '08-26 밤7';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1571,6 +1656,90 @@ function netWorth(){
    두 폰을 맞출 때 **두 배가 된다.** 같은 규칙·같은 달이면 어느 폰에서 만들어도
    같은 이름표가 나오게 해두면, 맞출 때 저절로 한 건으로 합쳐진다. */
 function ruleTxId(ruleId, ym){ return 'R' + ruleId + '_' + ym; }
+
+/* 이 반복이 **스스로 빠지는가**(자동이체·카드 자동결제) 아니면 **내가 손으로 옮겨야 하는가**.
+   🚨 왜 이 칸이 필요한가 (2026-08-25 확정) — 예전에는 「금액을 아나」 하나만 있었다.
+      그런데 실제로는 축이 둘이다.
+        ㉠ 금액을 아나        → 앱이 기록을 미리 만들 수 있나
+        ㉡ **내가 손을 대야 하나** → 안 하면 실제로 돈이 안 움직인다
+      ㉡이 없어서 두 가지가 틀어졌다.
+        - 자동인데 금액이 다른 것(대출이자·가스비·관리비)은 손으로 적게 되어
+          **고정비로 안 잡혔다.**
+        - 수동인데 앱이 **멋대로 기록을 만들어**, 이체를 깜빡해도 「했다」고 나왔다
+          → 잔액이 실제와 어긋난다.
+   ➡️ 이제 **고정비 = 반복에 등록된 것 전부**다. 금액이 변하든 손으로 적든 상관없다.
+   옛 반복에는 이 칸이 없으므로 **없으면 자동으로 본다** — 그래야 동작이 안 바뀐다. */
+function ruleIsAuto(r){ return r.auto !== false; }
+/* 앱이 기록을 대신 만들어 줄 수 있는 반복인가 */
+function ruleMakesTx(r){ return !r.varAmt && ruleIsAuto(r); }
+
+/* 그 달에 챙겨야 할 것 **전부**. 이미 적은 것도 ✓ 로 남긴다 —
+   사라져 버리면 「이번 달 뭘 했나」를 볼 수 없다(2026-08-26 사용자 요청). */
+function monthTodos(ym){
+  var out = [], today = todayStr();
+  liveRules().forEach(function(r){
+    if(ruleMakesTx(r) || r.active === false) return;
+    if(r.since && r.since > ym) return;
+    if(r.until && r.until < ym) return;
+    var dd = Math.min(+r.day || 1, daysInMonth(ym));
+    var tx = null;
+    liveTx().forEach(function(t){
+      if(!t.deleted && t.ruleId === r.id && ymOf(t.date) === ym) tx = t;
+    });
+    out.push({ r:r, tx:tx, done:!!tx, due:(ym + '-' + pad2(dd) <= today), day:dd });
+  });
+  /* 안 한 것 · 날짜 지난 것부터 위로 */
+  out.sort(function(a,b){
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    if(a.due !== b.due)   return a.due ? -1 : 1;
+    return a.day - b.day;
+  });
+  return out;
+}
+/* 언제 챙기는 것인지 한 마디. 날짜가 매달 다른 것은 **딱 그 날짜를 안 박는다** —
+   「매달 22일」이라고 적어두면 거짓말이 된다(2026-08-26 사용자 지적). */
+function todoWhen(r){
+  var dd = +r.day || 1;
+  return r.varDay ? (dd + '일 이후') : ('매달 ' + dd + '일');
+}
+/* 「챙길 것」에 아직 남아 있는 것들 — 손으로 적은 기록을 이어붙일 때 쓴다 */
+function pendingRules(ym){
+  return monthTodos(ym).filter(function(x){ return !x.done && x.due; })
+                       .map(function(x){ return x.r; });
+}
+/* 손으로 적은 기록이 「챙길 것」의 어느 항목인지 짚어낸다. 못 짚으면 null.
+
+   🚨 **애매하면 절대 붙이지 않는다.** 예전에 분류·결제수단만 보고 짚었다가
+      전세대출 이자를 관리비로 오인한 적이 있다(둘 다 「주거 + 아내 카뱅」이다).
+      그래서 ① 메모에 반복 이름이 들어 있으면 그것으로 확정하고,
+      ② 아니면 분류·결제수단이 맞는 후보가 **딱 하나일 때만** 붙인다. */
+function guessRule(d){
+  var ym = ymOf(d.date), cand = pendingRules(ym), i, r;
+  if(!cand.length) return null;
+
+  /* ① 메모에 반복 이름이 들어 있으면 그것 — 가장 확실한 신호 */
+  var memo = (d.memo || '').replace(/\s+/g, '');
+  if(memo){
+    var byName = cand.filter(function(x){
+      var t = (x.title || '').replace(/\s+/g, '');
+      return t && memo.indexOf(t) >= 0;
+    });
+    if(byName.length === 1) return byName[0];
+  }
+
+  /* ② 갈래·분류·돈이 오간 곳이 맞는 후보를 고른다 */
+  var fit = cand.filter(function(x){
+    var kind = (x.kind === 'income') ? 'income' : (x.kind === 'transfer') ? 'transfer' : 'expense';
+    if(kind !== d.type) return false;
+    if((x.cat || '') && (x.cat || '') !== (d.cat || '')) return false;
+    if(d.type === 'expense'  && x.fromId && x.fromId !== d.payId) return false;
+    if(d.type === 'income'   && x.toId   && x.toId   !== d.toId)  return false;
+    if(d.type === 'transfer' && x.fromId && x.fromId !== d.fromId) return false;
+    if(d.type === 'transfer' && x.toId   && x.toId   !== d.toId)   return false;
+    return true;
+  });
+  return (fit.length === 1) ? fit[0] : null;   /* 둘 이상이면 못 가르므로 안 붙인다 */
+}
 function runRules(rebuildId){
   var made=0, today=todayStr(), nowYM=ymOf(today);
   liveRules().forEach(function(r){
@@ -1578,7 +1747,9 @@ function runRules(rebuildId){
     if(r.active===false) return;
     /* 금액이 매달 다른 것은 기록을 만들지 않는다 — 얼마인지 모르는데 지어내면 안 된다.
        대신 홈의 「이번 달 챙길 것」에 뜬다. */
-    if(r.varAmt) return;
+    /* 금액을 모르면 못 만든다. **수동이면 만들면 안 된다** —
+       실제로 옮기지 않았는데 옮긴 것으로 쳐서 잔액이 틀어지기 때문. */
+    if(!ruleMakesTx(r)) return;
     if(!r.amount || !r.since) return;
     /* 「언제까지」가 있으면 거기서 멈춘다. 비어 있으면 이번 달까지.
        할부금처럼 끝나는 것을 등록해도 2년치가 쌓이지 않게 하려는 것. */
@@ -1647,6 +1818,12 @@ function rebuildRule(ruleId){
 var curPage='home';
 var curYM=ymOf(todayStr());
 var listFilter='all', listWho='all';
+/* 고정비/변동비만 골라 보는 것 — 홈의 고정비·변동비 단추에서만 켠다.
+   'all'=안 거름 / 'fixed'=고정비만 / 'var'=변동비만. */
+var listFix='all';
+/* 홈에서 드릴다운해서 내역으로 온 것인지 — 맞으면 위에 「‹ 홈」을 보여준다.
+   이 앱은 하단 탭 전환만 있고 뒤로가기 개념이 없어서, 드릴다운했을 때만 예외로 만든다. */
+var listFromHome=false;
 
 function go(p){
   curPage=p;
@@ -1661,7 +1838,14 @@ function go(p){
   if(p==='asset') renderAsset();
   if(p==='set') renderSet();
 }
-$$('#nav button').forEach(function(b){ b.onclick=function(){ go(b.dataset.go); }; });
+$$('#nav button').forEach(function(b){
+  b.onclick=function(){
+    /* 내역 탭을 하단 아이콘으로 직접 누른 것은 드릴다운이 아니다 — 「‹ 홈」을 끈다. */
+    if(b.dataset.go==='list') listFromHome=false;
+    go(b.dataset.go);
+  };
+});
+$('#l-back').onclick=function(){ go('home'); };
 
 /* ============================================================================
    6. 홈
@@ -1742,7 +1926,6 @@ function renderHome(){
   }
 
   renderBars(ym);
-  renderComingEvents();
   renderBudget(ym);
   renderUpcoming(ym);
 
@@ -1775,34 +1958,45 @@ function renderHome(){
   var nwCard=$('#h-networth') ? $('#h-networth').parentNode : null;
   if(nwCard) nwCard.style.display = isNow ? '' : 'none';
 
-  /* 「금액이 매달 다른 것」 중 아직 안 적은 것 */
+  /* 앱이 대신 못 적는 것 중 아직 안 적은 것.
+     둘 다 여기 온다 — ①금액을 모르는 것 ②내가 손으로 옮겨야 하는 것 */
   var td=$('#h-todo'); td.innerHTML=''; td.style.display='none';
   if(isNow){
-    var todo=[];
-    liveRules().forEach(function(r){
-      if(!r.varAmt || r.active===false) return;
-      if(r.since && r.since>ym) return;
-      if(r.until && r.until<ym) return;
-      var dd=Math.min(+r.day||1, daysInMonth(ym));
-      if(ym+'-'+pad2(dd) > todayStr()) return;      /* 아직 날짜가 안 됐다 */
-      /* 🚨 분류·결제수단만으로는 못 가른다 — 전세대출 이자도 「주거+공과금통장」이라
-         관리비를 적은 것으로 오인했다. 그래서 그 반복의 것이라는 표시로 정확히 본다. */
-      var done=liveTx().some(function(t){ return !t.deleted && t.ruleId===r.id && ymOf(t.date)===ym; });
-      if(!done) todo.push(r);
-    });
-    if(todo.length){
+    var todo=monthTodos(ym), soon=comingEvents(60);   /* 돈만이 아니라 일정도 여기 온다 */
+    if(todo.length || soon.length){
       td.style.display='';
-      td.appendChild(el('h2',null,'이번 달 챙길 것'));
+      td.appendChild(el('h2',null,'챙길 것'));
       td.appendChild(el('div','tiny muted',
-        '금액이 매달 달라서<br>앱이 대신 적을 수 없는 것입니다.'));
-      todo.forEach(function(r){
-        var bb=el('button','btn');
+        '<b>앱이 대신 적을 수 없는 돈</b>과<br><b>다가오는 일정</b>이 여기 옵니다.'));
+      todo.forEach(function(it){
+        var r=it.r;
+        var bb=el('button','btn todo-row'+(it.done?' done':'')+(it.due?'':' later'));
         bb.style.cssText='margin:10px 0 0 0;text-align:left';
-        bb.innerHTML='<b>'+(r.title||'이름 없음')+'</b> · 매달 '+r.day+'일 &nbsp;›';
+        /* 무엇을 해야 하는지 그때그때 다르므로 문구를 갈라 준다 */
+        var how;
+        if(it.done)                     how='적었습니다 · '+wonx(it.tx.amount);
+        else if(!it.due)                how='아직입니다 · '+todoWhen(r);
+        else if(!ruleIsAuto(r) && !r.varAmt) how='직접 옮기고 눌러주세요 · '+wonx(r.amount);
+        else if(!ruleIsAuto(r))         how='직접 옮기고 금액을 적어주세요';
+        else                            how='이미 빠졌을 것입니다 · 금액만 확인';
+        bb.innerHTML='<span class="todo-chk">'+(it.done?'✓':'')+'</span>'
+                   + '<span class="todo-body"><b>'+(r.title||'이름 없음')+'</b> · '+todoWhen(r)+' &nbsp;›'
+                   + '<span class="tiny muted" style="display:block;margin-top:3px;font-weight:600">'+how+'</span></span>';
         bb.onclick=function(){
+          /* 🚨 이미 적은 것을 누르면 **그 기록을 고치러** 간다.
+             새로 만들면 같은 달에 두 번 적히는 지름길이 된다. */
+          if(it.done){ openSheet(it.tx); return; }
           openSheet(null);
-          draft.type='expense'; draft.cat=r.cat||'';
-          if(r.fromId) draft.payId=r.fromId;
+          /* 🚨 예전에는 무조건 지출로 열었다. 챙길 것에 지출만 떠서 안 드러났을 뿐,
+             월급(수입)을 눌러도 지출로 열리는 버그였다. 이제 이체까지 오므로 제대로 가른다. */
+          draft.type = (r.kind==='transfer') ? 'transfer'
+                     : (r.kind==='income')   ? 'income' : 'expense';
+          draft.cat=r.cat||'';
+          /* 금액을 아는 것(수동·고정)은 미리 채워 준다 — 한 번 누르면 끝나게 */
+          if(!r.varAmt && +r.amount>0) draft.amount=+r.amount;
+          if(r.kind==='transfer'){ draft.fromId=r.fromId||''; draft.toId=r.toId||''; }
+          else if(r.kind==='income'){ draft.toId=r.toId||''; }
+          else if(r.fromId) draft.payId=r.fromId;
           if(r.who===0||r.who===1) draft.who=r.who;
           draft.memo=r.title||'';
           draft.ruleId=r.id;        /* 이 반복의 것이라고 표시 */
@@ -1810,6 +2004,36 @@ function renderHome(){
         };
         td.appendChild(bb);
       });
+      /* 다가오는 일정.
+         🚨 예전에는 「다가오는 일정」이 따로 있고 **14일 안**만 봤다. 그런데 가장 가까운
+            일정이 50일 뒤라 **아무것도 안 떴고**, 「다음 생신 언제지?」에 답을 못 했다
+            (2026-08-26 실측). 사용자: "챙길것이 꼭 돈일필요는없잖아 … 일정이랑 합칠수잇을거"
+         ➡️ 한 칸으로 합치고 **60일**까지 본다. */
+      if(soon.length){
+        if(todo.length){
+          var hr=el('div');
+          hr.style.cssText='height:1px;background:var(--line);margin:14px 0 12px';
+          td.appendChild(hr);
+        }
+        soon.slice(0,4).forEach(function(x){
+          var eb=el('button','btn');
+          eb.style.cssText='margin:10px 0 0 0;text-align:left';
+          var when = x.ongoing ? '가는 중' : (x.gap===0?'오늘':(x.gap===1?'내일':x.gap+'일 뒤'));
+          var pp = x.ds.split('-');
+          /* 🚨 메모는 여기 안 띄운다(2026-08-26). 「1963년생 · 2023년부터 양력으로 정함」
+             같은 것은 **왜 그렇게 넣었는지 남긴 기록**이지 매일 볼 것이 아니다.
+             홈은 「무엇이 언제」만. 자세한 것은 일정 탭에서 본다. */
+          var ep = x.dsEnd.split('-');
+          var dayTxt = Number(pp[1])+'월 '+Number(pp[2])+'일'
+                     + (x.dsEnd!==x.ds ? (' ~ ' + (ep[1]!==pp[1] ? Number(ep[1])+'월 ' : '')
+                                          + Number(ep[2])+'일') : '');
+          eb.innerHTML='<b>'+(x.e.title||'이름 없음')+'</b> · '+when+' &nbsp;›'
+                     + '<div class="tiny muted" style="margin-top:3px;font-weight:600">'
+                     + dayTxt+'</div>';
+          (function(ds){ eb.onclick=function(){ calYM=ymOf(ds); calSel=ds; go('cal'); }; })(x.ds);
+          td.appendChild(eb);
+        });
+      }
     }
   }
 
@@ -1828,59 +2052,10 @@ function renderHome(){
     eb.style.display=''; eb.innerHTML=''; eb.appendChild(warn);
   }
 
-  var nw=netWorth();
-  $('#h-networth').textContent=wonx(nw.net);
-  $('#h-networth').style.color=nw.net>=0?'var(--txt)':'var(--minus)';
-  var sub=$('#h-networth-sub');
-  if(!liveAssets().length){
-    sub.innerHTML='아직 통장·카드를 넣지 않았습니다.<br>돈 탭에서 한 번만 넣어두면<br>그 뒤로는 저절로 계산됩니다.';
-  }else{
-    sub.textContent='가진 것 '+shortWon(nw.plus)+' − 갚을 것 '+shortWon(nw.minus);
-  }
+  /* 순자산은 홈에서 뺐다(2026-08-26). 살림 탭에서 그린다. */
 
-  /* 최근 내역을 날짜별로 묶고 그날 합계를 같이 보여준다.
-     🔑 그냥 6건을 잘라 담으면 「합계는 −5만인데 줄은 −9천 하나만 보이는」 상태가 생긴다.
-        그래서 묶음(하루) 단위로 담고, 6줄을 넘으면 거기서 멈춘다.
-        첫 묶음은 길어도 무조건 넣는다 — 안 그러면 아무것도 안 보이는 날이 생긴다. */
-  var all=liveTx().slice().sort(function(a,b){
-    return a.date<b.date?1:a.date>b.date?-1:(b.ts||0)-(a.ts||0);
-  });
-  var rb=$('#h-recent'); rb.innerHTML='';
-  if(!all.length){
-    rb.appendChild(el('div','empty','아래 파란 ＋ 버튼을 눌러<br>첫 지출을 적어보세요.'));
-  }else{
-    var byDay={}, dayOrder=[];
-    all.forEach(function(t){
-      if(!byDay[t.date]){ byDay[t.date]=[]; dayOrder.push(t.date); }
-      byDay[t.date].push(t);
-    });
-    var shown=0, di;
-    for(di=0; di<dayOrder.length; di++){
-      var d=dayOrder[di], list=byDay[d];
-      if(shown>0 && shown+list.length>6) break;
-      var dsum=0;
-      list.forEach(function(x){                 /* 옮김은 합계에 안 넣는다 */
-        if(x.type==='income') dsum+=x.amount;
-        else if(x.type==='expense') dsum-=x.amount;
-      });
-      var g=el('div','daygroup');
-      var dh=el('div','dayhead');
-      dh.appendChild(el('span',null,dayLabel(d)));
-      dh.appendChild(el('span','num',(dsum>=0?'+':'−')+won(Math.abs(dsum))));
-      g.appendChild(dh);
-      list.forEach(function(t){ g.appendChild(txLine(t)); });
-      rb.appendChild(g);
-      shown+=list.length;
-    }
-  }
-
-  var lg=$('#h-legend'); lg.innerHTML='';
-  DB.people.forEach(function(nm,i){
-    var sp=el('span'), dot=el('i');
-    dot.style.background='var(--p'+i+')';
-    sp.appendChild(dot); sp.appendChild(document.createTextNode(josa(nm,'이','가')+' 쓴 것'));
-    lg.appendChild(sp);
-  });
+  /* 「최근 내역」은 2026-08-26 에 홈에서 뺐다 — 내역 탭과 겹치고
+     홈이 4화면을 넘어가게 만들던 주범이었다(사용자 요청). */
 }
 /* ────────────────────────────────────────────────────────────────
    6-1. 생활비 예산 · 이번 달 앞으로
@@ -2068,6 +2243,21 @@ function renderBars(ym){
       + '대상은 「분류·대상 고치기」에서 늘릴 수 있습니다.';
   }
 }
+/* 홈의 수입·지출·남은 돈 / 고정비·변동비를 누르면 **그 갈래만 걸러서** 내역으로 보낸다.
+   아내분이 「눌러서 뭐가 뭔지 알면 좋겠다」고 한 것과 같은 요청(2026-08-26).
+   고정비·변동비는 지출 중에서 또 한 번 가르는 것이라 listFilter='expense'로 같이 잡는다. */
+$$('#h-trio button, #h-trio2 button').forEach(function(b){
+  b.onclick=function(){
+    curYM = homeYM;                 /* 홈에서 보던 달 그대로 */
+    var f = b.dataset.f;
+    if(f==='fixed' || f==='var'){ listFilter='expense'; listFix=f; }
+    else{ listFilter=f; listFix='all'; }
+    listWho = 'all';
+    listFromHome = true;
+    listQ = ''; if($('#l-q')) $('#l-q').value='';
+    go('list');
+  };
+});
 $$('#h-by button').forEach(function(b){
   b.onclick=function(){ homeBy=b.dataset.b; renderBars(homeYM); };
 });
@@ -2327,7 +2517,14 @@ $('#bs-save').onclick=function(){
   save(); closeBudget(); toast('저장했습니다'); renderHome();
 };
 
-function txLine(t){
+/* viewId 를 주면 **그 통장 눈으로** 그린다.
+   🚨 왜 필요한가 (2026-08-25 아내분 지적) — 옮김은 부호도 색도 없어서
+      「청년도약 납입 70만(나감)」과 「청년도약 내 몫 50만(들어옴)」이 **똑같이 보였다.**
+      들어온 건지 나간 건지 화면에 **정보가 아예 없었다.** 이해가 어려운 게 아니라
+      이해할 수가 없는 화면이었다.
+   ➡️ 통장 상세에서는 그 통장 기준으로 +/− 를 붙이고 **파란색**을 준다.
+      빨강 = 없어진 돈 / 파랑 = 자리만 옮긴 돈 — 색만 봐도 갈린다. */
+function txLine(t, viewId){
   var b=el('button','tx-line');
   var wc=(t.who===1)?'who1':'who0';
   var isMove=(t.type==='transfer');
@@ -2343,9 +2540,22 @@ function txLine(t){
   if(t.ruleId) sub='🔁 '+sub;
   mid.appendChild(el('div','t2', sub));
   b.appendChild(mid);
-  var sign = isMove ? '' : (t.type==='income'?'+':'−');
+  var sign, color;
+  if(isMove){
+    if(viewId){
+      var dd = txDelta(t, viewId);
+      sign  = (dd>0) ? '+' : '−';
+      color = 'var(--accent)';          /* 파랑 = 자리만 옮긴 돈 */
+    }else{
+      sign  = '';                        /* 어느 통장 눈으로 볼지 모르면 부호를 안 붙인다 */
+      color = 'var(--sub)';
+    }
+  }else{
+    sign  = (t.type==='income') ? '+' : '−';
+    color = (t.type==='income') ? 'var(--plus)' : 'var(--minus)';
+  }
   var a=el('div','amt num', sign+won(t.amount));
-  a.style.color = isMove ? 'var(--sub)' : (t.type==='income'?'var(--plus)':'var(--minus)');
+  a.style.color = color;
   b.appendChild(a);
   b.onclick=function(){ openSheet(t); };
   return b;
@@ -2368,6 +2578,7 @@ function txMatches(t, q){
   return hay.toLowerCase().indexOf(q) >= 0;
 }
 function renderList(){
+  $('#l-back').style.display = listFromHome ? '' : 'none';
   $('#m-label').textContent=ymLabel(curYM);
   var q=listQ.trim().toLowerCase();
   var searching=!!q;
@@ -2382,6 +2593,8 @@ function renderList(){
     if(!searching && ymOf(t.date)!==curYM) return false;
     if(searching && !txMatches(t,q)) return false;
     if(listFilter!=='all' && t.type!==listFilter) return false;
+    if(listFix==='fixed' && !isFixed(t)) return false;
+    if(listFix==='var' && isFixed(t)) return false;
     if(listWho!=='all' && String(t.who)!==listWho) return false;
     return true;
   });
@@ -2390,9 +2603,20 @@ function renderList(){
   $('#l-in').textContent=wonx(si); $('#l-out').textContent=wonx(so);
   $('#l-net').textContent=wonx(si-so);
   $('#l-net').style.color=(si-so)>=0?'var(--txt)':'var(--minus)';
+  /* 「지출」만 볼 때 「수입 0원 · 남은 돈 −◯◯」이 같이 뜨면 헷갈린다.
+     지금 고른 갈래에 해당하는 줄만 남긴다. 「전체」일 때만 셋 다 보여준다. */
+  $('#l-in-row').style.display  = (listFilter==='expense') ? 'none' : '';
+  $('#l-out-row').style.display = (listFilter==='income')  ? 'none' : '';
+  $('#l-net-row').style.display = (listFilter==='all')     ? '' : 'none';
 
   rows.sort(function(a,b){ return a.date<b.date?1:a.date>b.date?-1:(b.ts||0)-(a.ts||0); });
   var body=$('#l-body'); body.innerHTML='';
+  if(listFix!=='all'){
+    var fxHead=el('div','notice');
+    fxHead.innerHTML='<b>'+(listFix==='fixed'?'고정비':'변동비')+'만</b> 걸러서 보고 있습니다.<br>'
+                    + '다른 것을 눌러도 이 상태는 그대로 이어집니다.';
+    body.appendChild(fxHead);
+  }
   if(searching){
     var head=el('div','notice');
     head.innerHTML='<b>전체 기간</b>에서 찾는 중입니다.<br>'
@@ -2431,7 +2655,7 @@ function renderList(){
 $('#l-q').oninput=function(){ listQ=this.value; renderList(); };
 $('#m-prev').onclick=function(){ curYM=ymShift(curYM,-1); renderList(); };
 $('#m-next').onclick=function(){ curYM=ymShift(curYM, 1); renderList(); };
-$$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; renderList(); }; });
+$$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; listFix='all'; listFromHome=false; renderList(); }; });
 $$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset.w; renderList(); }; });
 
 /* ============================================================================
@@ -2440,6 +2664,8 @@ $$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset
 var draft=null, editingId=null;
 /* 숫자판이 올라와 있는지. 시트를 열 때는 내려가 있다. */
 var padOpen=false;
+/* 결제수단·누가·대상·날짜를 접어 뒀는지. 시트를 열 때마다 접힌 채로 시작한다 —
+   이미 값이 채워져 있어서(직전 값 또는 기본값) 접혀 있어도 무엇이 골라졌는지 보인다. */
 
 function payables(){ return liveAssets().filter(function(a){ return KIND_PAY[a.kind]; }); }
 function movables(){ return liveAssets().filter(function(a){ return KIND_MOVE[a.kind]; }); }
@@ -2451,20 +2677,23 @@ function openSheet(tx){
     draft={ type:tx.type, amount:tx.amount, cat:tx.cat, payId:tx.payId||'', memo:tx.memo||'',
             who:tx.who, date:tx.date, fromId:tx.fromId||'', toId:tx.toId||'',
             target:tx.target||DEF_TARGET };
-    $('#sh-del').style.display=''; $('#sh-done').style.display='';
+    $('#sh-del').style.display='';
   }else{
     editingId=null;
     var p=payables(), b=banks();
     /* 「마지막에 고른 결제수단」을 기억해두는데, 그 카드·통장을 지운 뒤에도
        기억이 남아 있으면 없는 곳에서 돈이 빠진 것으로 저장된다.
        그래서 아직 살아 있는 것인지 확인하고, 아니면 잊는다. */
-    var lastPay = DB.last.payId;
+    /* 「가장 자주 쓰는 것」을 먼저 본다. 없으면 마지막에 쓴 것, 그것도 없으면 첫 번째.
+       지운 카드가 기억에 남아 있으면 없는 곳에서 돈이 빠진 것으로 저장되므로
+       살아 있는 것인지 확인하는 안전장치는 그대로 둔다. */
+    var lastPay = topPayId() || DB.last.payId;
     if(lastPay && !p.some(function(a){ return a.id===lastPay; })) lastPay='';
     draft={ type:'expense', amount:0, cat:'', ruleId:'', payId:(lastPay||(p[0]?p[0].id:'')),
             memo:'', who:DB.last.who||0, date:todayStr(),
             fromId:(b[0]?b[0].id:''), toId:(b[1]?b[1].id:''),
             target:(DB.last.target||DEF_TARGET) };
-    $('#sh-del').style.display='none'; $('#sh-done').style.display='none';
+    $('#sh-del').style.display='none';
   }
   padOpen = !draft.amount;   /* 새로 적을 때는 금액부터니 숫자판을 올려둔다 */
   drawSheet();
@@ -2532,6 +2761,224 @@ function chipRow(list, curId, onPick, colorByOwner, groupByOwner){
   });
   return ch;
 }
+/* 결제수단(지출은 payId, 수입은 toId) 한 칸. 카드를 고르면 어느 통장에서 빠지는지도 보여준다. */
+function renderPayField(b){
+  var income = (draft.type==='income');
+  var curId  = income ? draft.toId : draft.payId;
+  b.appendChild(fldLabel(income ? '어느 통장으로' : '무엇으로 결제'));
+
+  /* Buboo 처럼 「지금 고른 것 한 줄」만 두고, 누르면 화면이 통째로 넘어간다.
+     칩을 다 늘어놓으면 카드가 13개일 때 화면이 길어지고 찾기도 어렵다. */
+  var a  = curId ? assetById(curId) : null;
+  var row = el('button','pickrow'+(a?'':' empty'));
+  row.innerHTML = a
+    ? (payRowLabel(a) + '<span class="arw">›</span>')
+    : ((income?'통장을 골라주세요':'결제수단을 골라주세요') + '<span class="arw">›</span>');
+  row.onclick = function(){ openPay('pay'); };
+  b.appendChild(row);
+
+  if(!income){
+    var pa=assetById(draft.payId);
+    if(pa && pa.kind==='card'){
+      var link = pa.linkId ? assetName(pa.linkId) : '';
+      b.appendChild(el('div','tiny muted',
+        link ? ('이 카드값은 <b>'+link+'</b>에서 빠집니다.')
+             : '이 카드에 <b>결제 통장이 연결되어 있지 않습니다.</b><br>돈 탭에서 연결하면 통장 잔고에도 반영됩니다.'));
+    }
+  }
+  b.appendChild(el('div','fld'));
+}
+/* 목록 한 줄에 보일 글 — 종류 그림 + 이름 (카드는 결제통장까지) */
+function payRowLabel(a){
+  var ico = a.kind==='cash' ? '💵' : a.kind==='bank' ? '🏦' : a.kind==='card' ? '💳' : '📦';
+  return ico + ' ' + (a.name || KIND_LABEL[a.kind]);
+}
+/* 「누가」·「누구에게·무엇을 위해」 두 칸. */
+function renderWhoTargetField(b){
+  b.appendChild(fldLabel('누가'));
+  var ch2=el('div','chips');
+  DB.people.forEach(function(nm,i){
+    var btn=el('button',(draft.who===i?'on ':'')+'p'+i, nm);
+    btn.onclick=function(){ draft.who=i; drawSheet(); };
+    ch2.appendChild(btn);
+  });
+  b.appendChild(ch2);
+  b.appendChild(el('div','fld'));
+
+  /* 「누구에게 / 무엇을 위해」 — 위의 「누가」와는 다른 축이다.
+     기본이 「우리」로 골라져 있어서 그냥 두면 우리로 들어간다. */
+  b.appendChild(fldLabel('누구에게 · 무엇을 위해'));
+  var ch4=el('div','chips');
+  visibleList(DB.targets).forEach(function(t){
+    var btn=el('button', draft.target===t.n?'on':'', t.e+' '+t.n);
+    btn.onclick=function(){ draft.target=t.n; drawSheet(); };
+    ch4.appendChild(btn);
+  });
+  var addT=el('button',null,'＋');
+  addT.onclick=function(){ quickAdd('target'); };
+  ch4.appendChild(addT);
+  b.appendChild(ch4);
+  b.appendChild(el('div','tiny muted',
+    '안 고르면 「우리」로 들어갑니다.<br>'
+  + '시댁·친정처럼 돈이 간 곳을 남기면<br>'
+  + '나중에 모아 볼 수 있습니다.'));
+  b.appendChild(el('div','fld'));
+}
+/* 날짜 칸. 옮김에서도 그대로 쓴다(옮김은 접지 않는다). */
+function renderDateField(b){
+  b.appendChild(fldLabel('날짜'));
+  /* 맨 위로 올라왔으므로 「오늘·어제·날짜고르기」를 한 줄에 넣어 금액을 덜 밀어낸다.
+     Buboo 도 날짜는 늘 맨 위에 보인다 — 접으면 안 되는 항목이다. */
+  var wrap=el('div');
+  wrap.style.cssText='display:flex;gap:7px;align-items:center';
+  var t=todayStr(), y=new Date(Date.now()-86400000);
+  var yStr=y.getFullYear()+'-'+pad2(y.getMonth()+1)+'-'+pad2(y.getDate());
+  [[t,'오늘'],[yStr,'어제']].forEach(function(p){
+    var btn=el('button', draft.date===p[0]?'on':'', p[1]);
+    btn.style.cssText='flex:0 0 auto;padding:11px 15px;border-radius:12px;'
+      + 'border:1px solid var(--line);font:inherit;font-weight:700;font-size:15px;'
+      + (draft.date===p[0] ? 'background:var(--accent);color:#fff;border-color:var(--accent)'
+                           : 'background:var(--card);color:var(--sub)');
+    btn.onclick=function(){ draft.date=p[0]; drawSheet(); };
+    wrap.appendChild(btn);
+  });
+  var di=el('input'); di.type='date'; di.value=draft.date;
+  di.style.cssText='flex:1 1 auto;min-width:0;margin:0';
+  di.onchange=function(){ if(di.value){ draft.date=di.value; drawSheet(); } };
+  wrap.appendChild(di);
+  b.appendChild(wrap);
+  b.appendChild(el('div','fld'));
+}
+/* ── 결제수단 고르기(별도 화면) ─────────────────────────────────────────────
+   Buboo 를 따랐다: 사람 가로 탭 × 종류 세로 탭 × 목록.
+   접기를 쓰지 않는 이유 — 접힌 줄은 눌러야 하는 줄 모르고, 여닫으면 화면이 출렁여
+   「어디까지 했나」를 잃는다. 화면이 통째로 넘어가면 그 헷갈림이 없다. */
+/* 종류 세로 탭. 옮김은 적금·투자로도 옮기므로 그 둘이 더 필요하다.
+   지출 화면에서는 그 두 칸이 늘 비어 흐리게 보이지만, **자리가 고정이라 헷갈리지 않는다.** */
+var PAY_KINDS = [['cash','현금'],['bank','통장'],['card','카드'],
+                 ['savings','적금'],['invest','투자'],['other','기타']];
+/* slot — 지금 어느 칸을 고르는 중인가: 'pay'(결제수단) · 'from'(어디서) · 'to'(어디로) */
+var payPick = { who:2, kind:'card', slot:'pay' };
+
+/* 이 사람 이름으로 된 것 중, 지금 화면에서 고를 수 있는 것들 */
+/* 지금 고르는 칸에서 고를 수 있는 것들 */
+function payPool(){
+  if(payPick.slot==='from' || payPick.slot==='to') return movables();
+  return (draft.type==='income' ? banks() : payables());
+}
+function kindsOf(who){
+  return payPool().filter(function(a){ return ownerOf(a)===who; });
+}
+function openPay(slot){
+  payPick.slot = slot || 'pay';
+  var income = (draft.type==='income');
+  var cur = assetById(payCurId());
+  /* 처음 열 때 어느 탭인가 — ① 지금 고른 것이 있으면 그 자리 ② 없으면 「누가」에 맞춘다 */
+  /* 사람은 지금 고른 것을 따라가되, 종류는 **늘 카드부터** 연다.
+     제일 많이 쓰는 게 카드이기 때문(2026-08-26 사용자 요청).
+     그 사람에게 카드가 없으면 아래 drawPayPick 이 있는 종류로 알아서 옮겨준다.
+     옮김은 카드로 옮기지 않으므로 통장부터 연다. */
+  payPick.who  = cur ? ownerOf(cur) : (draft.who===1?1:0);
+  payPick.kind = (payPick.slot!=='pay') ? 'bank' : (income ? 'bank' : 'card');
+  $('#ps-title').textContent = payPickLabel();
+  $('#psheet').style.display='flex';
+  drawPayPick();
+}
+function closePay(){ $('#psheet').style.display='none'; }
+/* 지금 고르는 칸의 값 — 읽기·쓰기·이름을 한 곳에 모아둔다.
+   흩어놓으면 칸을 하나 더 늘릴 때마다 세 군데를 다 고쳐야 한다. */
+function payCurId(){
+  if(payPick.slot==='from') return draft.fromId;
+  if(payPick.slot==='to')   return draft.toId;
+  return (draft.type==='income') ? draft.toId : draft.payId;
+}
+function paySetId(id){
+  if(payPick.slot==='from') draft.fromId=id;
+  else if(payPick.slot==='to') draft.toId=id;
+  else if(draft.type==='income') draft.toId=id;
+  else draft.payId=id;
+}
+function payPickLabel(){
+  if(payPick.slot==='from') return '어디서';
+  if(payPick.slot==='to')   return '어디로';
+  return (draft.type==='income') ? '어느 통장으로' : '무엇으로 결제';
+}
+
+function drawPayPick(){
+  var b=$('#ps-body'); b.innerHTML='';
+  var all = payPool();
+
+  if(!all.length){
+    b.appendChild(el('div','notice',
+      '고를 수 있는 것이 하나도 없습니다.<br>'
+      +'먼저 돈 탭에서 만들어 주세요.'));
+    var go1=el('button','act','＋ 통장·카드 만들러 가기');
+    go1.style.cssText='width:100%;margin-top:9px;padding:13px;border-radius:14px;'
+      + 'background:var(--accent);color:#fff;font-weight:700;font-size:15px';
+    go1.onclick=function(){ closePay(); closeSheet(); go('asset'); openGuide(); };
+    b.appendChild(go1);
+    return;
+  }
+
+  /* 사람 가로 탭 — 아무것도 없는 사람은 자리는 두되 못 누르게(자리가 움직이면 헷갈린다) */
+  var who=el('div','pp-who');
+  who.style.gridTemplateColumns='repeat(3,1fr)';
+  [[0,DB.people[0]||'남편'],[1,DB.people[1]||'아내'],[2,'공동']].forEach(function(w){
+    var mine=kindsOf(w[0]);
+    var btn=el('button', payPick.who===w[0]?'on':'', w[1]);
+    btn.disabled = !mine.length;
+    if(!mine.length) btn.style.opacity='.34';
+    btn.onclick=function(){ payPick.who=w[0]; drawPayPick(); };
+    who.appendChild(btn);
+  });
+  b.appendChild(who);
+
+  var mine = kindsOf(payPick.who);
+  /* 이 사람에게 그 종류가 없으면 있는 것 중 첫째로 옮겨준다 (빈 화면을 안 보이게) */
+  if(!mine.some(function(a){ return a.kind===payPick.kind; })){
+    var first = PAY_KINDS.filter(function(k){
+      return mine.some(function(a){ return a.kind===k[0]; });
+    })[0];
+    if(first) payPick.kind = first[0];
+  }
+
+  var grid=el('div','pp-grid');
+  /* 왼쪽 종류 세로 탭 — 종류 목록은 사람을 바꿔도 자리가 안 움직인다 */
+  var kd=el('div','pp-kind');
+  PAY_KINDS.forEach(function(k){
+    var n = mine.filter(function(a){ return a.kind===k[0]; }).length;
+    var btn=el('button', payPick.kind===k[0]?'on':'', k[1]);
+    btn.disabled = !n;
+    btn.onclick=function(){ payPick.kind=k[0]; drawPayPick(); };
+    kd.appendChild(btn);
+  });
+  grid.appendChild(kd);
+
+  var lw=el('div','pp-list');
+  var rows = mine.filter(function(a){ return a.kind===payPick.kind; });
+  if(!rows.length){
+    lw.appendChild(el('div','tiny muted','여기에 등록된 것이 없습니다.<br>위에서 다른 칸을 눌러보세요.'));
+  }
+  var curId = payCurId();
+  rows.forEach(function(a){
+    var btn=el('button', curId===a.id?'on':'');
+    var html = payRowLabel(a);
+    if(a.kind==='card'){
+      html += '<span class="sub">' + (a.linkId ? assetName(a.linkId)+' 에서 빠짐' : '결제 통장이 연결 안 됨') + '</span>';
+    }else if(a.kind==='bank'){
+      html += '<span class="sub">' + wonx(balanceOf(a)) + '</span>';
+    }
+    btn.innerHTML = html;
+    btn.onclick=function(){
+      paySetId(a.id);
+      closePay();          /* 고르면 곧바로 돌아온다 — 한 번 더 안 누르게 */
+      drawSheet();
+    };
+    lw.appendChild(btn);
+  });
+  grid.appendChild(lw);
+  b.appendChild(grid);
+}
 function drawSheet(){
   var b=$('#sh-body'); b.innerHTML='';
   var titles={expense:'지출 적기', income:'수입 적기', transfer:'옮기기'};
@@ -2544,6 +2991,10 @@ function drawSheet(){
     seg.appendChild(btn);
   });
   b.appendChild(seg);
+
+  /* 날짜를 맨 위에 늘 보이게 둔다(Buboo 도 그렇다). 접으면 안 되는 항목이다 —
+     사용자: *"날짜개념도 원버튼방식이 좋긴한데"*. 옮김은 아래에서 따로 부른다. */
+  if(draft.type!=='transfer') renderDateField(b);
 
   /* 숫자판이 늘 떠 있으면 화면 절반을 차지해서 아래 칸들이 안 보인다.
      그래서 금액 칸을 눌렀을 때만 숫자판이 올라오게 했다. */
@@ -2558,101 +3009,53 @@ function drawSheet(){
 
   if(draft.type==='transfer'){
     b.appendChild(el('div','notice','옮김은 <b>쓴 돈에 안 들어갑니다.</b><br>돈이 사라진 게 아니라<br>주머니를 바꾼 것이기 때문입니다.'));
-    b.appendChild(fldLabel('어디서'));
-    b.appendChild(chipRow(movables(), draft.fromId, function(id){ draft.fromId=id; drawSheet(); }, true));
-    b.appendChild(el('div','fld'));
-    b.appendChild(fldLabel('어디로'));
-    b.appendChild(chipRow(movables(), draft.toId, function(id){ draft.toId=id; drawSheet(); }, true));
-    b.appendChild(el('div','fld'));
-  }else if(draft.type==='income'){
-    b.appendChild(fldLabel('어떤 돈'));
-    b.appendChild(catGrid(INCOME_CATS));
-    b.appendChild(el('div','fld'));
-    b.appendChild(fldLabel('어느 통장으로'));
-    b.appendChild(chipRow(banks(), draft.toId, function(id){ draft.toId=id; drawSheet(); }, true));
-    b.appendChild(el('div','fld'));
+    /* 옮길 수 있는 곳이 17개나 돼서 칩으로 늘어놓으면 못 찾는다(2026-08-26 실측).
+       결제수단과 똑같이 **한 줄 + 화면 넘김**으로 바꿨다. */
+    [['from','어디서'],['to','어디로']].forEach(function(sl){
+      b.appendChild(fldLabel(sl[1]));
+      var id = (sl[0]==='from') ? draft.fromId : draft.toId;
+      var a  = id ? assetById(id) : null;
+      var row = el('button','pickrow'+(a?'':' empty'));
+      row.innerHTML = a ? (payRowLabel(a) + '<span class="arw">›</span>')
+                        : (sl[1]+'를 골라주세요<span class="arw">›</span>');
+      row.onclick = (function(k){ return function(){ openPay(k); }; })(sl[0]);
+      b.appendChild(row);
+      b.appendChild(el('div','fld'));
+    });
+    renderDateField(b);
   }else{
-    /* 새로 적을 때만 띄운다. 고치는 중에 누르면 원래 값이 날아가 헷갈린다. */
-    if(!editingId){
-      var combos = topCombos(4);
-      if(combos.length){
-        b.appendChild(fldLabel('자주 쓰는 것 (누르면 셋이 한 번에)'));
-        var cw = el('div','chips'); cw.style.marginBottom='6px';
-        combos.forEach(function(c){
-          var on = (draft.cat===c.cat && draft.payId===c.payId && draft.who===c.who);
-          var who = (c.who===2) ? '공동' : (DB.people[c.who]||'');
-          var btn = el('button', on?'on':'', catOf(c.cat).e+' '+c.cat+' · '+assetName(c.payId)+' · '+who);
-          btn.onclick = function(){
-            draft.cat=c.cat; draft.payId=c.payId; draft.who=c.who;
-            drawSheet();
-          };
-          cw.appendChild(btn);
-        });
-        b.appendChild(cw);
-        b.appendChild(el('div','tiny muted','전에 자주 쓰던 조합입니다.'));
-        b.appendChild(el('div','fld'));
+    if(draft.type==='income'){
+      b.appendChild(fldLabel('어떤 돈'));
+      b.appendChild(catGrid(INCOME_CATS));
+      b.appendChild(el('div','fld'));
+    }else{
+      /* 새로 적을 때만 띄운다. 고치는 중에 누르면 원래 값이 날아가 헷갈린다.
+         예전엔 「분류·결제수단·누가」 셋을 한 번에 넣는 조합 단추였는데,
+         글이 길고 남편 쪽으로 쏠렸다. 결제수단은 이제 기본이 자주 쓰는 것으로 잡히므로
+         셋을 묶을 이유가 없어졌다 → **분류 하나만** 넣는 짧은 단추로 바꿨다. */
+      if(!editingId){
+        var fav = topCats(5);
+        if(fav.length){
+          b.appendChild(fldLabel('자주 쓰는 것'));
+          var cw = el('div','chips'); cw.style.marginBottom='6px';
+          fav.forEach(function(n){
+            var btn = el('button', draft.cat===n?'on':'', catOf(n).e+' '+n);
+            btn.onclick = function(){ draft.cat=n; drawSheet(); };
+            cw.appendChild(btn);
+          });
+          b.appendChild(cw);
+          b.appendChild(el('div','fld'));
+        }
       }
+      b.appendChild(fldLabel('어디에 썼나'));
+      b.appendChild(catGrid(visibleList(DB.cats), true));
+      b.appendChild(el('div','fld'));
     }
-    b.appendChild(fldLabel('어디에 썼나'));
-    b.appendChild(catGrid(visibleList(DB.cats), true));
-    b.appendChild(el('div','fld'));
-    b.appendChild(fldLabel('무엇으로 결제'));
-    b.appendChild(chipRow(payables(), draft.payId, function(id){ draft.payId=id; drawSheet(); }, true, true));
-    var pa=assetById(draft.payId);
-    if(pa && pa.kind==='card'){
-      var link = pa.linkId ? assetName(pa.linkId) : '';
-      b.appendChild(el('div','tiny muted',
-        link ? ('이 카드값은 <b>'+link+'</b>에서 빠집니다.')
-             : '이 카드에 <b>결제 통장이 연결되어 있지 않습니다.</b><br>돈 탭에서 연결하면 통장 잔고에도 반영됩니다.'));
-    }
-    b.appendChild(el('div','fld'));
+    /* 결제수단은 한 줄만 두고 누르면 화면이 넘어간다. 누가·대상은 아직 안 정했으므로
+       펼친 채로 둔다(스펙 4번). 날짜는 이미 맨 위에서 그렸다. */
+    renderPayField(b);
+    renderWhoTargetField(b);
   }
-
-  if(draft.type!=='transfer'){
-    b.appendChild(fldLabel('누가'));
-    var ch2=el('div','chips');
-    DB.people.forEach(function(nm,i){
-      var btn=el('button',(draft.who===i?'on ':'')+'p'+i, nm);
-      btn.onclick=function(){ draft.who=i; drawSheet(); };
-      ch2.appendChild(btn);
-    });
-    b.appendChild(ch2);
-    b.appendChild(el('div','fld'));
-
-    /* 「누구에게 / 무엇을 위해」 — 위의 「누가」와는 다른 축이다.
-       기본이 「우리」로 골라져 있어서 그냥 두면 우리로 들어간다. */
-    b.appendChild(fldLabel('누구에게 · 무엇을 위해'));
-    var ch4=el('div','chips');
-    visibleList(DB.targets).forEach(function(t){
-      var btn=el('button', draft.target===t.n?'on':'', t.e+' '+t.n);
-      btn.onclick=function(){ draft.target=t.n; drawSheet(); };
-      ch4.appendChild(btn);
-    });
-    var addT=el('button',null,'＋');
-    addT.onclick=function(){ quickAdd('target'); };
-    ch4.appendChild(addT);
-    b.appendChild(ch4);
-    b.appendChild(el('div','tiny muted',
-      '안 고르면 「우리」로 들어갑니다.<br>'
-    + '시댁·친정처럼 돈이 간 곳을 남기면<br>'
-    + '나중에 모아 볼 수 있습니다.'));
-    b.appendChild(el('div','fld'));
-  }
-
-  b.appendChild(fldLabel('날짜'));
-  var ch3=el('div','chips'); ch3.style.marginBottom='9px';
-  var t=todayStr(), y=new Date(Date.now()-86400000);
-  var yStr=y.getFullYear()+'-'+pad2(y.getMonth()+1)+'-'+pad2(y.getDate());
-  [[t,'오늘'],[yStr,'어제']].forEach(function(p){
-    var btn=el('button', draft.date===p[0]?'on':'', p[1]);
-    btn.onclick=function(){ draft.date=p[0]; drawSheet(); };
-    ch3.appendChild(btn);
-  });
-  b.appendChild(ch3);
-  var di=el('input'); di.type='date'; di.value=draft.date;
-  di.onchange=function(){ if(di.value){ draft.date=di.value; drawSheet(); } };
-  b.appendChild(di);
-  b.appendChild(el('div','fld'));
 
   /* 메모는 지출·수입에서 꼭 받는다.
      금액과 분류만 남으면 한 달 뒤에 무엇이었는지 알 수 없기 때문이다.
@@ -2785,26 +3188,81 @@ function recentMemos(cat, max){
    (배달+롯데카드+남편 14번, 배달+토스 생활비+아내 12번 …). 매번 세 번 고르는 대신
    한 번 눌러 끝내려는 것.
    🚨 반복이 만든 기록은 뺀다 — 손으로 적을 일이 없어서 후보가 되면 안 된다. */
+/* 「서로 다른 날 수」로 세는 것이 핵심이다.
+   건수로 세면 여행처럼 며칠에 몰아 쓴 것이 1등이 된다(2026-08-26 실측:
+   여행 22건이지만 4일, 술 22건은 21일). 평소에 늘 쓰는 것이 올라와야 한다. */
+function byDays(pick){
+  var days = {};
+  liveTx().forEach(function(t){
+    if(t.type!=='expense' || t.ruleId) return;   /* 반복이 만든 것은 뺀다 — 손으로 적을 일이 없다 */
+    var k = pick(t);
+    if(!k) return;
+    if(!days[k]) days[k] = {};
+    days[k][t.date] = 1;
+  });
+  var k, out = [];
+  for(k in days) out.push([k, Object.keys(days[k]).length]);
+  out.sort(function(a,b){ return b[1]-a[1]; });
+  return out;
+}
+/* 새로 적을 때 미리 잡아둘 결제수단 — **가장 자주 쓰는 것**(2026-08-26 사용자 요청).
+   예전엔 「마지막에 쓴 것」이었는데, 한 번 딴 카드를 쓰면 그 뒤로 계속 그게 나왔다. */
+function topPayId(){
+  var live = payables(), i;
+  var rank = byDays(function(t){ return t.payId; });
+  for(i=0;i<rank.length;i++){
+    if(live.some(function(a){ return a.id===rank[i][0]; })) return rank[i][0];
+  }
+  return '';
+}
+/* 「자주 쓰는 것」 단추에 올릴 분류 — 자주 쓰는 순서로 max 개 */
+function topCats(max){
+  var rank = byDays(function(t){ return t.cat; }), out = [], i;
+  for(i=0;i<rank.length && out.length<max;i++){
+    if(visibleList(DB.cats).some(function(c){ return c.n===rank[i][0]; })) out.push(rank[i][0]);
+  }
+  return out;
+}
 function topCombos(max){
-  var cnt={}, last={}, i=0, out=[];
+  var cnt={}, days={}, last={}, i=0, out=[];
   liveTx().forEach(function(t){
     if(t.type!=='expense' || t.ruleId) return;
     if(!t.cat || !t.payId) return;
     if(!assetById(t.payId)) return;               /* 지워진 카드·통장은 뺀다 */
     var w = (t.who===1?1:(t.who===0?0:2));
     var k = t.cat+'\u0000'+t.payId+'\u0000'+w;
-    cnt[k]=(cnt[k]||0)+1; last[k]=i++;
+    cnt[k]=(cnt[k]||0)+1;
+    if(!days[k]) days[k]={};
+    days[k][t.date]=1;                            /* 서로 다른 날을 센다 */
+    last[k]=i++;
   });
   var k;
-  for(k in cnt) out.push([k, cnt[k]]);
+  /* 🚨 건수로 세면 「몰아 쓴 것」이 이긴다 (2026-08-26 실측).
+        여행은 22건이지만 상해 여행 **4일**에 몰려 있고,
+        술은 16건인데 **15일**에 흩어져 있다. 건수로 세면 끝난 여행이 1등이 된다.
+     ➡️ **서로 다른 날 수**로 센다. 그래야 「평소에 늘 쓰는 것」이 올라온다.
+        같으면 건수, 그다음 최근 것. */
+  for(k in cnt) out.push([k, Object.keys(days[k]).length, cnt[k]]);
   out.sort(function(a,b){
     if(b[1]!==a[1]) return b[1]-a[1];
+    if(b[2]!==a[2]) return b[2]-a[2];
     return last[b[0]]-last[a[0]];
   });
-  return out.slice(0,max).map(function(x){
+  function mk(x){
     var p=x[0].split('\u0000');
-    return { cat:p[0], payId:p[1], who:+p[2], n:x[1] };
+    return { cat:p[0], payId:p[1], who:+p[2], n:x[2], d:x[1] };
+  }
+  var picked = out.slice(0, max).map(mk);
+  /* 🚨 사람별로 최소 하나씩 넣는다.
+        안 그러면 한쪽 사람 것만 4개가 차서 **다른 사람은 쓸 단추가 없다**
+        (2026-08-26 실측: 4개 중 3개가 남편 것이라 아내가 쓸 게 하나뿐이었다). */
+  [0,1].forEach(function(w){
+    if(picked.some(function(c){ return c.who===w; })) return;
+    var found=null, j;
+    for(j=0;j<out.length;j++){ if(+out[j][0].split('\u0000')[2]===w){ found=out[j]; break; } }
+    if(found){ picked.pop(); picked.push(mk(found)); }
   });
+  return picked;
 }
 function drawPad(){
   var p=$('#sh-pad'); p.innerHTML='';
@@ -2899,6 +3357,13 @@ function commitTx(keepOpen){
       f.fromId=draft.fromId; f.toId=draft.toId; f.updated=Date.now();
     }
   }else{
+    /* 「챙길 것」을 안 거치고 ＋ 로 적어도, 그 항목인 게 분명하면 표를 붙여준다.
+       안 붙이면 ①고정비가 아니라 변동비로 잡히고 ②이미 적었는데도 홈에 계속 남는다. */
+    var hit = null;
+    if(!draft.ruleId){
+      hit = guessRule(draft);
+      if(hit) draft.ruleId = hit.id;
+    }
     DB.tx.push({ id:uid(), ts:Date.now(), date:draft.date, type:draft.type,
       amount:draft.amount, cat:draft.cat, payId:draft.payId, memo:draft.memo,
       who:draft.who, target:draft.target, fromId:draft.fromId, toId:draft.toId,
@@ -2909,12 +3374,16 @@ function commitTx(keepOpen){
   /* 저장이 안 됐으면 「저장했습니다」라고 말하지 않는다.
      시트도 닫지 않는다 — 닫으면 적은 내용이 화면에서도 사라진다. */
   if(!save()) return;
+  /* 조용히 붙이면 「왜 고정비로 잡혔지?」가 된다. 무엇으로 처리했는지 꼭 알려준다. */
+  /* 「가스비으로」가 아니라 「가스비로」 — 받침에 맞춰 조사를 고른다(josa 가 이미 있다) */
+  var msg = (typeof hit !== 'undefined' && hit)
+          ? ('저장했습니다 · ' + josa(hit.title || '반복', '으로', '로') + ' 처리') : '';
   if(keepOpen && !editingId){
-    toast('저장했습니다. 이어서 적으세요');
+    toast(msg || '저장했습니다. 이어서 적으세요');
     draft.amount=0; draft.cat=''; draft.memo='';
     drawSheet(); $('#sh-body').scrollTop=0;
   }else{
-    toast(editingId?'고쳤습니다':'저장했습니다');
+    toast(editingId ? '고쳤습니다' : (msg || '저장했습니다'));
     closeSheet(); go(curPage);
   }
 }
@@ -2925,7 +3394,6 @@ $('#fab').onclick=function(){
   openSheet(null);
 };
 $('#sh-cancel').onclick=closeSheet;
-$('#sh-done').onclick=function(){ commitTx(); };
 $('#sh-del').onclick=function(){
   if(!editingId) return;
   if(!confirm('이 내역을 지울까요?')) return;
@@ -2937,6 +3405,9 @@ $('#sh-del').onclick=function(){
 /* ============================================================================
    9. 돈(자산) 화면
    ============================================================================ */
+/* 「명의별로 가진 것」 막대를 눌러서 그 사람 것만 걸러 본다.
+   'all'=안 거름 / 0·1=그 사람만 / 2=공동만. 같은 막대를 다시 누르면 풀린다. */
+var assetOwnerFilter='all';
 function renderAsset(){
   renderGoal();
   var nw=netWorth(), ym=ymOf(todayStr());
@@ -2958,6 +3429,9 @@ function renderAsset(){
                 + '둘 다 쓴 돈이 아니라<br><b>우리 몫이 늘어난 것</b>입니다.'
                 + (hasMort ? '<br><br>주담대는 따로 안 적어도<br>매달 갚은 원금이 여기 들어갑니다.' : '');
 
+  /* 지웠거나 더 이상 없는 사람 필터를 들고 있으면 잊는다(가진 것이 하나도 없을 때) */
+  if(assetOwnerFilter!=='all' && !nw.byOwner[assetOwnerFilter]) assetOwnerFilter='all';
+
   var oc=$('#a-owner'); oc.innerHTML='';
   var any=liveAssets().some(function(a){ return KIND_BALANCE[a.kind]; });
   $('#a-owner-card').style.display=any?'':'none';
@@ -2965,7 +3439,11 @@ function renderAsset(){
     [0,1,2].forEach(function(w){
       if(!nw.byOwner[w]) return;
       var nm=w===2?'공동':(DB.people[w]||('사람'+(w+1)));
-      var row=el('div','bar-row');
+      /* 눌러서 그 사람 것만 걸러 볼 수 있다 — 같은 막대를 다시 누르면 풀린다.
+         2026-08-26 사용자 요청: 막대 그림이기만 하고 거르지 못했던 것을 고침. */
+      var row=el('button','bar-row');
+      row.style.cssText='background:none;border:0;width:100%;text-align:left;padding:4px 2px;'
+        + 'border-radius:10px;' + (assetOwnerFilter===w ? 'background:var(--accent-soft)' : '');
       var lab=el('div','nm');
       lab.style.cssText='display:flex;align-items:center;gap:7px';
       var dot=el('i');
@@ -2977,8 +3455,16 @@ function renderAsset(){
       f.style.background=w===2?'var(--sub)':'var(--p'+w+')';
       f.style.display='block'; tr.appendChild(f); row.appendChild(tr);
       row.appendChild(el('div','amt num', shortWon(nw.byOwner[w])));
+      row.onclick=function(){ assetOwnerFilter = (assetOwnerFilter===w ? 'all' : w); renderAsset(); };
       oc.appendChild(row);
     });
+    if(assetOwnerFilter!=='all'){
+      var ofNote=el('div','tiny muted');
+      ofNote.style.marginTop='6px';
+      var ofNm = assetOwnerFilter===2 ? '공동' : (DB.people[assetOwnerFilter]||('사람'+(+assetOwnerFilter+1)));
+      ofNote.innerHTML='<b>'+ofNm+' 것만</b> 걸러서 보고 있습니다. 막대를 다시 누르면 풀립니다.';
+      oc.appendChild(ofNote);
+    }
   }
 
   var hasMortgage=liveAssets().some(function(a){ return a.kind==='mortgage'; });
@@ -3007,6 +3493,14 @@ function renderAsset(){
     gb.onclick=openGuide;
     body.appendChild(gb);
     return;
+  }
+  /* 「명의별로 가진 것」 막대를 눌러 골랐으면 그 사람 것만 아래 목록에 남긴다. */
+  if(assetOwnerFilter!=='all'){
+    list = list.filter(function(a){ return ownerOf(a)===assetOwnerFilter; });
+    if(!list.length){
+      body.appendChild(el('div','empty','그 명의로 된 통장·카드가 없습니다.'));
+      return;
+    }
   }
   var groups=[
     {t:'통장',      f:function(a){ return a.kind==='bank'||a.kind==='cash'; }},
@@ -3404,8 +3898,16 @@ function drawDetail(){
 
   var lc=el('div','card'); lc.style.padding='2px 18px';
   if(!rows.length) lc.appendChild(el('div','empty','이 달에는 오간 내역이 없습니다.'));
-  else rows.forEach(function(t){ lc.appendChild(txLine(t)); });
+  else rows.forEach(function(t){ lc.appendChild(txLine(t, a.id)); });
   b.appendChild(lc);
+  if(rows.some(function(t){ return t.type==='transfer'; })){
+    var lg=el('div','tiny muted');
+    lg.style.cssText='margin:10px 2px 0;line-height:1.75';
+    lg.innerHTML='<b style="color:var(--minus)">빨강</b> 은 <b>없어진 돈</b>입니다.<br>'
+               + '<b style="color:var(--accent)">파랑</b> 은 <b>자리만 옮긴 돈</b>입니다.<br>'
+               + '부호는 <b>이 통장 기준</b>입니다.';
+    b.appendChild(lg);
+  }
   b.appendChild(el('div',null,'<div style="height:12px"></div>'));
 }
 $('#ds-close').onclick=function(){ $('#dsheet').style.display='none'; document.body.style.overflow=''; renderAsset(); };
@@ -3638,12 +4140,13 @@ function drawRules(){
     if(r.kind==='expense') big.style.color='var(--minus)';
     if(r.kind==='income') big.style.color='var(--plus)';
     c.appendChild(big);
-    c.appendChild(el('div','tiny muted','매달 '+r.day+'일'));
+    c.appendChild(el('div','tiny muted', todoWhen(r)));
     if(r.kind==='transfer') c.appendChild(kv('어디서 어디로', assetName(r.fromId)+' → '+assetName(r.toId)));
     if(r.kind==='income')   c.appendChild(kv('들어오는 통장', assetName(r.toId)));
     if(r.kind==='expense')  c.appendChild(kv('빠지는 곳', assetName(r.fromId)));
     c.appendChild(kv('시작한 달', ymLabel(r.since)));
     if(r.until) c.appendChild(kv('끝나는 달', ymLabel(r.until)));
+    c.appendChild(kv('누가 하나', ruleIsAuto(r) ? '저절로 빠짐' : '내가 직접 옮김'));
     c.appendChild(kv('상태', r.active===false?'멈춤':'돌아가는 중'));
     c.appendChild(kv('만들어 둔 기록', ruleMadeCount(r.id)+'건'));
     c.onclick=function(){ openRule(r); };
@@ -3658,7 +4161,8 @@ function openRule(r){
   else{
     rEditId=null;
     rdraft={ title:'', kind:'transfer', day:25, amount:0, fromId:(bk[0]?bk[0].id:''),
-             toId:(bk[1]?bk[1].id:''), cat:'', who:0, since:ymOf(todayStr()), until:'', active:true };
+             toId:(bk[1]?bk[1].id:''), cat:'', who:0, since:ymOf(todayStr()), until:'',
+             active:true, auto:true };
     $('#es-title').textContent='반복 추가'; $('#es-del').style.display='none';
   }
   drawRule();
@@ -3703,6 +4207,21 @@ function drawRule(){
   dpick.onchange=function(){ rdraft.day=parseInt(dpick.value,10); };
   c2.appendChild(dpick);
   r2.appendChild(c1); r2.appendChild(c2); b.appendChild(r2);
+  /* 가스비·관리비처럼 **내는 날이 매달 다른 것**. 「매달 22일」이라고 박아두면 거짓말이 된다. */
+  var dseg=el('div','seg'); dseg.style.cssText='grid-template-columns:repeat(2,1fr);margin-top:10px';
+  [[false,'날짜가 매달 같다'],[true,'날짜가 매달 다르다']].forEach(function(o){
+    var btn=el('button', (!!rdraft.varDay)===o[0]?'on':'', o[1]);
+    btn.onclick=function(){ rdraft.varDay=o[0]; drawRule(); };
+    dseg.appendChild(btn);
+  });
+  b.appendChild(dseg);
+  if(rdraft.varDay){
+    b.appendChild(el('div','notice',
+      '<b>딱 그 날짜라고 안 적습니다.</b><br>'
+    + '대신 <b>「'+(+rdraft.day||1)+'일 이후」</b>로 보입니다.<br><br>'
+    + '위에서 고른 날은<br><b>언제부터 챙길지</b>만 정합니다.<br>'
+    + '달력에도 점을 안 찍습니다.'));
+  }
   /* 관리비처럼 달마다 금액이 다른 것 */
   var vseg=el('div','seg'); vseg.style.cssText='grid-template-columns:repeat(2,1fr);margin-top:10px';
   [[false,'금액이 매달 같다'],[true,'금액이 매달 다르다']].forEach(function(o){
@@ -3711,12 +4230,29 @@ function drawRule(){
     vseg.appendChild(btn);
   });
   b.appendChild(vseg);
+
+  /* 「내가 손을 대야 하나」 — 이게 없어서 수동인 것도 앱이 멋대로 기록을 만들었다. */
+  var aseg=el('div','seg'); aseg.style.cssText='grid-template-columns:repeat(2,1fr);margin-top:10px';
+  [[true,'저절로 빠진다'],[false,'내가 직접 옮긴다']].forEach(function(o){
+    var btn=el('button', (rdraft.auto!==false)===o[0]?'on':'', o[1]);
+    btn.onclick=function(){ rdraft.auto=o[0]; drawRule(); };
+    aseg.appendChild(btn);
+  });
+  b.appendChild(aseg);
+  if(rdraft.auto===false){
+    b.appendChild(el('div','notice',
+      '<b>앱이 기록을 안 만듭니다.</b><br><br>'
+    + '실제로 옮기지 않았는데<br>옮긴 것으로 세면<br><b>잔고가 틀어지기 때문</b>입니다.<br><br>'
+    + '대신 그 날짜가 지나면<br>홈에 <b>「이번 달 챙길 것」</b>으로 뜹니다.<br>'
+    + (rdraft.varAmt ? '눌러서 금액을 적으면 됩니다.'
+                     : '<b>금액이 미리 채워져 있어</b><br>한 번 누르면 끝납니다.')));
+  }
   if(rdraft.varAmt){
     b.appendChild(el('div','notice',
       '금액을 안 적습니다.<br><b>기록도 안 만듭니다.</b><br><br>'
     + '대신 그 날짜가 지나면<br>홈에 <b>「이번 달 챙길 것」</b>으로 뜹니다.<br>'
     + '눌러서 그때 금액을 적으면 됩니다.<br><br>'
-    + '관리비처럼 <b>달마다 금액이 다른 것</b>에 씁니다.<br>'
+    + '관리비·가스비·대출이자처럼<br><b>달마다 금액이 다른 것</b>에 씁니다.<br>'
     + '0원으로 박아두면 거짓말이 됩니다.'));
   }
   b.appendChild(el('div','fld'));
@@ -3797,7 +4333,8 @@ $('#es-save').onclick=function(){
   /* 「언제부터」를 오래 전으로 잘못 고르면 지난 기록이 수십 건 한꺼번에 생긴다.
      반복을 지워도 만들어진 기록은 남으므로, 만들기 전에 몇 건인지 알린다. */
   var willMake=0, wym=d.since, wtoday=todayStr(), wnow=ymOf(wtoday), wguard=0;
-  if(d.varAmt){ wym=wnow; }   /* 만들지 않으므로 예고할 것도 없다 */
+  /* 앱이 기록을 안 만드는 반복(금액을 모르거나 · 내가 직접 옮기는 것)은 예고할 것도 없다 */
+  if(!ruleMakesTx(d)){ wym=wnow; }
   while(wym<=wnow && wguard++<400){
     var wd=Math.min(+d.day||1, daysInMonth(wym));
     if(wym+'-'+pad2(wd) <= wtoday) willMake++;
@@ -3992,7 +4529,8 @@ function renderSet(){
      폰은 앱 파일을 한동안 저장해 두고 쓰기 때문에, 새로 올려도 옛 화면이 그대로일 때가 있다.
      그때 「데이터가 안 온 건가, 앱이 옛 건가」를 가릴 방법이 없으면 헤맨다.
      두 폰의 이 숫자가 같은지만 보면 된다. */
-  $('#s-ver').textContent='우리 가계부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건';
+  $('#s-ver').textContent='우리 가계부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건'
+                        + ' · 손댄 때 '+APP_TOUCHED;
 }
 /* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
    따로 만들면 나중에 반드시 한쪽만 고쳐져서 어긋난다.
@@ -4865,17 +5403,44 @@ function liveEvents(){ return (DB.events||[]).filter(function(e){ return !e.dele
 /* 이 일정이 「그 해」에 실제로 걸리는 양력 날짜.
    모르면 빈 글자를 돌려준다 — 모르는 것을 지어내지 않는다. */
 function evDateIn(e, year){
-  if(e.kind === 'plan') return e.date || '';
-  if(e.lunar){
-    var m = LUNAR_SOLAR[e.lmd];
-    return (m && m[String(year)]) || '';
+  /* 해마다 돌아오는 것 — 그 해의 그 날. */
+  if(e.yearly){
+    if(e.lunar){
+      var m = LUNAR_SOLAR[e.lmd];
+      return (m && m[String(year)]) || '';
+    }
+    /* 날짜 칸을 연-월-일로 통일했으므로 date 에서 월-일만 떼어 쓴다.
+       옛 기록은 md 에만 값이 있으므로 그것도 받아 준다. */
+    var md = e.md || (e.date ? e.date.slice(5) : '');
+    return md ? (year + '-' + md) : '';
   }
-  return e.md ? (year + '-' + e.md) : '';
+  /* 🚨 예전에는 D+ 를 켠 것을 달력에서 통째로 뺐다. 사귄 날(2020년)처럼 **한참 지난 것**만
+     생각했기 때문이다. 그런데 **이사·출산일처럼 앞으로 올 날**도 D− 로 세게 되면서
+     그것까지 달력에서 빠지면 안 된다(2026-08-26). ➡️ **빼지 않는다.**
+     지난 것은 어차피 「다가오는 일정」이 `gap < 0` 으로 거르므로 홈에는 안 뜬다. */
+  return e.date || '';
+}
+/* 이 일정이 「그 해」에 덮는 마지막 날. 하루짜리면 시작날과 같다.
+   여행처럼 여러 날에 걸치는 것 때문에 시작과 끝을 따로 본다(2026-08-26). */
+function evEndIn(e, year){
+  var s = evDateIn(e, year);
+  if(!s || !e.end) return s;
+  /* 해마다 돌아오는 것은 연도를 그 해로 갈아끼운다(설 연휴 같은 것) */
+  var en = e.yearly ? (year + '-' + e.end.slice(5)) : e.end;
+  /* 끝이 시작보다 앞이면 잘못 적은 것이다 — 하루짜리로 본다(날짜를 지어내지 않는다) */
+  return (en < s) ? s : en;
+}
+/* 그 하루가 이 일정에 걸리나 — 하루짜리는 같은 날, 여러 날짜리는 시작~끝 사이 */
+function evCoversDay(e, ds){
+  var year = +ds.slice(0,4);
+  var s = evDateIn(e, year);
+  if(!s) return false;
+  return ds >= s && ds <= evEndIn(e, year);
 }
 /* 그 하루에 걸린 일정들 */
 function dayEvents(ds){
-  var year = +ds.slice(0,4), out = [];
-  liveEvents().forEach(function(e){ if(evDateIn(e, year) === ds) out.push(e); });
+  var out = [];
+  liveEvents().forEach(function(e){ if(evCoversDay(e, ds)) out.push(e); });
   return out;
 }
 /* 그 달에 반복규칙이 돈을 움직이는 날. { 25:['out','in'] } 모양.
@@ -4885,6 +5450,9 @@ function moneyDays(ym){
   var out = {}, dim = daysInMonth(ym);
   liveRules().forEach(function(r){
     if(r.active === false) return;
+    /* 날짜가 매달 다른 것은 점을 안 찍는다 — 확실하지 않은 날에 점을 찍으면
+       달력이 거짓말을 하게 된다(2026-08-26 사용자 지적). */
+    if(r.varDay) return;
     if(r.since && ym < r.since) return;
     if(r.until && ym > r.until) return;
     var d = Math.min(+r.day || 1, dim);
@@ -4893,12 +5461,66 @@ function moneyDays(ym){
   });
   return out;
 }
-function evColor(e){ return e.kind === 'anniv' ? 'var(--p1)' : 'var(--accent)'; }
+function evColor(e){ return e.yearly ? 'var(--p1)' : 'var(--accent)'; }
+/* 「며칠째」 — 시작한 그날을 **1일째**로 센다(2026-08-26 사용자 확정).
+   그래서 2020-02-27 은 그날 1일째이고, 하루 지나면 2일째다. */
+function sinceDays(e){
+  if(!e.date) return null;
+  var t = todayStr();
+  var a = new Date(+e.date.slice(0,4), +e.date.slice(5,7)-1, +e.date.slice(8,10));
+  var b = new Date(+t.slice(0,4), +t.slice(5,7)-1, +t.slice(8,10));
+  return Math.round((b - a) / 86400000) + 1;
+}
+/* D+ 와 D− 를 **날짜만 보고 저절로** 가른다(2026-08-26 사용자 요청).
+     올 날   → 며칠 남았는지 **D-100**  (이사·출산일처럼 줄어드는 것)
+     그날부터 → 며칠째인지 **D+1 → D+2 → …**  (사귄 날처럼 쌓이는 것)
+   🚨 **그날 당일은 `D-DAY` 가 아니라 `D+1` 이다**(2026-08-26 사용자 확정).
+      한국 커플 앱들이 「만난 날 = 1일째 = D+1」로 세는 것과 맞춘 것이다.
+      군대식 `D-DAY`(당일) 표기는 **쓰지 않는다** — 우리 셈은 기념일 셈이다.
+   🔑 체크를 새로 만들지 않는다. 「D-day」 하나만 켜고 **날짜를 미래로 잡으면** 저절로 D− 가 된다.
+      (날짜 칸 두 개로 기간을 드러낸 것과 같은 생각이다) */
+function dLabel(e){
+  if(!e.date) return '';
+  var t = todayStr();
+  var a = new Date(+e.date.slice(0,4), +e.date.slice(5,7)-1, +e.date.slice(8,10));
+  var b = new Date(+t.slice(0,4), +t.slice(5,7)-1, +t.slice(8,10));
+  var gap = Math.round((a - b) / 86400000);      /* 그날까지 며칠 남았나 */
+  if(gap > 0) return 'D-' + won(gap);
+  return 'D+' + won(sinceDays(e));               /* 당일이면 1일째라 D+1 */
+}
+/* 일정 탭 맨 위에 한 줄로 가볍게. 큼직한 카드가 아니라 곁들이는 한 마디다. */
+function renderSince(){
+  var box = $('#c-since');
+  if(!box) return;
+  box.innerHTML = '';
+  /* 🚨 「해마다」만 켠 것은 date 에 연도가 없을 수 있다(옛 기록은 md 에만 있다).
+     연도를 모르면 D+ 를 셀 수 없으므로 아예 안 보여준다 — 지어내지 않는다. */
+  var rows = liveEvents().filter(function(e){ return e.dplus && e.date; });
+  if(!rows.length){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  /* 🚨 「앞으로 올 날」을 먼저 보여준다 — 이사·출산일처럼 **줄어드는 것이 급한 것**이다.
+     그 안에서는 가까운 날 순. 지난 것(D+)은 그 뒤에 오래된 순으로 둔다. */
+  var t = todayStr();
+  rows.sort(function(a, b){
+    var fa = (a.date >= t), fb = (b.date >= t);
+    if(fa !== fb) return fa ? -1 : 1;
+    return fa ? (a.date < b.date ? -1 : 1) : (a.date < b.date ? -1 : 1);
+  });
+  rows.forEach(function(e){
+    var lab = dLabel(e);
+    var row = el('button', 'since-row');
+    row.innerHTML = '<b>' + (e.title || '(이름 없음)') + '</b> '
+                  + '<span class="num' + (e.date >= t ? ' soon' : '') + '">' + lab + '</span>';
+    (function(ev){ row.onclick = function(){ openEvent(ev); }; })(e);
+    box.appendChild(row);
+  });
+}
 
 var calYM  = ymOf(todayStr());
 var calSel = todayStr();
 
 function renderCal(){
+  renderSince();
   var y = +calYM.slice(0,4), mo = +calYM.slice(5,7);
   $('#c-label').textContent = ymLabel(calYM);
 
@@ -4958,7 +5580,7 @@ function drawCalWarn(){
   var w = $('#c-warn'); w.innerHTML = '';
   var y = +calYM.slice(0,4);
   var miss = liveEvents().filter(function(e){
-    return e.kind === 'anniv' && e.lunar && !evDateIn(e, y);
+    return e.yearly && e.lunar && !evDateIn(e, y);
   });
   if(!miss.length) return;
   var names = miss.map(function(e){ return e.title || '(이름 없음)'; }).join(' · ');
@@ -4984,7 +5606,18 @@ function drawCalDay(){
     var box = el('div'); box.style.flex = '1';
     box.appendChild(el('div', 'nm', e.title || '(이름 없음)'));
     var sub = [];
-    sub.push(e.kind === 'anniv' ? (e.lunar ? '매년 · 음력' : '매년') : '이 날 하루');
+    /* 여러 날에 걸치는 것은 「이 날」이라고 하면 거짓말이 된다 — 기간을 그대로 적는다. */
+    var yy = +calSel.slice(0,4);
+    var s0 = evDateIn(e, yy), e0 = evEndIn(e, yy);
+    if(e0 && e0 !== s0){
+      var a = s0.split('-'), z = e0.split('-');
+      sub.push(Number(a[1])+'월 '+Number(a[2])+'일 ~ '
+             + (z[1]!==a[1] ? Number(z[1])+'월 ' : '') + Number(z[2])+'일');
+      if(e.yearly) sub.push(e.lunar ? '해마다 · 음력' : '해마다');
+    }else{
+      sub.push(e.yearly ? (e.lunar ? '해마다 · 음력' : '해마다') : '이 날');
+    }
+    if(e.dplus && e.date) sub.push(dLabel(e));
     sub.push(e.who === 2 ? '공동' : (DB.people[e.who] || ''));
     if(e.memo) sub.push(e.memo);
     box.appendChild(el('div', 'tiny muted', sub.join(' · ')));
@@ -5052,8 +5685,13 @@ function comingEvents(days){
       seen[key] = 1;
       var d1 = new Date(+ds.slice(0,4), +ds.slice(5,7)-1, +ds.slice(8,10));
       var gap = Math.round((d1 - t0) / 86400000);
+      /* 🚨 「지났나」는 **시작한 날**로 잰다(2026-08-26 사용자 확정).
+         한 번은 끝나는 날로 재서 여행 중에 「가는중」이라고 띄웠는데, 사용자가
+         *"가는중 표시는 안해도될거같아 걍 … 시작된날이면 뒤로는 안보여도될거같은데"* 라고 했다.
+         🔑 **이미 가고 있는 여행은 알려줄 필요가 없다.** 챙길 것은 「아직 안 온 것」이다.
+         (달력에서는 안 뺀다 — 「언제 갔었지?」를 나중에 볼 수 있어야 한다) */
       if(gap < 0 || gap > days) return;
-      out.push({ e:e, ds:ds, gap:gap });
+      out.push({ e:e, ds:ds, gap:gap, dsEnd:evEndIn(e, t0.getFullYear() + k) });
     });
   });
   out.sort(function(a,b){ return a.gap - b.gap; });
@@ -5099,7 +5737,10 @@ function openEvent(e){
   }else{
     evEditId = null;
     evdraft = { title:'', kind:'anniv', md:calSel.slice(5), lunar:false,
-                lmd:'01-01', date:calSel, who:2, memo:'' };
+                lmd:'01-01', date:calSel, who:2, memo:'',
+                /* 새로 만들 때는 **아무 체크도 안 켠 채**로 시작한다(2026-08-26 사용자 지시).
+                   그냥 그날 하루짜리 일정이 제일 흔하기 때문 — 기념일은 가끔이다. */
+                yearly:false, dplus:false, end:'' };
     $('#vs-title').textContent = '일정 추가';
     $('#vs-del').style.display = 'none';
   }
@@ -5129,29 +5770,111 @@ function mdPicker(cur, onPick){
   return wrap;
 }
 
+/* 체크 한 줄. 네모 + 글자를 통째로 누를 수 있게 만든다(작은 네모만 누르게 하면 잘 빗나간다). */
+function evCheck(label, on, onToggle){
+  var row = el('button', 'evchk' + (on ? ' on' : ''));
+  var box = el('i', 'bx', on ? '✓' : '');
+  row.appendChild(box);
+  row.appendChild(el('span', null, label));
+  row.onclick = function(){ onToggle(!on); };
+  return row;
+}
 function drawEvent(){
   var b = $('#vs-body'); b.innerHTML = '';
   var d = evdraft;
 
-  b.appendChild(fldLabel('무엇인가요'));
-  var seg = el('div', 'seg'); seg.style.gridTemplateColumns = 'repeat(2,1fr)';
-  [['anniv','매년 기념일'],['plan','그날 하루']].forEach(function(pp){
-    var btn = el('button', d.kind === pp[0] ? 'on' : '', pp[1]);
-    btn.onclick = function(){ d.kind = pp[0]; drawEvent(); };
-    seg.appendChild(btn);
-  });
-  b.appendChild(seg);
-
   b.appendChild(fldLabel('이름'));
   var ti = el('input');
   ti.value = d.title || '';
-  ti.placeholder = d.kind === 'anniv' ? '예: 어머니 생신' : '예: 치과 예약';
+  ti.placeholder = d.yearly ? '예: 어머니 생신'
+                 : d.dplus ? '예: 이사 · 출산일 · 사귄 날' : '예: 치과 예약';
   ti.maxLength = 20;
   ti.oninput = function(){ d.title = ti.value; };
   b.appendChild(ti);
   b.appendChild(el('div', 'fld'));
 
-  if(d.kind === 'anniv'){
+  /* 🚨 예전에는 여기에 칸 3개(매년 기념일·그날 하루·며칠째)가 있었다.
+     종류가 늘 때마다 칸이 늘어나는 구조라서 없앴다(2026-08-26 사용자 지적).
+     성질을 체크 두 개로 빼면 칸이 안 늘고, 「해마다 + D+」 둘 다도 된다. */
+  b.appendChild(fldLabel('날짜'));
+  /* 음력은 「몇 년」이라는 게 뜻이 없다(해마다 돌아오는 것뿐). 그래서 월-일만 받는다. */
+  if(d.yearly && d.lunar){
+    b.appendChild(mdPicker(d.lmd || '01-01', function(v){ d.lmd = v; }));
+  }else{
+    /* 🚨 「기간」 체크를 없앴다(2026-08-26 사용자 제안).
+       날짜 칸을 처음부터 **두 개** 두고 둘 다 그날로 채워 둔다.
+       오른쪽을 뒤로 옮기면 **저절로** 「언제부터 언제까지」가 된다 — 설명이 필요 없다. */
+    var di = el('input'); di.type = 'date';
+    /* 옛 기록은 md 에만 값이 있다. 연도를 지어내지 않고 올해로 보여만 준다. */
+    var startVal = d.date || (d.md ? (todayStr().slice(0,4) + '-' + d.md) : calSel);
+    di.value = startVal;
+    di.onchange = function(){
+      d.date = di.value; d.md = di.value.slice(5);
+      /* 시작을 뒤로 밀어 끝을 넘어서면 끝도 같이 민다 — 거꾸로 된 기간을 못 만들게 */
+      if(!d.end || d.end < d.date) d.end = d.date;
+      drawEvent();
+    };
+    /* 🚨 D-day 는 **한 시점**이라 기간이 있을 수 없다(2026-08-26 사용자 지적).
+       그래서 D-day 를 켜면 `~` 와 오른쪽 칸을 **아예 없앤다.**
+       고를 것이 하나뿐이면 칸도 하나여야 헷갈리지 않는다. */
+    if(d.dplus){
+      d.end = '';
+      b.appendChild(di);
+    }else{
+      var de = el('input'); de.type = 'date';
+      de.value = d.end || startVal;
+      de.onchange = function(){ d.end = de.value; drawEvent(); };
+      var row = el('div');
+      row.style.cssText = 'display:grid;grid-template-columns:1fr auto 1fr;'
+                        + 'align-items:center;gap:8px';
+      var tilde = el('div', null, '~');
+      tilde.style.cssText = 'color:var(--sub);font-weight:800;font-size:16px';
+      row.appendChild(di); row.appendChild(tilde); row.appendChild(de);
+      b.appendChild(row);
+      if(d.end && d.date && d.end < d.date){
+        b.appendChild(el('div', 'tiny muted',
+          '<b>끝이 시작보다 앞섭니다.</b><br>이대로 두면 하루로 봅니다.'));
+      }
+    }
+  }
+  b.appendChild(el('div', 'fld'));
+
+  /* 🚨 문구는 **한 단어**로 짧게 간다(2026-08-26 사용자 지적).
+     「여러 날에 걸칩니다」 같은 서술문은 *단순하지도 세련되지도 않다*는 것.
+     🚨 「기간」 체크는 아예 없앴다 — 날짜 칸 두 개로 저절로 드러나기 때문. */
+  var cb = el('div', 'evchks');
+  cb.appendChild(evCheck('해마다', !!d.yearly, function(v){
+    d.yearly = v;
+    /* 해마다가 꺼지면 음력은 뜻을 잃는다(음력→양력 표가 해마다 돌아오는 것 전용) */
+    if(!v) d.lunar = false;
+    drawEvent();
+  }));
+  /* 🚨 딱지를 「D+」라고 하면 안 된다 — 날짜가 미래면 **D− 로 줄어들기** 때문이다.
+     둘을 아우르는 말이 「D-day」다(2026-08-26 사용자 지적). */
+  cb.appendChild(evCheck('D-day', !!d.dplus, function(v){ d.dplus = v; drawEvent(); }));
+  b.appendChild(cb);
+
+  /* 지금 고른 조합이 무슨 뜻인지 그 자리에서 한 줄로 알려준다.
+     체크만 있으면 「그래서 어떻게 되는데?」를 모른다. */
+  var says = [];
+  var spanTxt = (d.end && d.date && d.end > d.date)
+    ? ('<b>' + (Math.round((new Date(d.end) - new Date(d.date)) / 86400000) + 1) + '일 동안</b>') : '';
+  if(d.yearly) says.push('달력에 <b>해마다</b>' + (spanTxt ? ' ' + spanTxt : '') + ' 뜹니다.');
+  else says.push(spanTxt ? ('달력에 ' + spanTxt + ' 뜹니다.')
+                         : '달력에 <b>그 날 하루만</b> 뜹니다.');
+  if(!d.yearly && !d.dplus) says.push('지나면 홈에서 저절로 사라집니다.<br>달력에는 그대로 남습니다.');
+  if(d.dplus){
+    var lab = d.date ? dLabel(d) : '';
+    says.push('일정 탭 맨 위에 <b>' + (lab || 'D+며칠') + '</b> 로 보입니다.');
+    /* 미래면 줄어들고, 지났으면 쌓인다 — 날짜만 보고 저절로 갈린다 */
+    says.push((d.date && d.date > todayStr())
+            ? '그날까지 <b>날마다 하나씩 줄어듭니다.</b><br>그날부터는 <b>D+1</b> 로 다시 쌓입니다.'
+            : '시작한 그날이 <b>D+1</b> 입니다.');
+  }
+  b.appendChild(el('div', 'tiny muted', says.join('<br>')));
+  b.appendChild(el('div', 'fld'));
+
+  if(d.yearly){
     b.appendChild(fldLabel('양력인가요 음력인가요'));
     var lseg = el('div', 'seg'); lseg.style.gridTemplateColumns = 'repeat(2,1fr)';
     [[false,'양력'],[true,'음력']].forEach(function(o){
@@ -5161,22 +5884,14 @@ function drawEvent(){
     });
     b.appendChild(lseg);
     if(d.lunar){
-      b.appendChild(mdPicker(d.lmd || '01-01', function(v){ d.lmd = v; }));
       b.appendChild(el('div', 'notice',
         '<b>음력은 아직 달력에 안 뜹니다.</b><br>'
       + '음력을 양력으로 바꾸려면<br>정해진 표가 있어야 하는데<br>'
       + '그 표를 아직 안 넣었습니다.<br><br>'
       + '지금 적어두시면 저장은 됩니다.<br>표를 넣는 순간 저절로 뜹니다.'));
-    }else{
-      b.appendChild(mdPicker(d.md || '01-01', function(v){ d.md = v; }));
     }
-  }else{
-    b.appendChild(fldLabel('날짜'));
-    var di = el('input'); di.type = 'date'; di.value = d.date || calSel;
-    di.onchange = function(){ d.date = di.value; };
-    b.appendChild(di);
+    b.appendChild(el('div', 'fld'));
   }
-  b.appendChild(el('div', 'fld'));
 
   b.appendChild(fldLabel('누구 일인가요'));
   var ch = el('div', 'chips');
@@ -5202,24 +5917,37 @@ function drawEvent(){
 $('#vs-save').onclick = function(){
   var d = evdraft;
   if(!String(d.title || '').trim()){ toast('이름을 적어주세요'); return; }
-  if(d.kind === 'plan' && !d.date){ toast('날짜를 골라주세요'); return; }
+  /* D+ 로 세려면 「몇 년부터」를 알아야 한다. 음력은 연도 개념이 없으므로 못 센다. */
+  if(d.dplus && !(d.yearly && d.lunar) && !d.date){ toast('언제부터인지 골라주세요'); return; }
+  if(!d.yearly && !d.dplus && !d.date){ toast('날짜를 골라주세요'); return; }
+  /* 옛 판으로 되돌아갈 수 있게 kind 도 맞춰 써 준다.
+     둘 다 켠 것은 옛 구조로 표현할 수 없으므로 「해마다」쪽을 남긴다. */
+  var kind = d.yearly ? 'anniv' : (d.dplus ? 'since' : 'plan');
+  /* 끝나는 날은 「여러 날」을 켰고 시작보다 뒤일 때만 담는다.
+     거꾸로 적힌 것을 그대로 담으면 나중에 읽는 쪽이 매번 걸러야 한다. */
+  var endVal = (d.end && d.date && d.end > d.date) ? d.end : '';
   if(!DB.events) DB.events = [];
   if(evEditId){
     var cur = null, i;
     for(i = 0; i < DB.events.length; i++) if(DB.events[i].id === evEditId) cur = DB.events[i];
     if(cur){
-      cur.title = d.title; cur.kind = d.kind; cur.md = d.md; cur.lunar = !!d.lunar;
+      cur.title = d.title; cur.kind = kind; cur.md = d.md; cur.lunar = !!d.lunar;
       cur.lmd = d.lmd; cur.date = d.date; cur.who = d.who; cur.memo = d.memo;
+      cur.yearly = !!d.yearly; cur.dplus = !!d.dplus;
+      cur.end = endVal;
       cur.updated = Date.now();
     }
   }else{
-    DB.events.push({ id:uid(), title:d.title, kind:d.kind, md:d.md, lunar:!!d.lunar,
+    DB.events.push({ id:uid(), title:d.title, kind:kind, md:d.md, lunar:!!d.lunar,
                      lmd:d.lmd, date:d.date, who:d.who, memo:d.memo,
+                     yearly:!!d.yearly, dplus:!!d.dplus,
+                     end:endVal,
                      updated:Date.now(), deleted:false });
   }
   if(!save()) return;
   $('#vsheet').style.display = 'none';
-  if(d.kind === 'plan' && d.date){ calSel = d.date; calYM = ymOf(d.date); }
+  /* 달력에 뜨는 것이면 그 날로 옮겨 준다. D+ 전용은 달력에 없으니 그대로 둔다. */
+  if(!d.yearly && !d.dplus && d.date){ calSel = d.date; calYM = ymOf(d.date); }
   toast('저장했습니다');
   renderCal();
 };
@@ -5392,6 +6120,7 @@ $('#sy-disconnect').onclick = function(){
   syncCfg = { token:'', owner:'', repo:'', last:0, err:'' };
   syncSaveCfg(); drawSyncCard(); toast('연결을 껐습니다');
 };
+$('#ps-cancel').onclick=closePay;
 $('#s-wipe').onclick=function(){
   if(!confirm('적어둔 내역과 자산이 전부 사라집니다. 정말 지울까요?')) return;
   if(!confirm('되돌릴 수 없습니다. 한 번 더 확인합니다.')) return;
