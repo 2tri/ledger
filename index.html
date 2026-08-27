@@ -128,7 +128,7 @@ select{appearance:none;-webkit-appearance:none;
 .cal{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;
   border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
   background:var(--card);margin-bottom:14px}
-.cal .cd{min-height:56px;padding:6px 0 5px;text-align:center;
+.cal .cd{min-height:56px;padding:6px 0 5px;text-align:center;min-width:0;overflow:hidden;
   border-right:1px solid var(--line);border-top:1px solid var(--line)}
 .cal .cd:nth-child(7n){border-right:none}
 .cal .cd:nth-child(-n+7){border-top:none}
@@ -141,6 +141,24 @@ select{appearance:none;-webkit-appearance:none;
 .cal .cd.today .dnum{background:var(--accent);color:#fff}
 .cal .dots{display:flex;justify-content:center;gap:3px;height:7px;margin-top:2px}
 .cal .dot{width:6px;height:6px;border-radius:50%}
+/* 🆕 내역 탭 위 달력 — 일정 달력(`.cal`)을 그대로 쓰되 칸에 그날 쓴/번 돈을 적는다.
+   숫자 두 줄이 들어가야 해서 칸을 조금 더 키운다. */
+.calmoney .cd{min-height:60px;padding:6px 0 4px}
+.calmoney .dnum{min-width:22px;line-height:22px;font-size:13.5px}
+.calmoney .money{margin-top:2px;font-size:9px;font-weight:700;line-height:1.3;
+  font-variant-numeric:tabular-nums;word-break:keep-all}
+.calmoney .money .in{color:var(--plus);display:block}
+.calmoney .money .out{color:var(--minus);display:block}
+/* 여러 날에 걸친 일정 — 점이 아니라 **이어진 막대**로 그린다(2026-08-26 사용자 요청).
+   점만 찍으면 「그날 뭔가 있다」로만 보이고 기간이라는 게 안 드러난다.
+   칸과 칸 사이에 1px 경계선이 있어서, 막대를 그 위로 넘겨 그려야 끊기지 않는다. */
+.cal .bars{display:flex;flex-direction:column;gap:2px;margin-top:2px;min-height:0}
+.cal .bar{height:15px;position:relative;left:-1px;width:calc(100% + 2px);
+  font-size:8.5px;font-weight:700;color:#fff;line-height:15px;text-align:left;
+  padding-left:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal .bar.s{border-radius:3px 0 0 3px}                                   /* 시작 날 — 왼쪽만 둥글게 */
+.cal .bar.e{border-radius:0 3px 3px 0;width:calc(100% - 1px)}            /* 끝나는 날 */
+.cal .bar.s.e{border-radius:3px;left:0;width:100%}                       /* 하루짜리 */
 .ev-row{display:flex;align-items:center;gap:10px;padding:13px 14px;background:var(--card);
   border-radius:var(--r2);border:var(--cardline);margin-bottom:8px;width:100%;text-align:left}
 .ev-row .dot{width:9px;height:9px;border-radius:50%;flex:none}
@@ -532,6 +550,11 @@ select{appearance:none;-webkit-appearance:none;
       <div class="kv" id="l-net-row" style="border-top:1px solid var(--line2);margin-top:4px;padding-top:7px">
         <span>남은 돈</span><b class="num" id="l-net">0원</b></div>
     </div>
+    <!-- 🆕 2026-08-27 — 아내가 익숙해한 Buboo 방식. 목록은 안 없애고 위에 달력을 얹는다.
+         날짜를 누르면 그 날 것만 아래 목록에 뜬다(다시 누르면 풀림). 검색 중엔 감춘다. -->
+    <div class="calh" id="l-calh"></div>
+    <div class="cal calmoney" id="l-cal"></div>
+    <div class="notice" id="l-daybar" style="display:none;background:var(--accent-soft);color:var(--txt)"></div>
     <div id="l-body"></div>
   </section>
 
@@ -1116,11 +1139,14 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
    🚨 **판번호는 「폰에 들어간 판」을 뜻한다. 「고친 횟수」가 아니다.**
       고칠 때마다 올리면 폰에 없는 번호가 계속 생겨서 그 판정이 망가진다.
       ➡️ **사용자가 「폰에 넣었다」고 말한 다음 고칠 때 비로소 다음 글자로 올린다.**
-      ➡️ 그 사이에 고친 것은 **아래 APP_TOUCHED(마지막 손댄 때)만** 갱신한다.
+      ➡️ 그 사이에 고친 것은 **아래 APP_TOUCHED(수정 시각)만** 갱신한다.
       (2026-08-26 사용자 확정 — 같은 지적을 여러 번 받았다) */
 var APP_BUILD = '08-26 i';
-/* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리. */
-var APP_TOUCHED = '08-26 밤9';
+/* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리.
+   🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
+   글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
+   "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
+var APP_TOUCHED = '08-27 09:43';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -2596,6 +2622,25 @@ function txLine(t, viewId){
    7. 내역
    ============================================================================ */
 var listQ='';
+/* 🆕 내역 탭 달력에서 고른 날. ''이면 그 달 전체, 'YYYY-MM-DD'면 그 날만 본다.
+   같은 날을 다시 누르면 풀린다. */
+var listDay='';
+/* 그 달 날마다 수입·지출 합계 — l-filter/l-who/l-fix 는 반영하고
+   listDay·검색은 반영하지 않는다(달력 자체가 「날짜를 고르는 도구」라서). */
+function monthDayTotals(ym){
+  var out={};
+  liveTx().forEach(function(t){
+    if(ymOf(t.date)!==ym) return;
+    if(listFilter!=='all' && t.type!==listFilter) return;
+    if(listFix==='fixed' && !isFixed(t)) return;
+    if(listFix==='var' && isFixed(t)) return;
+    if(listWho!=='all' && String(t.who)!==listWho) return;
+    if(t.type!=='income' && t.type!=='expense') return;
+    var d=out[t.date] || (out[t.date]={in:0,out:0});
+    if(t.type==='income') d.in+=t.amount; else d.out+=t.amount;
+  });
+  return out;
+}
 /* 찾을 때는 그 달만이 아니라 전체 기간을 훑는다.
    "저번에 그 병원비 얼마였지"는 대개 몇 달 전 일이기 때문. */
 function txMatches(t, q){
@@ -2608,21 +2653,79 @@ function txMatches(t, q){
           + ' ' + (DB.people[t.who===1?1:0]||'');
   return hay.toLowerCase().indexOf(q) >= 0;
 }
+/* 🆕 내역 탭 위 달력. 일정 탭 renderCal() 의 칸 만드는 방식을 그대로 본떴다
+   (요일 머리·빈 칸·.cd/.dnum 재사용) — 칸에는 그날 수입·지출을 적는다. */
+function renderListCal(){
+  var head=$('#l-calh'); head.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(function(w,i){
+    var d=el('div',null,w);
+    if(i===0) d.style.color='var(--minus)';
+    if(i===6) d.style.color='var(--accent)';
+    head.appendChild(d);
+  });
+  var g=$('#l-cal'); g.innerHTML='';
+  var y=+curYM.slice(0,4), mo=+curYM.slice(5,7);
+  var first=new Date(y,mo-1,1).getDay();
+  var dim=daysInMonth(curYM);
+  var totals=monthDayTotals(curYM);
+  var today=todayStr();
+  var i;
+  for(i=0;i<first;i++) g.appendChild(el('div','cd off'));
+  for(i=1;i<=dim;i++){
+    var ds=curYM+'-'+pad2(i);
+    var dow=new Date(y,mo-1,i).getDay();
+    var cls='cd';
+    if(dow===0) cls+=' sun';
+    if(dow===6) cls+=' sat';
+    if(ds===today) cls+=' today';
+    if(ds===listDay) cls+=' sel';
+    var cell=el('button',cls);
+    cell.appendChild(el('div','dnum',String(i)));
+    var t=totals[ds];
+    if(t && (t.in || t.out)){
+      var m=el('div','money');
+      if(t.in)  m.appendChild(el('span','in','+'+won(t.in)));
+      if(t.out) m.appendChild(el('span','out','-'+won(t.out)));
+      cell.appendChild(m);
+    }
+    (function(pick){ cell.onclick=function(){ listDay=(listDay===pick?'':pick); renderList(); }; })(ds);
+    g.appendChild(cell);
+  }
+  var tail=(7-((first+dim)%7))%7;
+  for(i=0;i<tail;i++) g.appendChild(el('div','cd off'));
+}
 function renderList(){
   $('#l-back').style.display = listFromHome ? '' : 'none';
   $('#m-label').textContent=ymLabel(curYM);
   var q=listQ.trim().toLowerCase();
   var searching=!!q;
   $('#l-monthbar').style.display = searching ? 'none' : '';
+  /* 검색은 전체 기간을 훑으므로 「그 달의 그 날」이라는 달력 자체가 뜻이 없다. */
+  $('#l-calh').style.display = searching ? 'none' : '';
+  $('#l-cal').style.display  = searching ? 'none' : '';
+  if(!searching) renderListCal();
   $$('#l-who button').forEach(function(b){
     if(b.dataset.w!=='all') b.textContent=DB.people[+b.dataset.w]||('사람'+(+b.dataset.w+1));
     b.classList.toggle('on', b.dataset.w===listWho);
   });
   $$('#l-filter button').forEach(function(b){ b.classList.toggle('on', b.dataset.f===listFilter); });
 
+  var dayBar=$('#l-daybar');
+  if(!searching && listDay){
+    dayBar.style.display='';
+    dayBar.innerHTML='<b>'+dayLabel(listDay)+'</b>만 보고 있습니다. ';
+    var allBtn=el('button',null,'전체 보기');
+    allBtn.style.cssText='margin-left:4px;text-decoration:underline;font-weight:700;color:var(--accent)';
+    allBtn.onclick=function(){ listDay=''; renderList(); };
+    dayBar.appendChild(allBtn);
+  }else{
+    dayBar.style.display='none'; dayBar.innerHTML='';
+  }
+
   var rows=liveTx().filter(function(t){
     if(!searching && ymOf(t.date)!==curYM) return false;
     if(searching && !txMatches(t,q)) return false;
+    if(!searching && listDay && t.date!==listDay) return false;
     if(listFilter!=='all' && t.type!==listFilter) return false;
     if(listFix==='fixed' && !isFixed(t)) return false;
     if(listFix==='var' && isFixed(t)) return false;
@@ -2683,9 +2786,10 @@ function renderList(){
     group.querySelector('.card').appendChild(txLine(t));
   });
 }
-$('#l-q').oninput=function(){ listQ=this.value; renderList(); };
-$('#m-prev').onclick=function(){ curYM=ymShift(curYM,-1); renderList(); };
-$('#m-next').onclick=function(){ curYM=ymShift(curYM, 1); renderList(); };
+/* 검색·달 이동은 「지금 보던 그 날」과 뜻이 어긋난다 — 고른 날짜를 비운다. */
+$('#l-q').oninput=function(){ listQ=this.value; listDay=''; renderList(); };
+$('#m-prev').onclick=function(){ curYM=ymShift(curYM,-1); listDay=''; renderList(); };
+$('#m-next').onclick=function(){ curYM=ymShift(curYM, 1); listDay=''; renderList(); };
 $$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; listFix='all'; listFromHome=false; renderList(); }; });
 $$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset.w; renderList(); }; });
 
@@ -4561,7 +4665,7 @@ function renderSet(){
      그때 「데이터가 안 온 건가, 앱이 옛 건가」를 가릴 방법이 없으면 헤맨다.
      두 폰의 이 숫자가 같은지만 보면 된다. */
   $('#s-ver').textContent='가계부부 · 판 '+APP_BUILD+' · 내역 '+liveTx().length+'건'
-                        + ' · 손댄 때 '+APP_TOUCHED;
+                        + ' · 수정 '+APP_TOUCHED;
 }
 /* 분류와 대상은 생김새와 규칙이 같아서 한 벌로 그린다.
    따로 만들면 나중에 반드시 한쪽만 고쳐져서 어긋난다.
@@ -5516,8 +5620,10 @@ function dLabel(e){
   var a = new Date(+e.date.slice(0,4), +e.date.slice(5,7)-1, +e.date.slice(8,10));
   var b = new Date(+t.slice(0,4), +t.slice(5,7)-1, +t.slice(8,10));
   var gap = Math.round((a - b) / 86400000);      /* 그날까지 며칠 남았나 */
-  if(gap > 0) return 'D-' + won(gap);
-  return 'D+' + won(sinceDays(e));               /* 당일이면 1일째라 D+1 */
+  /* 🚨 D+ 숫자에는 **쉼표를 넣지 않는다**(2026-08-26 사용자 지적).
+     `D+2,373` 이 「D+2」와 「373」 두 개로 읽혔다. 디데이 표기의 관례도 쉼표를 안 쓴다. */
+  if(gap > 0) return 'D-' + gap;
+  return 'D+' + sinceDays(e);                    /* 당일이면 1일째라 D+1 */
 }
 /* 일정 탭 맨 위에 한 줄로 가볍게. 큼직한 카드가 아니라 곁들이는 한 마디다. */
 function renderSince(){
@@ -5583,9 +5689,32 @@ function renderCal(){
     var cell = el('button', cls);
     cell.appendChild(el('div', 'dnum', String(i)));
 
+    /* 여러 날에 걸친 것은 **막대로 이어 그린다.** 점으로는 기간이 안 드러난다.
+       하루짜리 일정과 돈 나가는 날은 그대로 점으로 둔다 — 그건 정말 「그날 하나」이기 때문. */
+    var spans = [], colors = [];
+    dayEvents(ds).forEach(function(e){
+      var s0 = evDateIn(e, y), e0 = evEndIn(e, y);
+      if(e0 && e0 !== s0) spans.push({ e:e, s:(ds === s0), t:(ds === e0) });
+      else colors.push(evColor(e));
+    });
+    if(spans.length){
+      var bars = el('div', 'bars');
+      /* 두 줄까지만. 더 그리면 날짜 숫자를 밀어낸다.
+         🚨 제목은 「시작하는 날」 또는 「주가 넘어가 새 줄이 시작되는 일요일」에만 넣는다
+         (2026-08-27 사용자 요청 — Buboo 처럼 막대에 이름이 보이게).
+         칸을 가로질러 글자를 잇는 대신 **그 칸 안에서만** 잘리게 해서, 화면 크기가 바뀌어도
+         절대 깨지지 않는다. 나머지 칸은 지금처럼 색만 이어진다. */
+      spans.slice(0,2).forEach(function(sp){
+        var cl = 'bar' + (sp.s ? ' s' : '') + (sp.t ? ' e' : '');
+        var bar = el('div', cl);
+        bar.style.background = evColor(sp.e);
+        if(sp.s || dow === 0) bar.textContent = sp.e.title || '';
+        bars.appendChild(bar);
+      });
+      cell.appendChild(bars);
+    }
     /* 점은 최대 세 개까지만 찍는다. 더 찍으면 칸이 무너진다. */
-    var dots = el('div', 'dots'), colors = [];
-    dayEvents(ds).forEach(function(e){ colors.push(evColor(e)); });
+    var dots = el('div', 'dots');
     (money[i] || []).forEach(function(k){
       colors.push(k === 'in' ? 'var(--plus)' : 'var(--minus)');
     });
