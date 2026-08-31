@@ -1151,12 +1151,12 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
       ➡️ **사용자가 「폰에 넣었다」고 말한 다음 고칠 때 비로소 다음 글자로 올린다.**
       ➡️ 그 사이에 고친 것은 **아래 APP_TOUCHED(수정 시각)만** 갱신한다.
       (2026-08-26 사용자 확정 — 같은 지적을 여러 번 받았다) */
-var APP_BUILD = '08-26 i';
+var APP_BUILD = '08-31 a';
 /* 판번호를 안 올리는 동안 「이 파일이 언제 것인지」를 알려주는 자리.
    🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
    글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
    "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
-var APP_TOUCHED = '08-31 15:42';
+var APP_TOUCHED = '08-31 16:20';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -3065,6 +3065,9 @@ function openSheet(tx){
   drawSheet();
   $('#sheet').classList.add('on');
   document.body.style.overflow='hidden';
+  /* 목록을 스크롤해 내려간 채로 ＋ 를 눌러도, 입력창은 늘 맨 위에서 시작한다.
+     통합뷰어 판정화면처럼 「새 화면 = 초기 상태」가 되어야 자연스럽다(2026-08-31 아내분 지적). */
+  $('#sh-body').scrollTop=0;
 }
 function closeSheet(){
   $('#sheet').classList.remove('on');
