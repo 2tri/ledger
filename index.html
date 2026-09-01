@@ -29,6 +29,8 @@
   --minus:#F04452; --plus:#0DAB76;
   --p0:#3182F6; --p0-soft:#E8F3FF;
   --p1:#FF8A00; --p1-soft:#FFF3E0;
+  /* 공동(둘 다) — 남편 파랑·아내 주황과 안 겹치는 보라. 회색은 「없는 것」처럼 보여 안 쓴다. */
+  --p2:#8B5CF6; --p2-soft:#F1ECFE;
   --warn-bg:#FFF8E7; --warn-txt:#8A6100;
   --nav-h:64px; --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);   /* 시계·노치가 차지하는 높이 */
@@ -56,6 +58,7 @@
     --minus:#FF5F6D; --plus:#2BD9A0;
     --p0:#4D93FF; --p0-soft:#16243A;
     --p1:#FFA640; --p1-soft:#32240D;
+    --p2:#A78BFA; --p2-soft:#211A3A;
     --warn-bg:#2E260F; --warn-txt:#F2D28A;
   }
 }
@@ -67,6 +70,7 @@
     --minus:#FF5F6D; --plus:#2BD9A0;
     --p0:#4D93FF; --p0-soft:#16243A;
     --p1:#FFA640; --p1-soft:#32240D;
+    --p2:#A78BFA; --p2-soft:#211A3A;
     --warn-bg:#2E260F; --warn-txt:#F2D28A;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -138,6 +142,10 @@ select{appearance:none;-webkit-appearance:none;
   font-size:15px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
 .cal .cd.sun .dnum{color:var(--minus)}
 .cal .cd.sat .dnum{color:var(--accent)}
+/* 공휴일은 일요일과 같은 빨강 — 「쉬는 날」이라는 뜻이 색 하나로 통한다(2026-09-02) */
+.cal .cd.hol .dnum{color:var(--minus)}
+.cal .hnm{font-size:9px;line-height:1.15;color:var(--minus);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 1px}
 .cal .cd.today .dnum{background:var(--accent);color:#fff}
 .cal .dots{display:flex;justify-content:center;gap:3px;height:7px;margin-top:2px}
 .cal .dot{width:6px;height:6px;border-radius:50%}
@@ -263,6 +271,13 @@ select{appearance:none;-webkit-appearance:none;
    윗줄과 아랫줄 사이에 가로선을 넣어 칸 경계가 헷갈리지 않게 한다. */
 .seg.two button:nth-child(2n){border-right:none}
 .seg.two button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+/* 🆕 2026-09-02 — 찾기 화면처럼 세그가 여러 줄 겹칠 때 쓰는 작은 버전.
+   한 줄 안에서는 여전히 크기가 다 같다(규칙 지킴) — 줄 자체를 낮췄을 뿐이다. */
+.seg.sm{margin-bottom:9px}
+.seg.sm button{padding:8px 4px;font-size:13px}
+/* 세그만 낮추고 사이 간격은 그대로면 줄인 게 안 보인다(사용자 지적) —
+   라벨 위 간격도 같이 줄인다. */
+.fld.sm{margin-bottom:7px}
 
 /* ============================================================
    목록 고치기 (분류 · 대상)
@@ -461,16 +476,19 @@ select{appearance:none;-webkit-appearance:none;
       <div class="ym num" id="h-ym"></div>
       <button id="h-next">›</button>
     </div>
-    <button class="btn" id="h-today" style="display:none;margin-bottom:12px">이번 달로 돌아가기</button>
 
     <div class="card">
       <div class="tiny muted" id="h-spent-lbl">이번 달 쓴 돈</div>
       <div class="bigamt num" id="h-spent">0원</div>
       <div class="tiny muted" id="h-vs" style="margin-top:4px"></div>
-      <div class="trio" id="h-trio">
+      <!-- 🚨 2026-09-02 3칸 → 4칸. 「남은 돈」 하나만 보여주면 저축으로 나간 것까지
+           쓸 수 있는 돈으로 읽힌다(8월 실측: 278만 중 270만이 저축, 실제 자유분 8만원).
+           「저축」은 갈래가 없어 내역으로 보낼 수 없으므로 **단추가 아니라 그냥 칸**이다. -->
+      <div class="trio" id="h-trio" style="grid-template-columns:repeat(4,1fr)">
         <button data-f="income"><div class="lbl">수입 ›</div><div class="val num" id="h-in" style="color:var(--plus)">0</div></button>
         <button data-f="expense"><div class="lbl">지출 ›</div><div class="val num" id="h-out" style="color:var(--minus)">0</div></button>
-        <button data-f="all"><div class="lbl">남은 돈 ›</div><div class="val num" id="h-net">0</div></button>
+        <button data-f="saving"><div class="lbl">저축 ›</div><div class="val num" id="h-save">0</div></button>
+        <div><div class="lbl">잔액</div><div class="val num" id="h-net">0</div></div>
       </div>
       <div class="tiny muted" id="h-saved" style="margin-top:10px;line-height:1.6"></div>
       <div class="trio" id="h-trio2" style="margin-top:8px;grid-template-columns:repeat(2,1fr)">
@@ -494,23 +512,9 @@ select{appearance:none;-webkit-appearance:none;
 
     <div class="card" id="h-budget"></div>
 
-
-    <div class="card">
-      <h2>어디에 많이 썼나</h2>
-      <!-- 4칸이 되어 2줄로 나눴다. 한 줄에 4개를 넣으면 「카드·통장별」이 잘린다. -->
-      <div class="seg two" id="h-by" style="grid-template-columns:repeat(2,1fr)">
-        <button data-b="cat" class="on">분류별</button>
-        <button data-b="pay">카드·통장별</button>
-        <button data-b="who">사람별</button>
-        <button data-b="target">대상별</button>
-      </div>
-      <div class="seg" id="h-fixmode" style="grid-template-columns:repeat(2,1fr)">
-        <button data-fx="all">고정비까지</button>
-        <button data-fx="var" class="on">고정비 빼고</button>
-      </div>
-      <div id="h-bars"></div>
-      <div class="tiny muted" id="h-bars-note" style="margin-top:10px;line-height:1.7"></div>
-    </div>
+    <!-- 「어디에 많이 썼나」는 2026-09-01 에 📊 통계 화면(내역 탭 우상단)으로 옮겼다.
+         홈에 있던 것과 겹쳐서 있을 이유가 없어졌다 — h-by·h-fixmode·h-bars 는
+         이제 #stat-body 안에 있다(id 는 그대로라 renderBars() 가 안 깨진다). -->
 
     <!-- 「순자산」은 2026-08-26 에 홈에서 뺐다 — 살림 탭 맨 위에 똑같은 것이 있어
          중복이었다. 「최근 내역」을 뺀 것과 같은 이유(사용자 요청). -->
@@ -521,37 +525,57 @@ select{appearance:none;-webkit-appearance:none;
 
   <!-- ══════════ 내역 ══════════ -->
   <section class="page" id="pg-list">
-    <div class="head">
-      <button id="l-back" style="display:none;background:none;border:0;padding:0 10px 0 0;
-        font-size:15px;font-weight:700;color:var(--accent)">‹ 홈</button>
-      <h1>내역</h1>
+    <div class="head" style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center">
+        <button id="l-back" style="display:none;background:none;border:0;padding:0 10px 0 0;
+          font-size:15px;font-weight:700;color:var(--accent)">‹ 홈</button>
+        <h1>내역</h1>
+      </div>
+      <!-- 🚨 2026-09-01 개편 — 검색·필터·통계를 화면 밖(단추 뒤)으로 뺐다.
+           달력을 첫 화면에서 바로 보이게 하려는 것(아내 요청, Buboo 앱처럼).
+           id·기존 로직은 안 바꾸고 자리만 옮겼다 — 이 버튼들은 그 화면을 연다. -->
+      <!-- 🎨 아이콘 두 개는 **같은 선 굵기(2)·같은 크기(21px)** 로 맞춰 그렸다(2026-09-02).
+           처음엔 돋보기만 이모지(🔍)라 원그래프와 느낌이 따로 놀았다(사용자 지적).
+           🚨 원그래프를 「테두리 원 + 채운 4분의 1」로 그렸더니 **로딩 동그라미처럼 보였다.**
+              고리가 끊긴 것처럼 읽혔기 때문. → **닫힌 원 + 가운데에서 뻗는 칸막이 선**으로
+              바꿔 「나뉜 원」임이 드러나게 했다. 조각 하나만 옅게 채워 무슨 그림인지 못 박았다. -->
+      <div style="display:flex;gap:6px">
+        <button id="l-find-btn" aria-label="찾기"
+          style="position:relative;background:none;border:0;padding:4px 6px;line-height:0;color:var(--txt)">
+          <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="10.5" cy="10.5" r="6.5"/>
+            <path d="M15.6 15.6 L20.5 20.5"/>
+          </svg>
+          <i id="l-find-dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;
+            border-radius:50%;background:var(--accent)"></i></button>
+        <button id="l-stat-btn" aria-label="통계"
+          style="background:none;border:0;padding:4px 6px;line-height:0;color:var(--txt)">
+          <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 12 L12 3.2 A8.8 8.8 0 0 1 19.6 16.4 Z" fill="currentColor" opacity=".3"/>
+            <circle cx="12" cy="12" r="8.8" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 12 L12 3.2 M12 12 L19.6 16.4" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    <input id="l-q" placeholder="메모·분류·카드로 찾기" style="margin-bottom:12px">
     <div class="monthbar" id="l-monthbar">
       <button id="m-prev">‹</button>
       <div class="ym num" id="m-label"></div>
       <button id="m-next">›</button>
     </div>
-    <div class="seg" id="l-filter" style="grid-template-columns:repeat(3,1fr)">
-      <button data-f="all" class="on">전체</button>
-      <button data-f="expense">지출</button>
-      <button data-f="income">수입</button>
-    </div>
-    <div class="seg" id="l-who" style="grid-template-columns:repeat(3,1fr)">
-      <button data-w="all" class="on">둘 다</button>
-      <button data-w="0">－</button>
-      <button data-w="1">－</button>
-    </div>
-    <!-- 「지출」만 보는 중에 「수입 0원」이 뜨면 헷갈린다(2026-08-26 지적).
-         그래서 지금 고른 갈래에 해당하는 줄만 보여준다. -->
-    <div class="card" style="padding:10px 14px">
-      <div class="kv" id="l-in-row"><span>수입</span><b class="num" id="l-in" style="color:var(--plus)">0원</b></div>
-      <div class="kv" id="l-out-row"><span>지출</span><b class="num" id="l-out" style="color:var(--minus)">0원</b></div>
-      <div class="kv" id="l-net-row" style="border-top:1px solid var(--line2);margin-top:4px;padding-top:7px">
-        <span>남은 돈</span><b class="num" id="l-net">0원</b></div>
+    <!-- 예전엔 세로 3줄이었다. 가로 한 줄로 줄여 달력이 그 아래 바로 오게 했다(2026-09-01).
+         🚨 2026-09-02 「남은 돈」 칸을 뺐다 — 홈의 4칸(수입·지출·저축·잔액)과 **같은 계산**이라
+         같은 숫자가 두 군데 나오고 있었다(사용자: *"뭐가 복잡해보일거같아"*).
+         여기는 「이번 달에 뭐가 오갔나」만 답한다. 「얼마 남았나」는 홈이 답한다. -->
+    <div class="trio" style="margin-top:0;grid-template-columns:repeat(2,1fr)">
+      <div id="l-in-row"><div class="lbl">입금</div><div class="val num" id="l-in" style="color:var(--plus)">0원</div></div>
+      <div id="l-out-row"><div class="lbl">지출</div><div class="val num" id="l-out" style="color:var(--minus)">0원</div></div>
     </div>
     <!-- 🆕 2026-08-27 — 아내가 익숙해한 Buboo 방식. 목록은 안 없애고 위에 달력을 얹는다.
-         날짜를 누르면 그 날 것만 아래 목록에 뜬다(다시 누르면 풀림). 검색 중엔 감춘다. -->
+         날짜를 누르면 그 날 것만 아래 목록에 뜬다(다시 누르면 풀림). 검색 중엔 감춘다.
+         🚨 2026-09-01 — 이제 이 달력이 화면에서 가장 먼저 보이는 것(메인)이다. -->
     <div class="calh" id="l-calh"></div>
     <div class="cal calmoney" id="l-cal"></div>
     <div class="notice" id="l-daybar" style="display:none;background:var(--accent-soft);color:var(--txt)"></div>
@@ -569,12 +593,9 @@ select{appearance:none;-webkit-appearance:none;
     </div>
     <div class="calh" id="c-head"></div>
     <div class="cal" id="c-grid"></div>
-    <div class="leg">
-      <span><i style="background:var(--p1)"></i>기념일</span>
-      <span><i style="background:var(--accent)"></i>약속·할 일</span>
-      <span><i style="background:var(--minus)"></i>돈 나가는 날</span>
-      <span><i style="background:var(--plus)"></i>돈 들어오는 날</span>
-    </div>
+    <!-- 🚨 2026-09-02 — 범례가 「종류(기념일/약속)」에서 「누구 것」으로 바뀌었다.
+         이름은 사람 이름을 그대로 쓰므로 renderCal() 에서 채운다. -->
+    <div class="leg" id="c-leg"></div>
     <div id="c-warn"></div>
     <div id="c-day"></div>
   </section>
@@ -843,6 +864,123 @@ select{appearance:none;-webkit-appearance:none;
   <div class="sh-body" id="ps-body"></div>
 </div>
 
+<!-- ══════════ 내역 찾기·거르기 (2026-09-01 신설) ══════════ -->
+<!-- 🚨 z-index 68 — 가장 위층(다른 시트 위에서도 열릴 수 있어야 한다는 뜻이 아니라,
+     내역 화면(pg-list) 위에 뜨는 것이라 그 화면과 겹치는 다른 층보다 높으면 된다). -->
+<div id="fsheet" style="position:fixed;inset:0;z-index:68;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="fs-cancel">닫기</button>
+    <div class="ttl">찾기</div>
+  </div>
+  <div class="sh-body" id="fs-body">
+    <input id="l-q" placeholder="메모·분류·카드로 찾기" style="margin-bottom:8px">
+    <!-- 🆕 2026-09-02 — 처음엔 건수만 보여줬는데, 사용자가 다른 가계부 앱 검색 화면을
+         보여주며 "리스트가 나오게 하는거였어" — 실제 내역 목록을 여기서 바로 본다.
+         화면을 안 나가도 조건을 바꿀 때마다 목록이 바로 다시 그려진다. -->
+    <div class="fld sm"></div>
+    <div class="tiny muted" style="margin:0 0 5px 2px;font-weight:700">무엇을</div>
+    <div class="seg sm" id="l-filter" style="grid-template-columns:repeat(3,1fr)">
+      <button data-f="all" class="on">전체</button>
+      <button data-f="expense">지출</button>
+      <button data-f="income">수입</button>
+    </div>
+    <div class="fld sm"></div>
+    <div class="tiny muted" style="margin:0 0 5px 2px;font-weight:700">기간</div>
+    <!-- 🆕 2026-09-02 — "이번주"가 굳이 필요한가 지적받고 뺐다. 대부분 이번달 아니면
+         직접 기간을 정하지, "이번주"만 따로 볼 일은 잘 없다는 판단. -->
+    <div class="seg sm" id="fs-period" style="grid-template-columns:repeat(2,1fr)">
+      <button data-p="month" class="on">이번달</button>
+      <button data-p="custom">기간지정</button>
+    </div>
+    <div id="fs-custom" style="display:none;margin-top:8px;gap:8px;align-items:center">
+      <input id="fs-from" type="date" style="flex:1">
+      <span class="tiny muted">부터</span>
+      <input id="fs-to" type="date" style="flex:1">
+      <span class="tiny muted">까지</span>
+    </div>
+    <div class="fld sm"></div>
+    <div class="tiny muted" style="margin:0 0 5px 2px;font-weight:700">누가</div>
+    <div class="seg sm" id="l-who" style="grid-template-columns:repeat(3,1fr)">
+      <button data-w="all" class="on">둘 다</button>
+      <button data-w="0">－</button>
+      <button data-w="1">－</button>
+    </div>
+    <!-- listFix(고정비만/변동비만)는 홈에서 드릴다운했을 때만 켜진다.
+         여기엔 별도 단추가 없다 — 위 「무엇을」 셋 중 하나만 눌러도 listFix가 풀린다(기존 동작). -->
+    <div id="fs-fix-note"></div>
+    <div class="fld sm"></div>
+    <!-- 🆕 2026-09-02 — 「정렬」이 따로 한 줄(라벨+단추 3개)을 차지해서
+         "누를게 너무 많다"는 지적을 받았다. 목록 바로 위, 건수 옆에 작은 글씨로 줄였다.
+         🚨 처음엔 <select> 를 썼는데 펼친 목록이 브라우저 기본색(흰 배경)이라
+         다크 테마에서 글자가 잘 안 보였다(사용자 지적, 실측 스크린샷으로 확인).
+         <select> 의 펼친 목록은 앱 CSS가 안 먹는 경우가 많아(특히 iOS) 색을 못 맞춘다 —
+         그래서 우리 색을 그대로 쓰는 작은 팝업(카드 하나)으로 직접 만들었다. -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 10px 2px;position:relative">
+      <div class="tiny muted num" id="fs-count"></div>
+      <button id="fs-sort-btn" style="background:transparent;border:1px solid var(--line);border-radius:8px;
+        padding:5px 10px;font-size:13px;font-weight:700;color:var(--txt)">최신순 ▾</button>
+      <div id="fs-sort-menu" class="card" style="display:none;position:absolute;top:32px;right:0;z-index:5;
+        min-width:120px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.35)">
+        <button data-s="date"    style="display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:14px;color:var(--txt)">최신순</button>
+        <button data-s="amtDesc" style="display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:14px;color:var(--txt)">큰 금액순</button>
+        <button data-s="amtAsc"  style="display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:14px;color:var(--txt)">작은 금액순</button>
+      </div>
+    </div>
+    <div id="fs-results"></div>
+  </div>
+</div>
+
+<!-- ══════════ 통계 (2026-09-01 신설, 홈의 「어디에 많이 썼나」를 옮겨옴) ══════════ -->
+<div id="statsheet" style="position:fixed;inset:0;z-index:68;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="stat-cancel">닫기</button>
+    <div class="ttl">통계</div>
+  </div>
+  <div class="sh-body" id="stat-body">
+    <div class="monthbar" id="stat-monthbar">
+      <button id="stat-prev">‹</button>
+      <div class="ym num" id="stat-label"></div>
+      <button id="stat-next">›</button>
+    </div>
+    <div class="seg sm" id="stat-kind" style="grid-template-columns:repeat(2,1fr)">
+      <button data-k="expense" class="on">지출</button>
+      <button data-k="income">입금</button>
+    </div>
+    <div class="fld sm"></div>
+    <div class="card" style="text-align:center;padding:13px 18px">
+      <div class="tiny muted" id="stat-total-lbl">이 달 지출 총액</div>
+      <div class="bigamt num" id="stat-total" style="font-size:26px;margin-top:2px">0원</div>
+    </div>
+    <div class="fld"></div>
+
+    <!-- 아래 네 줄(h-by·h-fixmode·h-bars·h-bars-note)은 홈에 있던 것을
+         id 그대로 옮겨온 것이다 — renderBars() 가 안 깨진다(B단계에서 검증된 요령). -->
+    <div class="card">
+      <div class="seg two sm" id="h-by" style="grid-template-columns:repeat(2,1fr)">
+        <button data-b="cat" class="on">분류별</button>
+        <button data-b="pay">카드·통장별</button>
+        <button data-b="who">사람별</button>
+        <button data-b="target">대상별</button>
+      </div>
+      <div class="seg sm" id="h-fixmode" style="grid-template-columns:repeat(2,1fr)">
+        <button data-fx="all">고정비까지</button>
+        <button data-fx="var" class="on">고정비 빼고</button>
+      </div>
+      <div id="stat-bar"></div>
+      <div id="h-bars"></div>
+      <div class="tiny muted" id="h-bars-note" style="margin-top:10px;line-height:1.7"></div>
+    </div>
+    <div class="fld"></div>
+
+    <div class="card" id="stat-trend-card" style="display:none">
+      <h2>월별 추이</h2>
+      <div class="tiny muted">최근 7개월, 이번 달이 진합니다.</div>
+      <div id="stat-trend"></div>
+    </div>
+    <div class="fld"></div>
+  </div>
+</div>
+
 <!-- ══════════ 대상 고르기 (결제수단과 같은 별도 화면) ══════════ -->
 <!-- 🚨 z-index 67 — 입력 시트(#sheet, 60) 위에 떠야 한다. 결제수단 고르기(#psheet)와 같은 층. -->
 <div id="tsheet" style="position:fixed;inset:0;z-index:67;background:var(--bg);display:none;flex-direction:column">
@@ -952,6 +1090,19 @@ select{appearance:none;-webkit-appearance:none;
   <div class="sh-pad" style="padding:12px 14px">
     <button class="btn pri" id="bs-save" style="margin:0">저장</button>
   </div>
+</div>
+
+<!-- ══════════ 분류별 한도 (2026-09-02 신설) ══════════ -->
+<!-- 🚨 「생활비 정하기」 화면에 분류 25개짜리 목록이 그대로 박혀 있어서 복잡하다는
+     지적을 받았다(아내분 피드백). 대부분 안 쓰는 선택 기능이라 별도 화면으로 뺐다.
+     z-index 68 — bsheet(66) 위에서 열려야 하므로 찾기·통계 화면과 같은 층. -->
+<div id="cbsheet" style="position:fixed;inset:0;z-index:68;background:var(--bg);display:none;flex-direction:column">
+  <div class="sh-head">
+    <button id="cbs-cancel">‹ 뒤로</button>
+    <div class="ttl">분류별 한도</div>
+    <span style="width:32px"></span>
+  </div>
+  <div class="sh-body" id="cbs-body"></div>
 </div>
 
 <!-- ══════════ 목표 정하기 시트 ══════════ -->
@@ -1156,7 +1307,7 @@ var APP_BUILD = '08-31 a';
    🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
    글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
    "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
-var APP_TOUCHED = '08-31 16:20';
+var APP_TOUCHED = '09-01 13:55';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1799,6 +1950,46 @@ function monthMoves(ym){
   return { saved:Math.round(saved), repaid:Math.round(repaid) };
 }
 
+/* 「번 돈이 어디로 갔나」를 네 칸으로 가른다 — 수입 · 지출 · 저축 · 잔액 (2026-09-02).
+
+   왜 만들었나 — 예전에는 「남은 돈 = 수입 − 지출」 하나만 보여줬다. 그런데 8월 실측에서
+   그 값이 278만인데 **그중 270만이 저축으로 나가 실제로 쓸 수 있는 건 8만원**이었다.
+   사용자 지적: *"쓸수없는? 돈이니까 헷갈리지않아?"* → 저축을 **따로 떼어** 보여준다.
+
+   🚨 `monthMoves().saved` 와 **뜻이 다르다. 섞지 말 것.**
+     - `monthMoves().saved` = **진짜 모은 것**(적금·투자·모으는통장). 「모은 돈」 문구·살림 탭이 쓴다.
+     - 여기 `saved`   = **현금성 통장 밖으로 나간 것 전부**(위 + `other`, 예: 전세보증금).
+   왜 넓히나 — 8개월 검산에서 **2월만 잔액이 971만으로 부풀었다.** 2/5 에 파킹(저축)에서
+   전세보증금으로 950만을 옮겼는데 전세보증금이 `other` 라 저축에 안 잡혀 음수가 된 탓이다.
+   `other` 까지 넣으니 **8개월 전부 말이 된다**(2월 잔액 971만 → 21.6만).
+
+   🔑 잔액이 음수인 달(4·5월)은 틀린 게 아니라 **저축을 유지하려고 기존 잔고를 헐어 쓴 달**이다. */
+function outOfCashAsset(a){
+  if(!a) return false;
+  return isSavingAsset(a) || a.kind==='other';
+}
+/* 「저축」 칸을 눌렀을 때 보여줄 옮김인가.
+   🚨 monthCash() 의 합계와 **같은 규칙**이어야 한다 — 다르면 눌러서 본 목록의 합이
+      화면의 저축 금액과 안 맞아 「왜 다르지?」가 된다. */
+function isSavingMove(t){
+  if(t.type!=='transfer') return false;
+  var to=assetById(t.toId), fr=assetById(t.fromId);
+  return outOfCashAsset(to) || outOfCashAsset(fr) || !!(fr && KIND_DEBT[fr.kind]);
+}
+function monthCash(ym){
+  var s=monthSum(ym), saved=0;
+  liveTx().forEach(function(t){
+    if(t.type!=='transfer' || ymOf(t.date)!==ym) return;
+    var to=assetById(t.toId), fr=assetById(t.fromId);
+    if(outOfCashAsset(to)) saved+=t.amount;
+    if(outOfCashAsset(fr)) saved-=t.amount;
+    /* 빚에서 빌려 넣은 것은 내가 모은 게 아니다(청년도약의 누나 몫 20만처럼) */
+    if(fr && KIND_DEBT[fr.kind]) saved-=t.amount;
+  });
+  saved=Math.round(saved);
+  return { in:s.in, out:s.out, saved:saved, left:s.in-s.out-saved };
+}
+
 function balanceOf(a){
   if(a.kind==='mortgage') return -mortgageState(a).balance;
   if(a.kind==='credit'){
@@ -2048,7 +2239,12 @@ function go(p){
   $$('#nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.go===p); });
   $('#fab').classList.toggle('hidden', p==='set');
   window.scrollTo(0,0);
-  if(p==='home') renderHome();
+  /* 홈은 탭에 들어올 때마다 **이번 달로 되돌린다**(2026-09-02 사용자 요청).
+     예전에는 지난달을 보다가 다른 탭에 갔다 오면 그대로 지난달이 떠 있어서,
+     「이번 달로 돌아가기」 단추를 따로 눌러야 했다 — 그 단추를 없애고 이걸로 갈음한다.
+     🚨 `renderHome()` 을 부르는 다른 곳(저장 직후 등)에서는 리셋하면 안 되므로
+        **탭 전환인 여기에만** 둔다. */
+  if(p==='home'){ homeYM=ymOf(todayStr()); renderHome(); }
   if(p==='list') renderList();
   if(p==='cal')  renderCal();
   if(p==='asset') renderAsset();
@@ -2083,7 +2279,6 @@ function renderHome(){
   var ym=homeYM, thisYM=ymOf(todayStr()), isNow=(ym===thisYM);
   $('#home-ym-lbl').textContent=ymLabel(ym);
   $('#h-ym').textContent=ymLabel(ym);
-  $('#h-today').style.display = isNow ? 'none' : '';
   $('#h-next').style.visibility = (ym>=thisYM) ? 'hidden' : '';
   var s=monthSum(ym), prev=monthSum(ymShift(ym,-1));
 
@@ -2098,10 +2293,14 @@ function renderHome(){
     vs.textContent='지난달 기록이 없어 비교하지 않습니다';
     vs.style.color='var(--dim)';
   }
-  $('#h-in').textContent=shortWon(s.in);
-  $('#h-out').textContent=shortWon(s.out);
-  $('#h-net').textContent=shortWon(s.net);
-  $('#h-net').style.color=s.net>=0?'var(--txt)':'var(--minus)';
+  var mc=monthCash(ym);
+  $('#h-in').textContent=shortWon(mc.in);
+  $('#h-out').textContent=shortWon(mc.out);
+  $('#h-save').textContent=shortWon(mc.saved);
+  /* 적금을 헐어 쓴 달은 저축이 음수다 — 그것도 사실이라 그대로 보여준다 */
+  $('#h-save').style.color = mc.saved>0 ? 'var(--accent)' : 'var(--txt)';
+  $('#h-net').textContent=shortWon(mc.left);
+  $('#h-net').style.color=mc.left>=0?'var(--txt)':'var(--minus)';
 
   /* 현금흐름을 끝맺는 줄 — 「남은 돈이 어디로 갔나」.
      저축은 옮김이라 수입에도 지출에도 안 잡힌다. 그래서 여기서 따로 말해준다. */
@@ -2141,7 +2340,8 @@ function renderHome(){
       + '통계에서 빼기로 해둔 분류입니다.';
   }
 
-  renderBars(ym);
+  /* 「어디에 많이 썼나」는 2026-09-01 에 📊 통계 화면으로 옮겼다 — renderBars() 는
+     이제 drawStat() 에서만 부른다. */
   renderBudget(ym);
   renderUpcoming(ym);
 
@@ -2265,20 +2465,10 @@ function renderHome(){
     }
   }
 
-  /* 반복이 만든 것만 있고 직접 적은 기록이 하나도 없는 달은 「남은 돈」이 크게 흑자로 보인다.
-     그건 잘 산 게 아니라 안 적은 것이다 — 그렇게 말해준다. */
-  var mine=0, byRule=0;
-  liveTx().forEach(function(t){
-    if(ymOf(t.date)!==ym) return;
-    if(t.ruleId) byRule++; else mine++;
-  });
-  if(byRule>0 && mine===0){
-    var warn=el('div','notice');
-    warn.innerHTML='<b>이 달은 반복으로 만든 것뿐입니다.</b><br>'
-                 + '직접 적은 기록이 하나도 없습니다.<br>'
-                 + '그래서 「남은 돈」이<br>실제보다 많아 보입니다.';
-    eb.style.display=''; eb.innerHTML=''; eb.appendChild(warn);
-  }
+  /* 🚨 2026-09-01 「이 달은 반복으로 만든 것뿐입니다」 안내문을 **뺐다.**
+     사용자 판단: *"어짜피 기입하면 없어질거니까 시간순서도봐도 저게 보여질필요가 굳이없을거같아서."*
+     맞는 말이다 — 달이 시작되면 **언제나** 반복만 있는 상태로 지나가므로,
+     매달 초마다 뜨는 경고가 되어 **늘 뜨는 경고는 아무도 안 읽는다.** */
 
   /* 순자산은 홈에서 뺐다(2026-08-26). 살림 탭에서 그린다. */
 
@@ -2298,16 +2488,20 @@ function renderHome(){
 function isFixed(t){ return !!t.ruleId; }
 
 /* 그 달 지출을 무엇을 기준으로 묶을지 — 분류 / 카드·통장 / 사람 */
-function groupSpending(ym, by){
+/* 🆕 2026-09-01 — 통계 화면의 입금/지출 토글 때문에 수입도 다뤄야 한다.
+   kind 를 안 주면 기존과 똑같이 지출만 본다(기본값, 안전하게). */
+function groupSpending(ym, by, kind){
+  kind = kind || 'expense';
   var map={}, total=0;
   liveTx().forEach(function(t){
-    if(t.type!=='expense' || ymOf(t.date)!==ym) return;
+    if(t.type!==kind || ymOf(t.date)!==ym) return;
     if(isExclTx(t)) return;
     /* 🚨 고정비를 섞으면 1·2등이 늘 보험·주거(할부금)가 되어
           「어디를 아낄 수 있나」를 못 알려준다. 실측(8월): 섞으면 배달·보험·주거 순인데
           빼면 배달·여행·교통·장보기 순이 된다. 생활비 예산도 같은 이유로 고정비를 뺀다 —
-          **두 화면이 같은 기준으로 말해야 한다.** */
-    if(homeFix==='var' && isFixed(t)) return;
+          **두 화면이 같은 기준으로 말해야 한다.** 🚨 입금엔 고정비 개념이 없으므로
+          지출일 때만 거른다. */
+    if(kind==='expense' && homeFix==='var' && isFixed(t)) return;
     var key, label, emo='';
     if(by==='pay'){
       key = t.payId||'(안 고름)';
@@ -2395,20 +2589,42 @@ function upcomingRules(ym){
    분류별일 때 한도를 정해둔 줄은 남은 금액·초과 금액을 같이 적는다. */
 var homeBy='cat';
 var homeFix='var';        /* 'var'=고정비 빼고(기본) / 'all'=고정비까지 */
+var statKind='expense';   /* 🆕 2026-09-01 — 통계 화면의 입금/지출 토글. 'expense'/'income' */
 function renderBars(ym){
   var box=$('#h-bars'); box.innerHTML='';
   var note=$('#h-bars-note'); note.innerHTML='';
   $$('#h-by button').forEach(function(b){ b.classList.toggle('on', b.dataset.b===homeBy); });
   $$('#h-fixmode button').forEach(function(b){ b.classList.toggle('on', b.dataset.fx===homeFix); });
 
-  var g=groupSpending(ym, homeBy);
+  var g=groupSpending(ym, homeBy, statKind);
   if(!g.rows.length){
-    box.appendChild(el('div','empty','이번 달은 아직 적은 게 없습니다.'));
+    box.appendChild(el('div','empty', statKind==='income' ? '이번 달은 아직 들어온 돈이 없습니다.' : '이번 달은 아직 적은 게 없습니다.'));
     return;
   }
   var max=g.rows[0].v;
   g.rows.forEach(function(c){
-    var wrap=el('div'); wrap.style.marginBottom='13px';
+    var wrap=el('div'); wrap.style.marginBottom='13px'; wrap.style.cursor='pointer';
+    /* 🔑 누르면 「찾기」 화면으로 넘어가 이것만 걸러 보인다. 2026-09-01 신설, 2026-09-02
+       「찾기」가 기간·정렬까지 갖춘 화면으로 커지면서 다시 손봤다 — 그냥 검색어만 넘기면
+       통계에서 고른 조건(지출/입금·고정비 빼고 등)이 안 따라와서 **숫자가 안 맞을 수 있었다**
+       (사용자 지적: "이걸누르면 처가댁에 쓴내역만 나오게 하는 그런거말이야" — 맞는지 확인해 달라는
+       질문이었는데, 확인해보니 실제로 조건이 안 넘어가는 허점이 있었다).
+       지금 통계 화면이 보여주는 조건을 찾기 화면에 그대로 옮겨서, 방금 본 숫자와
+       찾기 화면에서 다시 합해 본 숫자가 반드시 같게 만든다. */
+    wrap.onclick=function(){
+      listFromHome=true;
+      closeStat();
+      /* preset 을 줘서 연다 — 🔍 아이콘으로 직접 열 때는 매번 기본값으로 돌아가지만
+         (2026-09-02, "다른 앱들처럼"), 여기서는 방금 본 통계 조건을 그대로 넘겨야
+         찾기 화면에서 다시 합한 숫자가 같아진다. */
+      openFind({
+        filter: statKind,                                  /* 지출/입금 그대로 */
+        fix: (statKind==='expense') ? homeFix : 'all',      /* 입금엔 고정비 개념 없음 */
+        who: (homeBy==='who') ? c.key : 'all',               /* 사람별 보기면 그 사람으로 */
+        q:   (homeBy==='who') ? '' : c.label,                /* 사람은 who 로 이미 걸렀으니 검색어는 비운다 */
+        period: 'month'                                      /* curYM(지금 보던 달)은 그대로 공유 */
+      });
+    };
     var r=el('div','bar-row'); r.style.marginBottom='0';
     var nm=el('div','nm', (c.emo?c.emo+' ':'')+c.label);
     if(homeBy==='who'){
@@ -2420,7 +2636,9 @@ function renderBars(ym){
     }
     r.appendChild(nm);
 
-    var lim = (homeBy==='cat') ? (+DB.catBudget[c.key]||0) : 0;
+    /* 한도(catBudget)는 지출 예산 개념이라 입금엔 뜻이 없다 —
+       특히 「기타」처럼 지출·수입 분류 이름이 겹칠 때 엉뚱한 한도가 붙는 것을 막는다. */
+    var lim = (homeBy==='cat' && statKind==='expense') ? (+DB.catBudget[c.key]||0) : 0;
     var over = lim>0 && c.v>lim;
     var tr=el('div','track'), f=el('i','fill');
     f.style.display='block';
@@ -2486,18 +2704,111 @@ $$('#h-trio button, #h-trio2 button').forEach(function(b){
     go('list');
   };
 });
+/* 🚨 2026-09-01 — 이 두 세그는 이제 홈이 아니라 통계 화면(#statsheet) 안에 있다.
+   homeYM 이 아니라 curYM(내역 탭과 같은 달) 기준이므로 drawStat() 을 부른다 —
+   총액·누적막대·월별추이까지 한 번에 다시 그려야 값이 안 어긋난다. */
 $$('#h-by button').forEach(function(b){
-  b.onclick=function(){ homeBy=b.dataset.b; renderBars(homeYM); };
+  b.onclick=function(){ homeBy=b.dataset.b; drawStat(); };
 });
 $$('#h-fixmode button').forEach(function(b){
-  b.onclick=function(){ homeFix=b.dataset.fx; renderBars(homeYM); };
+  b.onclick=function(){ homeFix=b.dataset.fx; drawStat(); };
 });
+
+/* ============================================================================
+   📊 통계 화면 (2026-09-01 신설) — 홈의 「어디에 많이 썼나」 + 그래프.
+   내역 탭 우상단 아이콘으로 연다. curYM(내역 탭과 같은 달)을 그대로 쓴다.
+   ============================================================================ */
+function openStat(){
+  $('#statsheet').style.display='flex';
+  document.body.style.overflow='hidden';
+  drawStat();
+}
+function closeStat(){
+  $('#statsheet').style.display='none';
+  document.body.style.overflow='';
+  renderList();   /* 통계에서 달을 옮겼거나 막대를 눌러 검색어를 채웠을 수 있어 새로 그린다 */
+}
+function drawStat(){
+  $('#stat-label').textContent=ymLabel(curYM);
+  $$('#stat-kind button').forEach(function(b){ b.classList.toggle('on', b.dataset.k===statKind); });
+  /* 입금엔 고정비 개념이 없다 */
+  $('#h-fixmode').style.display = (statKind==='income') ? 'none' : '';
+  $('#stat-total-lbl').textContent = (statKind==='income') ? '이 달 입금 총액' : '이 달 지출 총액';
+
+  var g=groupSpending(curYM, homeBy, statKind);
+  $('#stat-total').textContent=wonx(g.total);
+  renderStatBar(g);
+  renderBars(curYM);
+  renderStatTrend();
+}
+/* 가로 누적 막대 — 카테고리 비율을 이어붙인 한 줄 띠.
+   사람별일 때는 기존 사람 색(--p0/--p1)을 쓰고, 그 외엔 상위 6개만 색을 주고
+   나머지는 회색 하나로 묶는다 — 색이 25개면 아무 뜻이 없기 때문. */
+var STAT_COLORS=['#3182F6','#0DAB76','#FF8A00','#8B5CF6','#F04452','#06B6D4'];
+function renderStatBar(g){
+  var box=$('#stat-bar'); box.innerHTML='';
+  if(!g.rows.length || !g.total) return;
+  var wrap=el('div');
+  wrap.style.cssText='display:flex;width:100%;height:10px;border-radius:6px;overflow:hidden;margin:8px 0 16px';
+  g.rows.forEach(function(c,i){
+    var pct=c.v/g.total*100;
+    if(pct<=0) return;
+    var color = (homeBy==='who') ? 'var(--p'+c.key+')' : (i<6 ? STAT_COLORS[i] : 'var(--dim)');
+    var seg=el('div');
+    seg.style.cssText='width:'+pct+'%;background:'+color+';flex:none;box-sizing:border-box'
+      + (i>0 ? ';border-left:1px solid var(--card)' : '');
+    wrap.appendChild(seg);
+  });
+  box.appendChild(wrap);
+}
+/* 월별 추이 세로 막대 — 최근 7개월(이번 달 포함), 이번 달만 진하게.
+   숫자는 안 적는다(7개가 겹쳐 읽을 수 없다 — 규칙 3). 막대를 누르면 그 달로 이동. */
+function statMonths(){
+  var out=[], i;
+  for(i=6;i>=0;i--) out.push(ymShift(curYM,-i));
+  return out;
+}
+function renderStatTrend(){
+  var card=$('#stat-trend-card'), box=$('#stat-trend'); box.innerHTML='';
+  var months=statMonths();
+  var totals=months.map(function(ym){ return groupSpending(ym,'cat',statKind).total; });
+  var withData=totals.filter(function(v){ return v>0; }).length;
+  if(withData<2){ card.style.display='none'; return; }   /* 그래프가 아닌 막대 1개는 안 보여준다 */
+  card.style.display='';
+  var max=Math.max.apply(null, totals) || 1;
+  var wrap=el('div');
+  wrap.style.cssText='display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:8px';
+  months.forEach(function(ym,i){
+    var isCur=(ym===curYM);
+    var col=el('div');
+    col.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%';
+    var bar=el('div');
+    var h=Math.max(3, Math.round(totals[i]/max*100));
+    bar.style.cssText='width:100%;max-width:30px;height:'+h+'%;border-radius:5px 5px 0 0;cursor:pointer;'
+      + 'background:'+(isCur?'var(--accent)':'var(--dim)');
+    bar.onclick=function(){ curYM=ym; drawStat(); };
+    col.appendChild(bar);
+    var lbl=el('div','tiny muted', Number(ym.split('-')[1])+'월');
+    lbl.style.marginTop='6px';
+    if(isCur) lbl.style.cssText+=';color:var(--accent);font-weight:700';
+    col.appendChild(lbl);
+    wrap.appendChild(col);
+  });
+  box.appendChild(wrap);
+}
+$('#l-stat-btn').onclick=openStat;
+$('#stat-cancel').onclick=closeStat;
+$('#stat-prev').onclick=function(){ curYM=ymShift(curYM,-1); drawStat(); };
+$('#stat-next').onclick=function(){ curYM=ymShift(curYM, 1); drawStat(); };
+$$('#stat-kind button').forEach(function(b){
+  b.onclick=function(){ statKind=b.dataset.k; drawStat(); };
+});
+
 $('#h-prev').onclick=function(){ homeYM=ymShift(homeYM,-1); renderHome(); };
 $('#h-next').onclick=function(){
   if(homeYM>=ymOf(todayStr())) return;
   homeYM=ymShift(homeYM,1); renderHome();
 };
-$('#h-today').onclick=function(){ homeYM=ymOf(todayStr()); renderHome(); };
 
 function renderBudget(ym){
   var c=$('#h-budget'); c.innerHTML='';
@@ -2684,14 +2995,57 @@ function drawBudget(){
   + '아무것도 안 고르면<br>이 계산을 하지 않습니다.'));
   b.appendChild(el('div','fld'));
 
-  /* 분류마다 한도 — 비워두면 한도 없음 */
-  b.appendChild(fldLabel('분류마다 한도 정하기 (안 정해도 됩니다)'));
+  /* 분류마다 한도 — 🚨 2026-09-02 별도 화면(#cbsheet)으로 뺐다.
+     아내분이 "생활비 고치기가 복잡하다"고 한 원인이 이 구획이었다(분류 25개 목록 +
+     설명문 4단락이 화면 대부분을 차지했다). 대부분 안 쓰는 선택 기능이라, 여기서는
+     몇 개 정해뒀는지만 한 줄로 보여주고 실제 목록은 눌러야 나오게 했다. */
+  var setCnt=Object.keys(bdraft.catBudget||{}).length, exclCnt=Object.keys(bdraft.excl||{}).length;
+  var cbtag = [setCnt?(setCnt+'개 정함'):null, exclCnt?(exclCnt+'개 제외'):null].filter(Boolean).join(' · ');
+  var cb=el('button','pickrow');
+  cb.innerHTML = '분류별로 한도 정하기' + (cbtag?(' <span class="tiny muted">('+cbtag+')</span>'):'')
+               + '<span class="arw">›</span>';
+  cb.onclick=function(){ openCatBudget(); };
+  b.appendChild(cb);
+  b.appendChild(el('div','fld'));
+
+  var off=el('button','btn dan','생활비 정하기 끄기');
+  off.onclick=function(){
+    DB.budget={ amount:0, payIds:[], acctIds:[] };
+    save(); closeBudget(); toast('껐습니다'); renderHome();
+    /* 분류별 한도는 그대로 남긴다 — 생활비 총액과 별개로 쓰는 사람이 있다 */
+  };
+  b.appendChild(off);
+}
+$('#bs-cancel').onclick=closeBudget;
+$('#bs-save').onclick=function(){
+  var amt=+String(bdraft.amount).replace(/[^0-9]/g,'');
+  if(!(amt>0)){ toast('생활비 금액을 적어주세요'); return; }
+  DB.budget={ amount:amt, payIds:bdraft.payIds.slice(), acctIds:(bdraft.acctIds||[]).slice() };
+  DB.catBudget=JSON.parse(JSON.stringify(bdraft.catBudget||{}));
+  DB.cats.forEach(function(c){
+    if(bdraft.excl[c.n]) c.excl=true; else delete c.excl;
+  });
+  save(); closeBudget(); toast('저장했습니다'); renderHome();
+};
+
+/* ── 분류별 한도 (2026-09-02 신설) ─────────────────────────────────────────
+   「생활비 정하기」 안에 분류 25개짜리 목록이 그대로 있어서 복잡하다는 지적을 받아
+   별도 화면으로 뺐다. bdraft 를 그대로 같이 쓴다 — 저장은 여전히 「생활비 정하기」의
+   「저장」 한 번으로 같이 된다(여기는 임시 화면일 뿐, 따로 저장 버튼이 없다). */
+function openCatBudget(){
+  drawCatBudget();
+  $('#cbsheet').style.display='flex';
+  /* body.style.overflow 는 이미 bsheet 가 hidden 으로 켜 놨다 — 그대로 둔다 */
+}
+function closeCatBudget(){
+  $('#cbsheet').style.display='none';
+  drawBudget();   /* 「N개 정함」 요약 숫자를 새로 반영 */
+}
+function drawCatBudget(){
+  var b=$('#cbs-body'); b.innerHTML='';
   b.appendChild(el('div','notice',
     '여기 적는 값은 <b>계산된 것이 아니라<br>내가 정하는 목표</b>입니다.<br>'
   + '홈의 「분류별」에서<br>얼마나 남았는지 같이 보입니다.'));
-  /* 🚨 2026-08-26 — 사용자가 고정비 분류에 「제외」를 켰다가 홈 숫자가 통째로 틀어졌다.
-     「생활비에서 고정비를 빼야지」라고 생각한 것인데 **그건 앱이 이미 자동으로 한다.**
-     여기 단추는 훨씬 센 것(홈 통계 전체에서 삭제)이라 뜻을 갈라 적어 준다. */
   b.appendChild(el('div','notice',
     '<b>🚫 고정비는 여기서 뺄 필요가 없습니다.</b><br>'
   + '보험·주거·통신·공과금·구독료처럼<br>매달 정해져 나가는 돈은<br>'
@@ -2702,7 +3056,8 @@ function drawBudget(){
   + '각자 용돈처럼 <b>이미 나눠 가진 돈</b>을<br>또 세지 않으려 할 때만 씁니다.<br>'
   + '켜면 <b>홈의 쓴 돈·고정비·변동비에서<br>모두 빠집니다.</b><br>'
   + '내역 목록에는 그대로 남습니다.'));
-  /* 이 달에 그 분류로 쓴 돈 — 켜면 얼마가 빠지는지 그 자리에서 보여주려고 미리 센다 */
+  b.appendChild(el('div','fld'));
+
   var _bym = ymOf(todayStr()), _bsum = {}, _bfix = {};
   liveTx().forEach(function(t){
     if(t.type!=='expense' || ymOf(t.date)!==_bym) return;
@@ -2726,11 +3081,8 @@ function drawBudget(){
     };
     if(bdraft.excl[c.n]){ i.disabled=true; i.value=''; i.placeholder='—'; i.style.opacity='.4'; }
     row.appendChild(i);
-    /* 통계에서 빼기 — 켜면 한도 칸이 꺼진다(뺄 것에 한도를 정할 이유가 없다) */
     var ex=el('button');
     var on=!!bdraft.excl[c.n];
-    /* 🚨 「제외」 두 글자로는 무엇에서 빠지는지 안 드러난다(2026-08-26 사용자가 헷갈림).
-       「통계 제외」로 고쳐 적고 칸을 조금 넓혔다. */
     ex.style.cssText='flex:none;width:66px;padding:11px 0;border-radius:12px;font-size:11.5px;'
       + 'font-weight:700;line-height:1.3;'
       + 'border:1px solid '+(on?'var(--accent)':'var(--line)')+';'
@@ -2738,13 +3090,11 @@ function drawBudget(){
     ex.innerHTML = on ? '통계<br>제외됨' : '통계<br>제외';
     ex.onclick=function(){
       if(bdraft.excl[c.n]) delete bdraft.excl[c.n]; else bdraft.excl[c.n]=1;
-      drawBudget();
+      drawCatBudget();
     };
     row.appendChild(ex);
     b.appendChild(row);
 
-    /* 켜져 있으면 **이 달에 얼마가 빠지는지** 그 자리에서 보여준다.
-       저장하고 홈에 가서야 숫자가 바뀐 걸 발견하면 원인을 못 찾는다. */
     if(on && _bsum[c.n]){
       var warn=el('div','tiny muted');
       warn.style.cssText='margin:-4px 0 11px 2px;line-height:1.6';
@@ -2754,27 +3104,8 @@ function drawBudget(){
       b.appendChild(warn);
     }
   });
-  b.appendChild(el('div','fld'));
-
-  var off=el('button','btn dan','생활비 정하기 끄기');
-  off.onclick=function(){
-    DB.budget={ amount:0, payIds:[], acctIds:[] };
-    save(); closeBudget(); toast('껐습니다'); renderHome();
-    /* 분류별 한도는 그대로 남긴다 — 생활비 총액과 별개로 쓰는 사람이 있다 */
-  };
-  b.appendChild(off);
 }
-$('#bs-cancel').onclick=closeBudget;
-$('#bs-save').onclick=function(){
-  var amt=+String(bdraft.amount).replace(/[^0-9]/g,'');
-  if(!(amt>0)){ toast('생활비 금액을 적어주세요'); return; }
-  DB.budget={ amount:amt, payIds:bdraft.payIds.slice(), acctIds:(bdraft.acctIds||[]).slice() };
-  DB.catBudget=JSON.parse(JSON.stringify(bdraft.catBudget||{}));
-  DB.cats.forEach(function(c){
-    if(bdraft.excl[c.n]) c.excl=true; else delete c.excl;
-  });
-  save(); closeBudget(); toast('저장했습니다'); renderHome();
-};
+$('#cbs-cancel').onclick=closeCatBudget;
 
 /* viewId 를 주면 **그 통장 눈으로** 그린다.
    🚨 왜 필요한가 (2026-08-25 아내분 지적) — 옮김은 부호도 색도 없어서
@@ -2833,6 +3164,14 @@ function monthDayTotals(ym){
   var out={};
   liveTx().forEach(function(t){
     if(ymOf(t.date)!==ym) return;
+    if(listFilter==='saving'){
+      if(!isSavingMove(t)) return;
+      if(listWho!=='all' && String(t.who)!==listWho) return;
+      /* 적금으로 「들어간」 것은 통장에서 나간 돈이라 빨강 쪽에 넣는다 */
+      var ds=out[t.date] || (out[t.date]={in:0,out:0});
+      if(outOfCashAsset(assetById(t.toId))) ds.out+=t.amount; else ds.in+=t.amount;
+      return;
+    }
     if(listFilter!=='all' && t.type!==listFilter) return;
     if(listFix==='fixed' && !isFixed(t)) return;
     if(listFix==='var' && isFixed(t)) return;
@@ -2879,6 +3218,9 @@ function renderListCal(){
     var cls='cd';
     if(dow===0) cls+=' sun';
     if(dow===6) cls+=' sat';
+    /* 🚨 내역 달력은 칸에 금액이 들어가 자리가 없다 — 공휴일 이름은 안 적고
+       **날짜만 빨갛게** 한다(쉬는 날이라는 것만 보이면 된다). 이름은 일정 탭에서 본다. */
+    if(holidayOf(ds)) cls+=' hol';
     if(ds===today) cls+=' today';
     if(ds===listDay) cls+=' sel';
     var cell=el('button',cls);
@@ -2898,6 +3240,8 @@ function renderListCal(){
 }
 function renderList(){
   $('#l-back').style.display = listFromHome ? '' : 'none';
+  /* 거르는 중이면 🔍 옆에 점을 찍는다 — 안 찍으면 「왜 몇 건 안 보이지?」가 된다(2026-09-01). */
+  $('#l-find-dot').style.display = findActive() ? '' : 'none';
   $('#m-label').textContent=ymLabel(curYM);
   var q=listQ.trim().toLowerCase();
   var searching=!!q;
@@ -2928,7 +3272,8 @@ function renderList(){
     if(!searching && ymOf(t.date)!==curYM) return false;
     if(searching && !txMatches(t,q)) return false;
     if(!searching && listDay && t.date!==listDay) return false;
-    if(listFilter!=='all' && t.type!==listFilter) return false;
+    if(listFilter==='saving'){ if(!isSavingMove(t)) return false; }
+    else if(listFilter!=='all' && t.type!==listFilter) return false;
     if(listFix==='fixed' && !isFixed(t)) return false;
     if(listFix==='var' && isFixed(t)) return false;
     if(listWho!=='all' && String(t.who)!==listWho) return false;
@@ -2936,14 +3281,31 @@ function renderList(){
   });
   var si=0,so=0;
   rows.forEach(function(t){ if(t.type==='income') si+=t.amount; else if(t.type==='expense') so+=t.amount; });
-  $('#l-in').textContent=wonx(si); $('#l-out').textContent=wonx(so);
-  $('#l-net').textContent=wonx(si-so);
-  $('#l-net').style.color=(si-so)>=0?'var(--txt)':'var(--minus)';
-  /* 「지출」만 볼 때 「수입 0원 · 남은 돈 −◯◯」이 같이 뜨면 헷갈린다.
-     지금 고른 갈래에 해당하는 줄만 남긴다. 「전체」일 때만 셋 다 보여준다. */
-  $('#l-in-row').style.display  = (listFilter==='expense') ? 'none' : '';
-  $('#l-out-row').style.display = (listFilter==='income')  ? 'none' : '';
-  $('#l-net-row').style.display = (listFilter==='all')     ? '' : 'none';
+  /* 「지출」만 볼 때 「수입 0원」이 같이 뜨면 헷갈린다(2026-08-26 지적).
+     지금 고른 갈래에 해당하는 칸만 남긴다.
+     🚨 한 칸만 남으면 폭이 반쪽이라 어색하므로, 그때는 한 칸이 전체를 채우게 한다. */
+  var onlyIn  = (listFilter==='income');
+  var onlyOut = (listFilter==='expense');
+  var onlySave= (listFilter==='saving');
+  /* 저축은 「옮김」이라 수입에도 지출에도 안 잡힌다 — 0원 두 칸을 띄우면 거짓말이 된다.
+     그래서 그때는 칸 하나에 **홈의 저축과 같은 값**을 보여준다(2026-09-02). */
+  if(onlySave){
+    $('#l-in-row').style.display='none';
+    $('#l-out-row').style.display='';
+    $('#l-out-row').querySelector('.lbl').textContent='저축';
+    var sv=monthCash(curYM).saved;
+    $('#l-out').textContent=wonx(sv);
+    $('#l-out').style.color='var(--txt)';
+  }else{
+    $('#l-in').textContent=wonx(si);
+    $('#l-out').textContent=wonx(so);
+    $('#l-out').style.color='var(--minus)';
+    $('#l-out-row').querySelector('.lbl').textContent='지출';
+    $('#l-in-row').style.display  = onlyOut ? 'none' : '';
+    $('#l-out-row').style.display = onlyIn  ? 'none' : '';
+  }
+  $('#l-in-row').parentNode.style.gridTemplateColumns =
+    (onlyIn || onlyOut || onlySave) ? '1fr' : 'repeat(2,1fr)';
 
   rows.sort(function(a,b){ return a.date<b.date?1:a.date>b.date?-1:(b.ts||0)-(a.ts||0); });
   var body=$('#l-body'); body.innerHTML='';
@@ -2953,6 +3315,12 @@ function renderList(){
                     + '다른 것을 눌러도 이 상태는 그대로 이어집니다.';
     body.appendChild(fxHead);
   }
+  /* 🚨 여기에 「넣은 것/뺀 것/합계」 안내문을 넣었다가 **뺐다**(2026-09-01).
+     사용자가 원한 것은 설명이 아니라 **중복돼 보이는 줄 자체가 안 보이는 것**이었다:
+     *"내 의도는 1917만원이 보이는게 아니고 해지해서 생긴돈, 그걸 옮긴돈,
+       막 이런게 중복되어보인다는건데 어쩔수없으면 그냥 두고"*
+     ➡️ 합계는 이미 화면 맨 위 요약에 있어 **안내문은 같은 말을 두 번 하는 것**이었다.
+     🔵 합치는 것은 **안 하기로 했다** — 이유는 HANDOFF 「저축 목록 중복」 절 참고. */
   if(searching){
     var head=el('div','notice');
     head.innerHTML='<b>전체 기간</b>에서 찾는 중입니다.<br>'
@@ -2989,11 +3357,153 @@ function renderList(){
   });
 }
 /* 검색·달 이동은 「지금 보던 그 날」과 뜻이 어긋난다 — 고른 날짜를 비운다. */
-$('#l-q').oninput=function(){ listQ=this.value; listDay=''; renderList(); };
+$('#l-q').oninput=function(){ listQ=this.value; listDay=''; renderList(); drawFindResults(); };
 $('#m-prev').onclick=function(){ curYM=ymShift(curYM,-1); listDay=''; renderList(); };
 $('#m-next').onclick=function(){ curYM=ymShift(curYM, 1); listDay=''; renderList(); };
-$$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; listFix='all'; listFromHome=false; renderList(); }; });
-$$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset.w; renderList(); }; });
+$$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; listFix='all'; listFromHome=false; renderList(); drawFindResults(); }; });
+$$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset.w; renderList(); drawFindResults(); }; });
+$$('#fs-period button').forEach(function(b){ b.onclick=function(){ findPeriod=b.dataset.p; drawFindResults(); }; });
+$('#fs-sort-btn').onclick=function(e){
+  e.stopPropagation();
+  var m=$('#fs-sort-menu');
+  m.style.display = (m.style.display==='none') ? 'block' : 'none';
+};
+$$('#fs-sort-menu button').forEach(function(b){
+  b.onclick=function(){ findSort=b.dataset.s; $('#fs-sort-menu').style.display='none'; drawFindResults(); };
+});
+/* 메뉴 밖을 누르면 닫는다 — 다른 화면의 팝업들과 같은 규칙 */
+document.addEventListener('click', function(e){
+  var m=$('#fs-sort-menu');
+  if(m && m.style.display==='block' && !m.contains(e.target) && e.target.id!=='fs-sort-btn') m.style.display='none';
+});
+$('#fs-from').onchange=function(){ findFrom=this.value; drawFindResults(); };
+$('#fs-to').onchange=function(){ findTo=this.value; drawFindResults(); };
+
+/* ── 찾기·거르기 화면 (2026-09-01 신설) ──────────────────────────────
+   검색·전체/지출/수입·둘다/남편/아내를 여기로 옮겼다 — 달력이 첫 화면에
+   바로 보이게 하려는 것(아내 요청). id·기존 동작은 그대로, 자리만 옮겼다. */
+function findActive(){
+  return listFilter!=='all' || listWho!=='all' || listFix!=='all' || !!listQ;
+}
+/* 🆕 2026-09-02 — 처음엔 건수만 셌는데, 사용자가 실제 목록을 원해서
+   findCount()/updateFsCount() 를 findMatches()/drawFindResults() 로 바꿨다.
+   기간(이번주/이번달/기간지정)이 새로 생겨서, 검색어도 이제 "전체 기간"이 아니라
+   그 기간 안에서만 찾는다(참고 화면과 같은 구조 — 기간과 검색어가 동시에 걸린다). */
+var findPeriod='month';        /* 'week' | 'month' | 'custom' */
+var findFrom='', findTo='';    /* findPeriod==='custom' 일 때만 쓴다 */
+var findSort='date';           /* 'date' | 'amtAsc' | 'amtDesc' */
+function dstr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function findRange(){
+  if(findPeriod==='week'){
+    var t=new Date(todayStr()+'T00:00:00'), dow=t.getDay();
+    var start=new Date(t); start.setDate(t.getDate()-dow);
+    var end=new Date(start); end.setDate(start.getDate()+6);
+    return { from: dstr(start), to: dstr(end) };
+  }
+  if(findPeriod==='custom'){
+    return { from: findFrom||'0000-01-01', to: findTo||'9999-12-31' };
+  }
+  return { from: curYM+'-01', to: curYM+'-'+pad2(daysInMonth(curYM)) };
+}
+/* renderList() 의 거르는 조건과 같되, **기간 범위**까지 더해서 실제 행을 돌려준다. */
+function findMatches(){
+  var range=findRange(), q=listQ.trim().toLowerCase();
+  var rows=liveTx().filter(function(t){
+    if(t.date<range.from || t.date>range.to) return false;
+    if(q && !txMatches(t,q)) return false;
+    if(listFilter==='saving'){ if(!isSavingMove(t)) return false; }
+    else if(listFilter!=='all' && t.type!==listFilter) return false;
+    if(listFix==='fixed' && !isFixed(t)) return false;
+    if(listFix==='var' && isFixed(t)) return false;
+    if(listWho!=='all' && String(t.who)!==listWho) return false;
+    return true;
+  });
+  if(findSort==='amtAsc')       rows.sort(function(a,b){ return a.amount-b.amount; });
+  else if(findSort==='amtDesc') rows.sort(function(a,b){ return b.amount-a.amount; });
+  else rows.sort(function(a,b){ return a.date<b.date?1:a.date>b.date?-1:(b.ts||0)-(a.ts||0); });
+  return rows;
+}
+function drawFindResults(){
+  $('#fs-custom').style.display = (findPeriod==='custom') ? 'flex' : 'none';
+  $$('#fs-period button').forEach(function(b){ b.classList.toggle('on', b.dataset.p===findPeriod); });
+  var sortLabel={date:'최신순', amtDesc:'큰 금액순', amtAsc:'작은 금액순'}[findSort];
+  $('#fs-sort-btn').textContent=sortLabel+' ▾';
+  $$('#fs-sort-menu button').forEach(function(b){
+    b.style.background = (b.dataset.s===findSort) ? 'var(--accent-soft)' : 'transparent';
+    b.style.color = (b.dataset.s===findSort) ? 'var(--accent)' : 'var(--txt)';
+    b.style.fontWeight = (b.dataset.s===findSort) ? '700' : '400';
+  });
+
+  var rows=findMatches();
+  var sum=0; rows.forEach(function(t){
+    if(t.type==='income') sum+=t.amount; else if(t.type==='expense') sum-=t.amount;
+  });
+  $('#fs-count').textContent = rows.length+'건 · 합계 '+(sum>=0?'+':'−')+won(Math.abs(sum));
+
+  var body=$('#fs-results'); body.innerHTML='';
+  if(!rows.length){
+    body.appendChild(el('div','empty','걸리는 내역이 없습니다.'));
+    return;
+  }
+  var capped = (rows.length>200) ? rows.slice(0,200) : rows;
+  var box=el('div','card'); box.style.padding='2px 18px';
+  capped.forEach(function(t){ box.appendChild(txLine(t)); });
+  body.appendChild(box);
+  if(rows.length>200){
+    body.appendChild(el('div','tiny muted','그 밖에 '+(rows.length-200)+'건이 더 있습니다.'));
+  }
+}
+/* preset 을 안 주면(=🔍 아이콘으로 직접 열면) **다른 앱들처럼 매번 기본값으로 돌아간다**
+   (2026-09-02 사용자 요청: "새로 나갓다가 다시 들어가면 초기화되야하는건 다른앱들처럼
+   기본으로 가져가고"). preset 을 주면(=통계 화면에서 막대를 눌러 들어오면) 그 조건을
+   그대로 쓴다 — 방금 본 숫자와 여기서 다시 합한 숫자가 같아야 하기 때문이다. */
+function openFind(preset){
+  if(preset){
+    listFilter=preset.filter; listFix=preset.fix; listWho=preset.who;
+    listQ=preset.q; findPeriod=preset.period||'month';
+  }else{
+    listQ=''; listFilter='all'; listWho='all'; listFix='all';
+    findPeriod='month'; findSort='date'; findFrom=''; findTo='';
+    $('#fs-from').value=''; $('#fs-to').value='';
+  }
+  $('#l-q').value=listQ;   /* 검색창 글자는 preset 이든 초기화든 항상 listQ 와 맞춘다 */
+  $$('#l-who button').forEach(function(b){
+    if(b.dataset.w!=='all') b.textContent=DB.people[+b.dataset.w]||('사람'+(+b.dataset.w+1));
+  });
+  var note=$('#fs-fix-note'); note.innerHTML='';
+  if(listFix!=='all'){
+    note.className='notice'; note.style.marginTop='14px';
+    note.innerHTML='<b>'+(listFix==='fixed'?'고정비':'변동비')+'만</b> 거르는 중입니다.<br>'
+                  + '위 「무엇을」에서 아무거나 눌러도 풀립니다.';
+  }else{
+    note.className=''; note.style.marginTop='';
+  }
+  if(findFrom) $('#fs-from').value=findFrom;
+  if(findTo)   $('#fs-to').value=findTo;
+  drawFindResults();
+  $('#fsheet').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+/* 🚨 2026-09-02 — 「찾기」를 닫으면 그 조건이 **내역 탭에 그대로 눌어붙어** 있었다.
+   두 가지가 문제였다(사용자 지적: *"닫기 누르면 내역에서 이런식으로 검색햇던게 맨위로보이고
+   정렬된단말이지 이게 자연스러운 흐름인가?"*):
+   ① **자연스럽지 않다** — 찾기는 잠깐 들여다보는 것인데, 닫고 나면 내역 탭이 계속
+      걸러진 채로 남아 「내 내역이 왜 이것뿐이지」가 된다.
+   ② **숫자가 달라진다(진짜 버그)** — 내역 탭은 `renderList()` 에서 **검색어가 있으면
+      달을 무시하고 전체 기간**을 뒤진다. 그래서 통계에서 「처가댁 8월 1건 10만원」을 누르고
+      찾기에서 그대로 1건을 본 뒤 닫으면, 내역 탭은 **전체 기간 10건 137만원**을 보여줬다.
+      같은 조건인데 두 화면이 다른 답을 내놓는 꼴이었다.
+   ➡️ 닫을 때 거르기를 **전부 푼다.** 찾기 화면 안에서만 조건이 살아 있게 한다. */
+function closeFind(){
+  $('#fsheet').style.display='none';
+  $('#fs-sort-menu').style.display='none';
+  document.body.style.overflow='';
+  listQ=''; listFilter='all'; listWho='all'; listFix='all';
+  $('#l-q').value='';
+  renderList();
+}
+$('#l-find-btn').onclick=function(){ openFind(); };
+$('#fs-cancel').onclick=closeFind;
 
 /* ============================================================================
    8. 입력 시트
@@ -3482,7 +3992,7 @@ function drawSheet(){
   var lbl = draft.type==='income'?'받은 금액':(draft.type==='transfer'?'옮길 금액':'쓴 금액');
   box.appendChild(el('div','lbl', lbl));
   box.appendChild(el('div','v num'+(draft.amount?'':' zero'), won(draft.amount)+'원'));
-  box.appendChild(el('div','hint', padOpen ? '다시 누르면 숫자판이 내려갑니다.'
+  box.appendChild(el('div','hint', padOpen ? '다 적었으면 「확인」을 누르세요.'
                                            : '눌러서 금액을 적어주세요.'));
   box.onclick=function(){ padOpen=!padOpen; drawSheet(); };
   b.appendChild(box);
@@ -3763,29 +4273,39 @@ function drawPad(){
   /* 숫자판이 내려가 있을 때도 저장은 늘 눌릴 수 있어야 한다.
      안 그러면 금액을 다 적고 나서 저장을 못 찾는다. */
   if(!padOpen){
-    var bar=el('div'); bar.style.cssText='padding:12px 14px;display:flex;gap:9px';
+    /* 🚨 2026-09-01 「＋계속」을 뺐다 — 저장하고 시트를 연 채로 다음 것을 바로 적는
+       단추였는데, 사용자가 안 쓴다고 했다(*"그냥 없어도 될거같애"*).
+       저장 하나만 남으니 맨 아래에서 헤맬 일이 없다.
+       `commitTx(keepOpen)` 의 인자는 그대로 둔다 — 되살릴 때 코드를 다시 안 짜도 되게. */
+    var bar=el('div'); bar.style.cssText='padding:12px 14px';
     var sv=el('button','btn pri', editingId?'수정 완료':'저장');
-    sv.style.cssText='margin:0;flex:1';
+    sv.style.cssText='margin:0;width:100%';
     sv.onclick=function(){ commitTx(); };
     bar.appendChild(sv);
-    if(!editingId){
-      var go2=el('button','btn','＋계속');
-      go2.style.cssText='margin:0;flex:none;width:96px;border:1px solid var(--line)';
-      go2.onclick=function(){ commitTx(true); };
-      bar.appendChild(go2);
-    }
     p.appendChild(bar);
     return;
   }
   var grid=el('div','pad');
-  var layout=[{k:'1'},{k:'2'},{k:'3'},{k:'SAVE'},
+  /* 🚨 2026-09-02 — 숫자판 안의 「저장」을 **「확인」**으로 바꿨다.
+     예전에는 숫자판이 계속 떠 있어서 **분류 8개 밖을 고르려고 스크롤할 자리가 없었다**
+     (아내분 지적: *"아래로 내리는게 자연스럽지않아"*).
+     이제 금액을 치고 **확인**을 누르면 숫자판이 내려가 화면이 넓어지고,
+     고를 때마다 다음 칸으로 저절로 넘어간다. 저장은 **맨 아래 한 곳**에만 둔다.
+     금액을 고치고 싶으면 **금액 칸을 다시 누르면** 숫자판이 올라온다. */
+  var layout=[{k:'1'},{k:'2'},{k:'3'},{k:'OK'},
               {k:'4'},{k:'5'},{k:'6'},
               {k:'7'},{k:'8'},{k:'9'},{k:'←'},
               {k:'C'},{k:'0'},{k:'00'},{k:'DONE'}];
   layout.forEach(function(o){
     var btn;
-    if(o.k==='SAVE'){ btn=el('button','save', editingId?'수정<br>완료':'저장'); btn.onclick=function(){ commitTx(); }; }
-    else if(o.k==='DONE'){ btn=el('button','act','＋계속'); btn.onclick=function(){ commitTx(true); }; }
+    if(o.k==='OK'){
+      btn=el('button','save','확인');
+      btn.onclick=function(){ padOpen=false; drawSheet(); };
+    }
+    else if(o.k==='DONE'){
+      /* 숫자판을 내리는 것과 같은 일 — 넓은 칸이라 여기서도 누를 수 있게 둔다 */
+      btn=el('button','act','확인'); btn.onclick=function(){ padOpen=false; drawSheet(); };
+    }
     else if(o.k==='←'){ btn=el('button','act','←'); btn.onclick=function(){ draft.amount=Math.floor(draft.amount/10); refreshAmt(); }; }
     else if(o.k==='C'){ btn=el('button','act','C'); btn.onclick=function(){ draft.amount=0; refreshAmt(); }; }
     else{
@@ -6038,6 +6558,132 @@ var LUNAR_SOLAR = {
   }
 };
 
+/* 한국 공휴일 표 (2026~2045).
+   🚨 손으로 고치지 말 것 — 도구/공휴일생성.py 를 다시 돌려서 만든다.
+      설날·추석·부처님오신날은 음력이라 해마다 양력 날짜가 다르고, 대체공휴일은
+      그 해 요일에 따라 생겼다 없어진다. 기억으로 적으면 「그럴듯한데 틀린 날짜」가 된다.
+   만든 방법: 음력변환.py(Meeus 천문계산) + 관공서의 공휴일에 관한 규정의 대체공휴일 규칙.
+   검산 18건 통과(2026-09-02) — 설날·추석·부처님오신날 8건 + 과거 대체공휴일 실제값 10건.
+   ⚠️ 임시공휴일(선거일·정부가 그때그때 정하는 것)은 들어 있지 않다 — 미리 알 수 없다. */
+var HOLIDAYS = {
+  '2026': { '01-01':'신정', '02-16':'설날 연휴', '02-17':'설날', '02-18':'설날 연휴',
+            '03-01':'삼일절', '03-02':'삼일절 대체공휴일', '05-05':'어린이날', '05-24':'부처님오신날',
+            '05-25':'부처님오신날 대체공휴일', '06-06':'현충일', '08-15':'광복절', '08-17':'광복절 대체공휴일',
+            '09-24':'추석 연휴', '09-25':'추석', '09-26':'추석 연휴', '10-03':'개천절',
+            '10-05':'개천절 대체공휴일', '10-09':'한글날', '12-25':'성탄절' },
+  '2027': { '01-01':'신정', '02-06':'설날 연휴', '02-07':'설날', '02-08':'설날 연휴',
+            '02-09':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날', '05-13':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '08-16':'광복절 대체공휴일', '09-14':'추석 연휴',
+            '09-15':'추석', '09-16':'추석 연휴', '10-03':'개천절', '10-04':'개천절 대체공휴일',
+            '10-09':'한글날', '10-11':'한글날 대체공휴일', '12-25':'성탄절', '12-27':'성탄절 대체공휴일' },
+  '2028': { '01-01':'신정', '01-25':'설날 연휴', '01-26':'설날', '01-27':'설날 연휴',
+            '03-01':'삼일절', '05-02':'부처님오신날', '05-05':'어린이날', '06-06':'현충일',
+            '08-15':'광복절', '10-02':'추석 연휴', '10-03':'개천절·추석', '10-04':'추석 연휴',
+            '10-09':'한글날', '12-25':'성탄절' },
+  '2029': { '01-01':'신정', '02-12':'설날 연휴', '02-13':'설날', '02-14':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-07':'어린이날 대체공휴일', '05-20':'부처님오신날',
+            '05-21':'부처님오신날 대체공휴일', '06-06':'현충일', '08-15':'광복절', '09-21':'추석 연휴',
+            '09-22':'추석', '09-23':'추석 연휴', '09-24':'추석 대체공휴일', '10-03':'개천절',
+            '10-09':'한글날', '12-25':'성탄절' },
+  '2030': { '01-01':'신정', '02-02':'설날 연휴', '02-03':'설날', '02-04':'설날 연휴',
+            '02-05':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날', '05-06':'어린이날 대체공휴일',
+            '05-09':'부처님오신날', '06-06':'현충일', '08-15':'광복절', '09-11':'추석 연휴',
+            '09-12':'추석', '09-13':'추석 연휴', '10-03':'개천절', '10-09':'한글날',
+            '12-25':'성탄절' },
+  '2031': { '01-01':'신정', '01-22':'설날 연휴', '01-23':'설날', '01-24':'설날 연휴',
+            '03-01':'삼일절', '03-03':'삼일절 대체공휴일', '05-05':'어린이날', '05-28':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-30':'추석 연휴', '10-01':'추석',
+            '10-02':'추석 연휴', '10-03':'개천절', '10-09':'한글날', '12-25':'성탄절' },
+  '2032': { '01-01':'신정', '02-10':'설날 연휴', '02-11':'설날', '02-12':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-16':'부처님오신날', '05-17':'부처님오신날 대체공휴일',
+            '06-06':'현충일', '08-15':'광복절', '08-16':'광복절 대체공휴일', '09-18':'추석 연휴',
+            '09-19':'추석', '09-20':'추석 연휴', '09-21':'추석 대체공휴일', '10-03':'개천절',
+            '10-04':'개천절 대체공휴일', '10-09':'한글날', '10-11':'한글날 대체공휴일', '12-25':'성탄절',
+            '12-27':'성탄절 대체공휴일' },
+  '2033': { '01-01':'신정', '01-30':'설날 연휴', '01-31':'설날', '02-01':'설날 연휴',
+            '02-02':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날', '05-06':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-07':'추석 연휴', '09-08':'추석',
+            '09-09':'추석 연휴', '10-03':'개천절', '10-09':'한글날', '10-10':'한글날 대체공휴일',
+            '12-25':'성탄절', '12-26':'성탄절 대체공휴일' },
+  '2034': { '01-01':'신정', '02-18':'설날 연휴', '02-19':'설날', '02-20':'설날 연휴',
+            '02-21':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날', '05-25':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-26':'추석 연휴', '09-27':'추석',
+            '09-28':'추석 연휴', '10-03':'개천절', '10-09':'한글날', '12-25':'성탄절' },
+  '2035': { '01-01':'신정', '02-07':'설날 연휴', '02-08':'설날', '02-09':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-07':'어린이날 대체공휴일', '05-15':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-15':'추석 연휴', '09-16':'추석',
+            '09-17':'추석 연휴', '09-18':'추석 대체공휴일', '10-03':'개천절', '10-09':'한글날',
+            '12-25':'성탄절' },
+  '2036': { '01-01':'신정', '01-27':'설날 연휴', '01-28':'설날', '01-29':'설날 연휴',
+            '01-30':'설날 대체공휴일', '03-01':'삼일절', '03-03':'삼일절 대체공휴일', '05-03':'부처님오신날',
+            '05-05':'어린이날', '05-06':'부처님오신날 대체공휴일', '06-06':'현충일', '08-15':'광복절',
+            '10-03':'개천절·추석 연휴', '10-04':'추석', '10-05':'추석 연휴', '10-06':'추석 대체공휴일',
+            '10-09':'한글날', '12-25':'성탄절' },
+  '2037': { '01-01':'신정', '02-14':'설날 연휴', '02-15':'설날', '02-16':'설날 연휴',
+            '02-17':'설날 대체공휴일', '03-01':'삼일절', '03-02':'삼일절 대체공휴일', '05-05':'어린이날',
+            '05-22':'부처님오신날', '06-06':'현충일', '08-15':'광복절', '08-17':'광복절 대체공휴일',
+            '09-23':'추석 연휴', '09-24':'추석', '09-25':'추석 연휴', '10-03':'개천절',
+            '10-05':'개천절 대체공휴일', '10-09':'한글날', '12-25':'성탄절' },
+  '2038': { '01-01':'신정', '02-03':'설날 연휴', '02-04':'설날', '02-05':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-11':'부처님오신날', '06-06':'현충일',
+            '08-15':'광복절', '08-16':'광복절 대체공휴일', '09-12':'추석 연휴', '09-13':'추석',
+            '09-14':'추석 연휴', '09-15':'추석 대체공휴일', '10-03':'개천절', '10-04':'개천절 대체공휴일',
+            '10-09':'한글날', '10-11':'한글날 대체공휴일', '12-25':'성탄절', '12-27':'성탄절 대체공휴일' },
+  '2039': { '01-01':'신정', '01-23':'설날 연휴', '01-24':'설날', '01-25':'설날 연휴',
+            '01-26':'설날 대체공휴일', '03-01':'삼일절', '04-30':'부처님오신날', '05-02':'부처님오신날 대체공휴일',
+            '05-05':'어린이날', '06-06':'현충일', '08-15':'광복절', '10-01':'추석 연휴',
+            '10-02':'추석', '10-03':'개천절·추석 연휴', '10-04':'추석 대체공휴일', '10-09':'한글날',
+            '10-10':'한글날 대체공휴일', '12-25':'성탄절', '12-26':'성탄절 대체공휴일' },
+  '2040': { '01-01':'신정', '02-11':'설날 연휴', '02-12':'설날', '02-13':'설날 연휴',
+            '02-14':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날', '05-07':'어린이날 대체공휴일',
+            '05-18':'부처님오신날', '06-06':'현충일', '08-15':'광복절', '09-20':'추석 연휴',
+            '09-21':'추석', '09-22':'추석 연휴', '10-03':'개천절', '10-09':'한글날',
+            '12-25':'성탄절' },
+  '2041': { '01-01':'신정', '01-31':'설날 연휴', '02-01':'설날', '02-02':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-06':'어린이날 대체공휴일', '05-07':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-09':'추석 연휴', '09-10':'추석',
+            '09-11':'추석 연휴', '10-03':'개천절', '10-09':'한글날', '12-25':'성탄절' },
+  '2042': { '01-01':'신정', '01-21':'설날 연휴', '01-22':'설날', '01-23':'설날 연휴',
+            '03-01':'삼일절', '03-03':'삼일절 대체공휴일', '05-05':'어린이날', '05-26':'부처님오신날',
+            '06-06':'현충일', '08-15':'광복절', '09-27':'추석 연휴', '09-28':'추석',
+            '09-29':'추석 연휴', '09-30':'추석 대체공휴일', '10-03':'개천절', '10-09':'한글날',
+            '12-25':'성탄절' },
+  '2043': { '01-01':'신정', '02-09':'설날 연휴', '02-10':'설날', '02-11':'설날 연휴',
+            '03-01':'삼일절', '03-02':'삼일절 대체공휴일', '05-05':'어린이날', '05-16':'부처님오신날',
+            '05-18':'부처님오신날 대체공휴일', '06-06':'현충일', '08-15':'광복절', '08-17':'광복절 대체공휴일',
+            '09-16':'추석 연휴', '09-17':'추석', '09-18':'추석 연휴', '10-03':'개천절',
+            '10-05':'개천절 대체공휴일', '10-09':'한글날', '12-25':'성탄절' },
+  '2044': { '01-01':'신정', '01-29':'설날 연휴', '01-30':'설날', '01-31':'설날 연휴',
+            '02-01':'설날 대체공휴일', '03-01':'삼일절', '05-05':'어린이날·부처님오신날', '05-06':'어린이날 대체공휴일',
+            '06-06':'현충일', '08-15':'광복절', '10-03':'개천절', '10-04':'추석 연휴',
+            '10-05':'추석', '10-06':'추석 연휴', '10-09':'한글날', '10-10':'한글날 대체공휴일',
+            '12-25':'성탄절', '12-26':'성탄절 대체공휴일' },
+  '2045': { '01-01':'신정', '02-16':'설날 연휴', '02-17':'설날', '02-18':'설날 연휴',
+            '03-01':'삼일절', '05-05':'어린이날', '05-24':'부처님오신날', '06-06':'현충일',
+            '08-15':'광복절', '09-24':'추석 연휴', '09-25':'추석', '09-26':'추석 연휴',
+            '09-27':'추석 대체공휴일', '10-03':'개천절', '10-09':'한글날', '12-25':'성탄절' }
+};
+
+/* 그 날의 공휴일 이름. 표에 없는 해(2026 이전·2045 이후)면 빈 값. */
+function holidayOf(ds){
+  var y = HOLIDAYS[ds.slice(0,4)];
+  return (y && y[ds.slice(5)]) || '';
+}
+/* 달력 칸에 넣을 짧은 이름. 칸이 좁아서(폰 기준 한 칸 ~50px) 긴 이름은 잘린다 —
+   잘려서 뜻을 잃느니 **미리 짧은 말로 바꾼다.** 온전한 이름은 날짜를 누르면 아래에 나온다.
+   🚨 「대체」는 반드시 남긴다 — 그게 없으면 진짜 명절과 구분이 안 된다. */
+var HOL_SHORT = {
+  '부처님오신날':'석탄일', '어린이날':'어린이날', '설날 연휴':'설연휴', '추석 연휴':'추석연휴'
+};
+function holidayShort(nm){
+  var sub = / 대체공휴일$/.test(nm);
+  var base = nm.replace(' 대체공휴일', '');
+  /* 겹친 날(어린이날·부처님오신날)은 앞의 것만 적는다 — 둘 다 적으면 무조건 잘린다 */
+  base = base.split('·')[0];
+  base = HOL_SHORT[base] || base;
+  return sub ? (base + ' 대체') : base;
+}
+
 function liveEvents(){ return (DB.events||[]).filter(function(e){ return !e.deleted; }); }
 
 /* 이 일정이 「그 해」에 실제로 걸리는 양력 날짜.
@@ -6101,7 +6747,14 @@ function moneyDays(ym){
   });
   return out;
 }
-function evColor(e){ return e.yearly ? 'var(--p1)' : 'var(--accent)'; }
+/* 일정 색 = **누구 것인가**(2026-09-02 사용자 확정).
+   예전에는 종류(기념일/약속)로 갈랐는데, 그 색이 **앱의 사람 색과 정확히 겹쳐서**
+   (기념일 주황 = 아내 주황) 오히려 헷갈렸다. 사용자: *"(가)로하되"* 「공동은 회색말고 다른색」.
+   종류는 달력 아래 목록에서 글자로 구분된다. */
+function evColor(e){
+  var w = (e.who===0) ? 0 : (e.who===1) ? 1 : 2;
+  return 'var(--p'+w+')';
+}
 /* 「며칠째」 — 시작한 그날을 **1일째**로 센다(2026-08-26 사용자 확정).
    그래서 2020-02-27 은 그날 1일째이고, 하루 지나면 2일째다. */
 function sinceDays(e){
@@ -6166,6 +6819,15 @@ function renderCal(){
   var y = +calYM.slice(0,4), mo = +calYM.slice(5,7);
   $('#c-label').textContent = ymLabel(calYM);
 
+  /* 범례 — 사람 이름을 설정에서 바꿀 수 있으므로 여기서 채운다 */
+  var leg = $('#c-leg'); leg.innerHTML = '';
+  [[0, DB.people[0]||'남편'], [1, DB.people[1]||'아내'], [2, '공동']].forEach(function(p){
+    var sp = el('span');
+    var ic = el('i'); ic.style.background = 'var(--p'+p[0]+')';
+    sp.appendChild(ic); sp.appendChild(document.createTextNode(p[1]));
+    leg.appendChild(sp);
+  });
+
   /* 요일 줄 */
   var head = $('#c-head'); head.innerHTML = '';
   ['일','월','화','수','목','금','토'].forEach(function(w, i){
@@ -6179,7 +6841,8 @@ function renderCal(){
   var g = $('#c-grid'); g.innerHTML = '';
   var first = new Date(y, mo - 1, 1).getDay();
   var dim   = daysInMonth(calYM);
-  var money = moneyDays(calYM);
+  /* 🚨 2026-09-01 돈 나가는/들어오는 날 점을 뺐다 — 내역 탭 달력에 실제 돈이 이미
+     날짜별로 다 보여서 중복이었다(아내분 지적). moneyDays() 함수는 남겨 둔다. */
   var today = todayStr();
   var i;
   for(i = 0; i < first; i++) g.appendChild(el('div', 'cd off'));
@@ -6187,12 +6850,15 @@ function renderCal(){
     var ds  = calYM + '-' + pad2(i);
     var dow = new Date(y, mo - 1, i).getDay();
     var cls = 'cd';
+    var hol = holidayOf(ds);
     if(dow === 0) cls += ' sun';
     if(dow === 6) cls += ' sat';
+    if(hol) cls += ' hol';
     if(ds === today)  cls += ' today';
     if(ds === calSel) cls += ' sel';
     var cell = el('button', cls);
     cell.appendChild(el('div', 'dnum', String(i)));
+    if(hol) cell.appendChild(el('div', 'hnm', holidayShort(hol)));
 
     /* 여러 날에 걸친 것은 **막대로 이어 그린다.** 점으로는 기간이 안 드러난다.
        하루짜리 일정과 돈 나가는 날은 그대로 점으로 둔다 — 그건 정말 「그날 하나」이기 때문. */
@@ -6220,9 +6886,6 @@ function renderCal(){
     }
     /* 점은 최대 세 개까지만 찍는다. 더 찍으면 칸이 무너진다. */
     var dots = el('div', 'dots');
-    (money[i] || []).forEach(function(k){
-      colors.push(k === 'in' ? 'var(--plus)' : 'var(--minus)');
-    });
     var seen = {}, uniq = [];
     colors.forEach(function(c){ if(!seen[c]){ seen[c] = 1; uniq.push(c); } });
     uniq.slice(0,3).forEach(function(c){
@@ -6263,6 +6926,19 @@ function drawCalDay(){
   var dow = ['일','월','화','수','목','금','토'][new Date(+p[0], +p[1]-1, +p[2]).getDay()];
   b.appendChild(fldLabel(Number(p[1]) + '월 ' + Number(p[2]) + '일 (' + dow + ')'));
 
+  /* 공휴일이면 맨 위에 알린다 — 달력 칸의 작은 글씨는 잘릴 수 있어서 여기선 온전한 이름으로. */
+  var holToday = holidayOf(calSel);
+  if(holToday){
+    var hr = el('div', 'ev-row');
+    var hd = el('i', 'dot'); hd.style.background = 'var(--minus)';
+    hr.appendChild(hd);
+    var hb = el('div'); hb.style.flex = '1';
+    hb.appendChild(el('div', 'nm', holToday));
+    hb.appendChild(el('div', 'tiny muted', '공휴일'));
+    hr.appendChild(hb);
+    b.appendChild(hr);
+  }
+
   var list = dayEvents(calSel);
   list.forEach(function(e){
     var row = el('button', 'ev-row');
@@ -6291,29 +6967,13 @@ function drawCalDay(){
     b.appendChild(row);
   });
 
-  /* 그날 오가는 돈 — 반복규칙에서 가져온 것.
-     여기서는 고칠 수 없다. 원본은 「살림 → 반복해서 나가는 돈」에 있다. */
-  var dim = daysInMonth(calYM), dnum = +p[2];
-  var rules = liveRules().filter(function(r){
-    if(r.active === false) return false;
-    if(r.since && calYM < r.since) return false;
-    if(r.until && calYM > r.until) return false;
-    return Math.min(+r.day || 1, dim) === dnum;
-  });
-  rules.forEach(function(r){
-    var row = el('div', 'ev-row');
-    var t = el('i', 'dot');
-    t.style.background = (r.kind === 'income') ? 'var(--plus)' : 'var(--minus)';
-    row.appendChild(t);
-    var box = el('div'); box.style.flex = '1';
-    box.appendChild(el('div', 'nm', r.title || '(이름 없음)'));
-    box.appendChild(el('div', 'tiny muted',
-      (r.payIn ? '들어온 월급 그대로' : r.varAmt ? '금액이 매달 다름' : wonx(r.amount)) + ' · 반복'));
-    row.appendChild(box);
-    b.appendChild(row);
-  });
+  /* 🚨 2026-09-02 — 「그날 오가는 돈(반복규칙)」 목록을 여기서 **뺐다.**
+     A단계(2026-09-01)에서 달력의 빨강·초록 점은 지웠는데 **이 아래 목록은 놓쳤다**
+     (사용자 지적: *"일정에 아직도 돈나가는거 반복표시가 나오는데?"*).
+     일정 탭에서 돈 관련을 아예 빼기로 한 결정(*"아예 빼자 어짜피 내역달력에서 볼수잇잖아"*)에
+     따라 목록도 없앤다. 돈은 **내역 탭 달력**에서 실제 금액으로 본다. */
 
-  if(!list.length && !rules.length){
+  if(!list.length && !holToday){
     b.appendChild(el('div', 'empty',
       '이 날은 아무것도 없습니다.<br>아래 ＋ 를 눌러 넣어보세요.'));
   }
