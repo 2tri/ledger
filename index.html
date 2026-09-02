@@ -26,9 +26,20 @@
   --bg:#F2F4F6; --card:#FFFFFF; --line:#E5E8EB; --line2:#F2F4F6;
   --txt:#191F28; --sub:#6B7684; --dim:#B0B8C1;
   --accent:#3182F6; --accent-soft:#E8F3FF;
-  --minus:#F04452; --plus:#0DAB76;
+  /* 🚨 2026-09-02 — 지출색을 **빨강에서 호박색으로** 옮겼다(아내분 지적).
+     달력에서 **일요일 날짜**와 **지출 금액**이 똑같은 빨강이라 헷갈렸다.
+     🔑 **일요일 빨강은 한국 달력의 관습이라 손대지 않는다**(사용자 판단).
+        대신 지출이 빨강 계열에서 아예 나온다.
+     🚨 처음엔 지출을 **버건디로 짙게** 했는데 **어두운 화면에서 못 내렸다** —
+        달력 금액이 9px 굵은 글씨라 대비 4.5 아래로 가면 안 읽힌다.
+        호박색은 **양쪽 화면 다** 대비가 넉넉하고 일요일과 밝기도 확실히 갈린다:
+        밝은 화면 5.02 / 어두운 화면 9.20, 일요일과 밝기차 0.074 / 0.159.
+     `--sun` 을 따로 둔 이유 — 예전엔 일요일도 `--minus` 를 써서 같이 바뀌어 버렸다. */
+  --minus:#B45309; --plus:#0DAB76;
+  --sun:#F04452;                 /* 달력 일요일 — 한국 달력 관습대로 빨강 유지 */
   --p0:#3182F6; --p0-soft:#E8F3FF;
-  --p1:#FF8A00; --p1-soft:#FFF3E0;
+  /* 아내 — 주황이었는데 핑크로 바꿨다(2026-09-02 아내분 요청) */
+  --p1:#DB2777; --p1-soft:#FFF0F6;
   /* 공동(둘 다) — 남편 파랑·아내 주황과 안 겹치는 보라. 회색은 「없는 것」처럼 보여 안 쓴다. */
   --p2:#8B5CF6; --p2-soft:#F1ECFE;
   --warn-bg:#FFF8E7; --warn-txt:#8A6100;
@@ -55,9 +66,12 @@
     --bg:#101214; --card:#17191C; --line:#292C31; --line2:#1E2126;
     --txt:#EDEEF0; --sub:#9BA3AD; --dim:#6B727C;
     --accent:#4D93FF; --accent-soft:#16243A;
-    --minus:#FF5F6D; --plus:#2BD9A0;
+    /* 🚨 어두운 화면에서는 **너무 짙게 못 내린다** — 달력 금액이 9px 굵은 글씨라
+       흐려지면 못 읽는다. 실제로 대비를 재서 골랐다(#E8455F = 4.87:1, 이보다 짙으면 4.5 미만). */
+    --minus:#FF9F43; --plus:#2BD9A0;
+    --sun:#FF5F6D;                 /* 달력 일요일 — 한국 달력 관습대로 빨강 유지 */
     --p0:#4D93FF; --p0-soft:#16243A;
-    --p1:#FFA640; --p1-soft:#32240D;
+    --p1:#FF6BA8; --p1-soft:#3A1428;
     --p2:#A78BFA; --p2-soft:#211A3A;
     --warn-bg:#2E260F; --warn-txt:#F2D28A;
   }
@@ -67,9 +81,12 @@
     --bg:#101214; --card:#17191C; --line:#292C31; --line2:#1E2126;
     --txt:#EDEEF0; --sub:#9BA3AD; --dim:#6B727C;
     --accent:#4D93FF; --accent-soft:#16243A;
-    --minus:#FF5F6D; --plus:#2BD9A0;
+    /* 🚨 어두운 화면에서는 **너무 짙게 못 내린다** — 달력 금액이 9px 굵은 글씨라
+       흐려지면 못 읽는다. 실제로 대비를 재서 골랐다(#E8455F = 4.87:1, 이보다 짙으면 4.5 미만). */
+    --minus:#FF9F43; --plus:#2BD9A0;
+    --sun:#FF5F6D;                 /* 달력 일요일 — 한국 달력 관습대로 빨강 유지 */
     --p0:#4D93FF; --p0-soft:#16243A;
-    --p1:#FFA640; --p1-soft:#32240D;
+    --p1:#FF6BA8; --p1-soft:#3A1428;
     --p2:#A78BFA; --p2-soft:#211A3A;
     --warn-bg:#2E260F; --warn-txt:#F2D28A;
 }
@@ -140,7 +157,7 @@ select{appearance:none;-webkit-appearance:none;
 .cal .cd.sel{background:var(--accent-soft)}
 .cal .dnum{display:inline-block;min-width:25px;line-height:25px;border-radius:999px;
   font-size:15px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
-.cal .cd.sun .dnum{color:var(--minus)}
+.cal .cd.sun .dnum{color:var(--sun)}
 .cal .cd.sat .dnum{color:var(--accent)}
 /* 공휴일은 일요일과 같은 빨강 — 「쉬는 날」이라는 뜻이 색 하나로 통한다(2026-09-02) */
 .cal .cd.hol .dnum{color:var(--minus)}
@@ -196,6 +213,23 @@ select{appearance:none;-webkit-appearance:none;
 .todo-row .todo-body{flex:1;min-width:0}
 .todo-row.done .todo-body{opacity:.55}
 .todo-row.later .todo-body{opacity:.5}
+/* 🆕 2026-09-01 — 「월납」 앱 방식. 끝난 것·밀린 것이 한눈에 갈리게 한다.
+   예전에는 끝난 것과 안 끝난 것이 똑같이 보이고, 날짜가 지났는지도 안 드러났다. */
+.todo-row.done .todo-body b{text-decoration:line-through}
+.todo-row.late{background:var(--warn-bg);margin:0 -18px;padding:10px 18px;border-radius:0}
+.todo-row.late .todo-chk{border-color:var(--warn-txt)}
+.todo-row.late .todo-body{opacity:1}
+.todo-row.late .todo-body b,.todo-row.late .todo-body .tiny{color:var(--warn-txt)}
+/* 진행률 막대 — 몇 건 남았는지 세지 않아도 보이게 */
+.tprog{height:6px;background:var(--line2);border-radius:999px;overflow:hidden;margin:8px 0 4px}
+.tprog i{display:block;height:100%;background:var(--accent);border-radius:999px}
+/* 홈 첫 화면 알림 줄 — 「이번 달 쓴 돈」 카드 맨 아래에 붙는다 */
+.todo-alert{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  margin:16px -18px -20px;padding:13px 18px;border-radius:0 0 var(--r) var(--r);
+  border-top:1px solid var(--line2);font-size:14.5px;font-weight:700}
+.todo-alert.warn{background:var(--warn-bg);color:var(--warn-txt)}
+.todo-alert.calm{background:var(--line2);color:var(--sub)}
+.todo-alert .grow{flex:1}
 .leg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 10px;margin-bottom:16px;padding:0 2px}
 .leg span{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--sub);
   font-weight:600;white-space:nowrap}
@@ -225,6 +259,8 @@ select{appearance:none;-webkit-appearance:none;
   display:block;width:100%}
 .trio>div:last-child,.trio>button:last-child{border-right:none}
 .trio>button:active{background:var(--accent-soft)}
+/* 내역 요약의 입금·지출 칸을 걸러 보는 중일 때(2026-09-02) — 다른 시트의 .seg.on 과 같은 뜻 */
+.trio>button.on{background:var(--accent-soft)}
 .trio .lbl{font-size:13px;color:var(--sub);margin-bottom:4px;font-weight:600}
 .trio .val{font-size:17px;font-weight:800;letter-spacing:-.6px}
 
@@ -496,6 +532,10 @@ select{appearance:none;-webkit-appearance:none;
         <button data-f="var"><div class="lbl">변동비 ›</div><div class="val num" id="h-var">0</div></button>
       </div>
       <div class="tiny muted" id="h-fixnote" style="margin-top:9px;line-height:1.7"></div>
+      <!-- 🆕 2026-09-01 — 첫 화면에서 「챙길 것」이 몇 건 남았는지 알리는 줄.
+           카드 순서는 안 바꾼다(챙길 것이 1,469px 이라 맨 위로 올리면 쓴 돈이 밀려난다).
+           누르면 챙길 것 카드로 내려간다. -->
+      <button class="todo-alert" id="h-todo-alert" style="display:none"></button>
     </div>
 
     <div class="card" id="h-empty" style="display:none"></div>
@@ -569,9 +609,12 @@ select{appearance:none;-webkit-appearance:none;
          🚨 2026-09-02 「남은 돈」 칸을 뺐다 — 홈의 4칸(수입·지출·저축·잔액)과 **같은 계산**이라
          같은 숫자가 두 군데 나오고 있었다(사용자: *"뭐가 복잡해보일거같아"*).
          여기는 「이번 달에 뭐가 오갔나」만 답한다. 「얼마 남았나」는 홈이 답한다. -->
-    <div class="trio" style="margin-top:0;grid-template-columns:repeat(2,1fr)">
-      <div id="l-in-row"><div class="lbl">입금</div><div class="val num" id="l-in" style="color:var(--plus)">0원</div></div>
-      <div id="l-out-row"><div class="lbl">지출</div><div class="val num" id="l-out" style="color:var(--minus)">0원</div></div>
+    <!-- 🚨 2026-09-02 — 두 칸을 누르면 그 갈래만 걸러 보여준다(아내분 요청).
+         다시 누르면 「전체」로 풀린다 — 8/26에 만든 「거르는 중이면 반대쪽을 숨긴다」 규칙과
+         부딪히지 않게, 숨긴 칸이 아니라 **남은 칸을 다시 누르면 돌아오게** 했다. -->
+    <div class="trio" id="l-io" style="margin-top:0;grid-template-columns:repeat(2,1fr)">
+      <button data-io="income" id="l-in-row"><div class="lbl">입금</div><div class="val num" id="l-in" style="color:var(--plus)">0원</div></button>
+      <button data-io="expense" id="l-out-row"><div class="lbl">지출</div><div class="val num" id="l-out" style="color:var(--minus)">0원</div></button>
     </div>
     <!-- 🆕 2026-08-27 — 아내가 익숙해한 Buboo 방식. 목록은 안 없애고 위에 달력을 얹는다.
          날짜를 누르면 그 날 것만 아래 목록에 뜬다(다시 누르면 풀림). 검색 중엔 감춘다.
@@ -1307,7 +1350,7 @@ var APP_BUILD = '08-31 a';
    🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
    글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
    "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
-var APP_TOUCHED = '09-01 13:55';
+var APP_TOUCHED = '09-02 10:53';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1803,6 +1846,49 @@ function incomeInto(acctId, ym){
   });
   return s;
 }
+/* 🆕 2026-09-01 — **그 수입 규칙 하나로 들어온 금액만.**
+   왜 필요한가 — 아내 월급통장에는 **자가운전보조금 5만과 월급이 따로 들어오고,
+   카뱅으로도 따로 옮긴다.** 그런데 `incomeInto` 는 통장 전체 합계라서 둘이 뭉쳐진다.
+   그러면 이체가 한 줄로 만들어져 **실제 통장 내역(두 줄)과 대조가 안 된다.**
+   ➡️ 이체 규칙에 `payInRule` 로 「어느 수입을 옮기는 것인지」를 적어두면 그것만 센다. */
+function incomeOfRule(ruleId, ym){
+  var s=0;
+  liveTx().forEach(function(t){
+    if(t.type!=='income' || t.ruleId!==ruleId) return;
+    if(ymOf(t.date)!==ym) return;
+    s+=t.amount;
+  });
+  return s;
+}
+/* `payIn` 이 채워야 할 금액.
+   `payInRule` 이 있으면 **그 수입만** 센다 — 아내 월급통장처럼 자가운전보조금이 따로
+   들어오는 경우, 이체도 따로 하므로 뭉쳐서 채우면 안 되기 때문이다.
+
+   🚨 그런데 **옛 기록에는 `ruleId` 가 안 붙어 있다**(손으로 넣은 1~6월 월급이 그렇다).
+      그것만 보고 0원을 채우면 **월급을 0으로 적게 만드는 더 나쁜 일**이 된다(2026-09-01 실측으로
+      잡았다 — 1~6월이 전부 0으로 나왔다).
+      ➡️ 그 규칙으로 찾은 게 없으면 **통장 전체 수입에서 「따로 옮기는 것들」만 빼서** 쓴다.
+         빼는 대상 = 같은 통장에서 나가는 다른 `auto` 이체 규칙의 고정 금액(자가운전보조금 등). */
+function payInAmount(r, ym){
+  if(!r.payInRule) return incomeInto(r.fromId, ym);
+  /* ① 그 수입 규칙으로 만들어진 것이 있으면 그게 정답이다(7월 이후처럼 `ruleId` 가 붙은 것). */
+  var only = incomeOfRule(r.payInRule, ym);
+  if(only > 0) return only;
+  /* ② 없으면 — 옛 기록은 `ruleId` 가 안 붙어 있다. 통장 전체 수입에서
+        **같이 들어오지만 따로 옮기는 수입**(자가운전보조금 등)만 뺀다.
+     🚨 「그 통장에서 나가는 고정 이체를 다 뺀다」로 하면 안 된다 — 청약·적금까지 빠져서
+        1~6월이 75만씩 어긋났다(2026-09-01 실측으로 잡았다). **수입 쪽만 봐야 한다.** */
+  var total = incomeInto(r.fromId, ym), apart = 0;
+  liveRules().forEach(function(x){
+    if(x.deleted || x.id === r.payInRule) return;
+    if(x.kind !== 'income' || x.toId !== r.fromId) return;   /* 같은 통장으로 들어오는 다른 수입 */
+    if(x.varAmt || x.payIn) return;                          /* 금액이 정해진 것만 */
+    if(x.since && ym < x.since) return;
+    if(x.until && ym > x.until) return;
+    apart += (+x.amount || 0);
+  });
+  return Math.max(0, total - apart);
+}
 
 /* 「월급 카뱅으로」 이체를 적으면 **월급(수입)도 같이 적어 준다** (2026-08-27 신설).
 
@@ -2029,10 +2115,17 @@ function cardSpentIn(assetId, ym){
   });
   return s;
 }
+/* 🆕 2026-09-01 — 「통장으로 기록은 하되 우리 자산으로는 안 세는 것」.
+   남매계가 그런 경우다: **누나 명의 통장이고 절반은 누나 돈**이라 우리 순자산에 넣으면
+   우리 돈이 아닌 것까지 우리 것으로 세게 된다(사용자: *"우리자산으로는 안잡히도록"*).
+   그렇다고 지출로만 적으면 **얼마 모였는지**를 못 본다 — 그래서 통장은 만들고 순자산에서만 뺀다. */
+function isNotOurs(a){ return !!(a && a.notOurs); }
+
 function netWorth(){
   var plus=0, minus=0, byOwner=[0,0,0], negBanks=[];
   liveAssets().forEach(function(a){
     if(a.kind==='card'||a.kind==='cash') return;
+    if(isNotOurs(a)) return;   /* 우리 돈이 아닌 통장 — 순자산에서 뺀다 */
     var v=balanceOf(a);
     /* 마이너스통장·대출은 원래 빚이므로 그대로 센다.
        🚨 통장·적금·투자·기타가 마이너스인 것은 「빚」이 아니라
@@ -2080,6 +2173,26 @@ function ruleMakesTx(r){ return !r.varAmt && ruleIsAuto(r); }
 
 /* 그 달에 챙겨야 할 것 **전부**. 이미 적은 것도 ✓ 로 남긴다 —
    사라져 버리면 「이번 달 뭘 했나」를 볼 수 없다(2026-08-26 사용자 요청). */
+/* 🆕 2026-09-01 — 그 날짜가 며칠 지났나(0이면 오늘). 「밀렸습니다」를 적는 데 쓴다. */
+function daysLate(ym, day){
+  var d = ym + '-' + pad2(day), t = todayStr();
+  if(d > t) return -1;                       /* 아직 안 온 날 */
+  var a = new Date(+d.slice(0,4), +d.slice(5,7)-1, +d.slice(8,10));
+  var b = new Date(+t.slice(0,4), +t.slice(5,7)-1, +t.slice(8,10));
+  return Math.round((b - a) / 86400000);
+}
+/* 「챙길 것」 요약 — 몇 건 중 몇 건 했나, 밀린 게 몇 건인가.
+   홈 첫 화면 알림 줄과 챙길 것 카드가 **같은 값**을 써야 하므로 한 곳에서 센다. */
+function todoSummary(ym){
+  var list = monthTodos(ym), done = 0, late = 0;
+  list.forEach(function(it){
+    if(it.done) done++;
+    /* 🚨 `varDay` 는 「그 날짜 이후」라는 뜻이라 밀렸다고 셀 수 없다(가스비·관리비). */
+    else if(!it.r.varDay && daysLate(ym, it.day) >= 0) late++;
+  });
+  return { total:list.length, done:done, left:list.length-done, late:late };
+}
+
 function monthTodos(ym){
   var out = [], today = todayStr();
   liveRules().forEach(function(r){
@@ -2331,13 +2444,37 @@ function renderHome(){
   else if(!fix) fn.innerHTML='<b>고정비가 0원</b>입니다.<br>'
                            + '엑셀에서 가져온 기록은<br>전부 「변동비」로 잡힙니다.<br>'
                            + '보험·공과금처럼 매달 같은 것은<br>「반복」에 등록하면 갈립니다.';
-  else fn.innerHTML='고정비는 어차피 나갈 돈입니다.<br>'
-                  + '줄일 수 있는 건 <b>변동비</b> 쪽입니다.';
+  /* 🚨 2026-09-01 — 「고정비는 어차피 나갈 돈입니다…」 두 줄을 뺐다.
+     한 번 읽으면 끝나는 설명이라 매달 똑같이 자리만 차지했다(사용자 지적으로 실측:
+     이 구획 두 덩어리가 116px = 카드 437px 의 27%). 숫자가 바뀌는 안내만 남긴다. */
+  else fn.innerHTML='';
   if(ex.sum){
-    fn.innerHTML += (fn.innerHTML?'<br><br>':'')
-      + '<b>'+ex.names.join('·')+'</b>으로 나간 <b>'+wonx(ex.sum)+'</b>은<br>'
-      + '위 숫자에서 빼고 셌습니다.<br>'
-      + '통계에서 빼기로 해둔 분류입니다.';
+    /* 금액이 매달 바뀌므로 이건 남긴다 — 안 보이면 「왜 숫자가 줄었지」가 된다.
+       3줄 → 1줄로 줄였다.
+       🚨 예전에는 「회비**으로** 나간」처럼 조사가 틀려 보였다(받침 없는 말에 「으로」).
+          조사를 붙이려면 josa() 를 써야 하는데, **아예 조사가 필요 없는 문장으로 바꿨다** —
+          그게 더 짧고 틀릴 여지도 없다. */
+    var exNm=ex.names.join('·');
+    fn.innerHTML += (fn.innerHTML?'<br>':'')
+      + '<b>'+exNm+' '+wonx(ex.sum)+'</b>은 뺐습니다.';
+  }
+
+  /* 🆕 2026-09-01 — 첫 화면 알림 줄. 「챙길 것」 카드와 **같은 값**(todoSummary)을 쓴다. */
+  var al=$('#h-todo-alert'), tsm=todoSummary(ym);
+  if(!tsm.total || !tsm.left){
+    al.style.display='none';               /* 다 적었으면 조용히 사라진다 */
+  }else{
+    al.style.display='';
+    al.className = 'todo-alert ' + (tsm.late ? 'warn' : 'calm');
+    al.innerHTML = '<span>' + (tsm.late ? '🔔' : '🗒') + '</span>'
+                 + '<span class="grow">' + (tsm.late
+                     ? (tsm.late + '건 밀렸습니다 · 남은 ' + tsm.left + '건')
+                     : ('아직 ' + tsm.left + '건 남았습니다')) + '</span>'
+                 + '<span>›</span>';
+    al.onclick = function(){
+      var card = $('#h-todo');
+      if(card && card.style.display!=='none') card.scrollIntoView({behavior:'smooth', block:'start'});
+    };
   }
 
   /* 「어디에 많이 썼나」는 2026-09-01 에 📊 통계 화면으로 옮겼다 — renderBars() 는
@@ -2377,16 +2514,47 @@ function renderHome(){
   /* 앱이 대신 못 적는 것 중 아직 안 적은 것.
      둘 다 여기 온다 — ①금액을 모르는 것 ②내가 손으로 옮겨야 하는 것 */
   var td=$('#h-todo'); td.innerHTML=''; td.style.display='none';
-  if(isNow){
-    var todo=monthTodos(ym), soon=comingEvents(60);   /* 돈만이 아니라 일정도 여기 온다 */
+  /* 🚨 2026-09-01 — 예전에는 `if(isNow)` 로 **이번 달에만** 그렸다.
+     그래서 지난 달로 넘기면 챙길 것이 통째로 사라졌다(사용자 지적: *"8월로 넘어가서
+     홈탭가면 왜 없지?"*). 지난 달에도 **그때 뭘 빠뜨렸나**를 봐야 하고, 그 자리에서
+     늦게라도 적을 수 있어야 한다 → **달 상관없이 그린다.**
+     🔑 다만 「다가오는 일정」(comingEvents)은 **오늘 기준 앞날**이라 지난 달에는 뜻이 없다 —
+        그것만 이번 달에서만 붙인다. */
+  {
+    var todo=monthTodos(ym), soon=isNow ? comingEvents(60) : [];
     if(todo.length || soon.length){
       td.style.display='';
       td.appendChild(el('h2',null,'챙길 것'));
-      td.appendChild(el('div','tiny muted',
-        '<b>앱이 대신 적을 수 없는 돈</b>과<br><b>다가오는 일정</b>이 여기 옵니다.'));
+      /* 🆕 2026-09-01 — 진행률(「월납」 앱 방식). 몇 건 남았는지 세지 않아도 보이게.
+         긴 설명문 대신 이 한 줄이 「지금 뭘 해야 하나」를 바로 답한다. */
+      var sm=todoSummary(ym);
+      if(sm.total){
+        var line=el('div','tiny muted');
+        line.style.margin='0 0 2px 2px';
+        line.innerHTML = sm.left
+          ? (sm.total+'건 중 <b style="color:var(--txt)">'+sm.done+'건</b> 적었습니다')
+          : '<b style="color:var(--plus)">다 적었습니다.</b>';
+        td.appendChild(line);
+        var pg=el('div','tprog');
+        var fl=el('i'); fl.style.width = Math.round(sm.done/sm.total*100)+'%';
+        pg.appendChild(fl); td.appendChild(pg);
+        var sub=el('div','tiny muted');
+        sub.style.margin='0 0 4px 2px';
+        sub.innerHTML = sm.left
+          ? (sm.late ? ('<b style="color:var(--warn-txt)">'+sm.late+'건 밀렸습니다</b> · 남은 '+sm.left+'건')
+                     : (sm.left+'건 남았습니다'))
+          : '이번 달은 더 적을 것이 없습니다.';
+        td.appendChild(sub);
+      }
       todo.forEach(function(it){
         var r=it.r;
-        var bb=el('button','btn todo-row'+(it.done?' done':'')+(it.due?'':' later'));
+        /* 🆕 밀린 것(날짜가 지났는데 안 적은 것)은 노란 줄로 띄운다.
+           예전에는 전부 「아직입니다」라서 오늘 할 것인지 지난 것인지 구분이 안 됐다.
+           🚨 단 `varDay`(날짜가 정해지지 않은 것 — 가스비·관리비)는 **밀렸다고 하지 않는다.**
+              그 달에 아예 안 나올 수도 있어서 「N일 밀렸습니다」가 거짓말이 된다
+              (사용자 지적: *"가스비같은게 매달 나오는게 아닐수도 잇어서"*). */
+        var late = (!it.done && !r.varDay && daysLate(ym, it.day) > 0) ? daysLate(ym, it.day) : 0;
+        var bb=el('button','btn todo-row'+(it.done?' done':'')+(it.due?'':' later')+(late?' late':''));
         bb.style.cssText='margin:10px 0 0 0;text-align:left';
         /* 무엇을 해야 하는지 그때그때 다르므로 문구를 갈라 준다 */
         var how;
@@ -2396,10 +2564,12 @@ function renderHome(){
            눌러 들어가서야 알게 하면 한 번 더 헤매게 된다. */
         else if(r.payIn && r.fromId)    how=(ruleIsAuto(r)?'':'직접 옮기고 적어주세요 · ')
                                           + '이번 달 들어온 돈 '
-                                          + wonx(incomeInto(r.fromId, ym));
+                                          + wonx(payInAmount(r, ym));
         else if(!ruleIsAuto(r) && !r.varAmt) how='직접 옮기고 눌러주세요 · '+wonx(r.amount);
         else if(!ruleIsAuto(r))         how='직접 옮기고 금액을 적어주세요';
         else                            how='이미 빠졌을 것입니다 · 금액만 확인';
+        /* 밀린 것은 며칠 밀렸는지 앞에 적는다 — 「아직입니다」만으로는 급한지 안 급한지 모른다 */
+        if(late) how = late + '일 밀렸습니다 · ' + how;
         bb.innerHTML='<span class="todo-chk">'+(it.done?'✓':'')+'</span>'
                    + '<span class="todo-body"><b>'+(r.title||'이름 없음')+'</b> · '+todoWhen(r)+' &nbsp;›'
                    + '<span class="tiny muted" style="display:block;margin-top:3px;font-weight:600">'+how+'</span></span>';
@@ -2419,7 +2589,7 @@ function renderHome(){
              🚨 잔액이 아니다 — 통장에 남아 있던 용돈까지 옮긴 것으로 적히면 안 된다.
              월급을 적은 직후에 누르면 그 월급이 그대로 나온다. 다르면 고쳐 적으면 된다. */
           if(r.payIn && r.fromId){
-            var pin=incomeInto(r.fromId, ym);
+            var pin=payInAmount(r, ym);
             if(pin>0) draft.amount=pin;
           }
           if(r.kind==='transfer'){ draft.fromId=r.fromId||''; draft.toId=r.toId||''; }
@@ -2853,20 +3023,19 @@ function renderBudget(ym){
   var dl=daysLeftIn(ym);
   var note=el('div','tiny muted');
   note.style.cssText='margin-top:10px;line-height:1.7';
+  /* 🚨 2026-09-01 — 「어차피 나갈 돈이라 아껴 쓸 수 있는 돈이 아니기 때문입니다」 같은
+     **이유 설명**을 뺐다. 홈 카드에서 뺀 것과 같은 성격이고(사용자: *"이 멘트도 반복인거같은데"*),
+     매달 똑같이 자리만 차지했다. **금액이 바뀌는 사실만 한 줄로 남긴다.** */
   if(over){
     note.innerHTML='예산보다 <b>'+wonx(-left)+'</b> 더 썼습니다.<br>'
                  + '이번 달은 '+dl+'일 남았습니다.';
     if(bp.fixed>0){
-      note.innerHTML += '<br><br>할부금·구독료 같은 <b>고정비 '+wonx(bp.fixed)+'</b>은<br>'
-                      + '여기에 안 넣었습니다.<br>어차피 나갈 돈이라<br>'
-                      + '「아껴 쓸 수 있는 돈」이 아니기 때문입니다.';
+      note.innerHTML += '<br><b>고정비 '+wonx(bp.fixed)+'</b>은 뺐습니다.';
     }
   }else if(dl>0){
-    note.innerHTML='남은 '+dl+'일 동안<br><b>하루 '+wonx(Math.floor(left/dl))+'꼴</b>로 쓸 수 있습니다.<br>'
-                 + '남은 돈을 남은 날수로<br>나눈 값입니다.';
+    note.innerHTML='남은 '+dl+'일 동안<br><b>하루 '+wonx(Math.floor(left/dl))+'꼴</b>로 쓸 수 있습니다.';
     if(bp.fixed>0){
-      note.innerHTML += '<br><br>할부금·구독료 같은 <b>고정비 '+wonx(bp.fixed)+'</b>은<br>'
-                      + '여기에 안 넣었습니다.';
+      note.innerHTML += '<br><b>고정비 '+wonx(bp.fixed)+'</b>은 뺐습니다.';
     }
   }else{
     note.innerHTML='지난 달을 보고 있습니다.';
@@ -3200,7 +3369,7 @@ function renderListCal(){
   var head=$('#l-calh'); head.innerHTML='';
   ['일','월','화','수','목','금','토'].forEach(function(w,i){
     var d=el('div',null,w);
-    if(i===0) d.style.color='var(--minus)';
+    if(i===0) d.style.color='var(--sun)';   /* 「일」 머리글 — 지출색이 아니라 일요일색 */
     if(i===6) d.style.color='var(--accent)';
     head.appendChild(d);
   });
@@ -3304,6 +3473,8 @@ function renderList(){
     $('#l-in-row').style.display  = onlyOut ? 'none' : '';
     $('#l-out-row').style.display = onlyIn  ? 'none' : '';
   }
+  $('#l-in-row').classList.toggle('on', onlyIn);
+  $('#l-out-row').classList.toggle('on', onlyOut);
   $('#l-in-row').parentNode.style.gridTemplateColumns =
     (onlyIn || onlyOut || onlySave) ? '1fr' : 'repeat(2,1fr)';
 
@@ -3362,6 +3533,20 @@ $('#m-prev').onclick=function(){ curYM=ymShift(curYM,-1); listDay=''; renderList
 $('#m-next').onclick=function(){ curYM=ymShift(curYM, 1); listDay=''; renderList(); };
 $$('#l-filter button').forEach(function(b){ b.onclick=function(){ listFilter=b.dataset.f; listFix='all'; listFromHome=false; renderList(); drawFindResults(); }; });
 $$('#l-who button').forEach(function(b){ b.onclick=function(){ listWho=b.dataset.w; renderList(); drawFindResults(); }; });
+/* 요약 칸 「입금」·「지출」을 눌러도 그 갈래로 거른다(2026-09-02 아내분 요청).
+   이미 그 갈래로 거른 중이면 **다시 눌러 「전체」로 되돌린다** — 반대쪽 칸이 숨어 있어서
+   되돌아올 단추가 없어지는 것을 막는다(🔍 화면에서 「전체」를 눌러도 되지만, 그 자리에서 바로
+   되돌릴 길을 만들어 둔 것). 「저축」으로 보고 있을 때(`listFilter==='saving'`)는 이 지출 칸이
+   「저축」이라는 이름만 빌려 쓰고 있을 뿐이라, 눌러도 「전체」가 아니라 이 단추 본래의 뜻인
+   「지출」로 넘어간다(막다른 상태는 아니므로 그대로 둔다). */
+$$('#l-io button').forEach(function(b){
+  b.onclick=function(){
+    var f=b.dataset.io;
+    listFilter = (listFilter===f) ? 'all' : f;
+    listFix='all'; listFromHome=false;
+    renderList(); drawFindResults();
+  };
+});
 $$('#fs-period button').forEach(function(b){ b.onclick=function(){ findPeriod=b.dataset.p; drawFindResults(); }; });
 $('#fs-sort-btn').onclick=function(e){
   e.stopPropagation();
@@ -5073,6 +5258,25 @@ function drawAsset(){
         : '이 통장으로 옮긴 돈은<br>「모은 돈」에 안 들어갑니다.<br>')
     + '파킹통장처럼<br>쓰려고 둔 게 아니라<br>모으려고 둔 통장에 켜세요.<br>'
     + '결제수단 목록에는 그대로 남습니다.'));
+    b.appendChild(el('div','fld'));
+
+    /* 🆕 2026-09-01 — 남매계처럼 **남 명의이고 절반은 남의 돈**인 통장.
+       기록은 남기고(얼마 모였나) 순자산에서만 뺀다. */
+    b.appendChild(fldLabel('가진 돈에 넣어 셀까요'));
+    var nseg=el('div','seg'); nseg.style.gridTemplateColumns='repeat(2,1fr)';
+    [[false,'넣어 센다'],[true,'빼고 센다']].forEach(function(o){
+      var nb=el('button', (!!adraft.notOurs)===o[0]?'on':'', o[1]);
+      nb.onclick=function(){ adraft.notOurs=o[0]; drawAsset(); };
+      nseg.appendChild(nb);
+    });
+    b.appendChild(nseg);
+    b.appendChild(el('div','tiny muted',
+      (adraft.notOurs
+        ? '<b>가진 돈에서 빼고 셉니다.</b><br>'
+          + '남매계처럼 <b>남 명의이거나<br>절반이 남의 몫</b>인 통장에 씁니다.<br>'
+          + '잔고와 내역은 그대로 보입니다 —<br>얼마 모였는지는 볼 수 있습니다.'
+        : '가진 돈에 <b>그대로 들어갑니다.</b><br>'
+          + '보통 통장은 이쪽입니다.')));
     b.appendChild(el('div','fld'));
 
     /* 네이버페이·카카오페이처럼 미리 충전해 두고 쓰는 것.
@@ -6832,7 +7036,7 @@ function renderCal(){
   var head = $('#c-head'); head.innerHTML = '';
   ['일','월','화','수','목','금','토'].forEach(function(w, i){
     var d = el('div', null, w);
-    if(i === 0) d.style.color = 'var(--minus)';
+    if(i === 0) d.style.color = 'var(--sun)';   /* 「일」 머리글 — 지출색이 아니라 일요일색 */
     if(i === 6) d.style.color = 'var(--accent)';
     head.appendChild(d);
   });
