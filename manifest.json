@@ -1,15 +1,25 @@
 {
-  "name": "우리 가계부",
-  "short_name": "가계부",
+  "name": "ê°ê³ë¶ë¶",
+  "short_name": "ê°ê³ë¶ë¶",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F2F4F6",
-  "theme_color": "#3182F6",
+  "background_color": "#2A2FD8",
+  "theme_color": "#2A2FD8",
   "lang": "ko",
   "icons": [
-    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
