@@ -3748,6 +3748,13 @@ function newTxDate(){
   return todayStr();
 }
 function openSheet(tx){
+  /* 찾기 화면(#fsheet, z-index 68)이 이 시트(z-index 60)보다 위에 뜬다.
+     찾기 화면에서 항목을 눌러 여기로 들어오면, 안 닫아줄 경우 이 화면이 열려도
+     찾기 화면에 가려 안 보인다(2026-09-14 사용자 신고 — "닫기를 누르면 눌러져있더라"). */
+  if($('#fsheet').style.display==='flex'){
+    $('#fsheet').style.display='none';
+    document.body.style.overflow='';
+  }
   if(tx){
     editingId=tx.id;
     draft={ type:tx.type, amount:tx.amount, cat:tx.cat, payId:tx.payId||'', memo:tx.memo||'',
