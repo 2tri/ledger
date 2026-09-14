@@ -230,6 +230,11 @@ select{appearance:none;-webkit-appearance:none;
 .todo-alert.warn{background:var(--warn-bg);color:var(--warn-txt)}
 .todo-alert.calm{background:var(--line2);color:var(--sub)}
 .todo-alert .grow{flex:1}
+/* 다른 폰에서 새로 적은 내역 알림 줄 — 카드 밖, 독립된 둥근 줄(카드 바닥에 붙는 todo-alert와 다른 모양) */
+.new-alert{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  margin:0 0 12px;padding:12px 16px;border-radius:var(--r2);
+  background:var(--accent-soft);color:var(--accent);font-size:14.5px;font-weight:700}
+.new-alert .grow{flex:1}
 .leg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 10px;margin-bottom:16px;padding:0 2px}
 .leg span{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--sub);
   font-weight:600;white-space:nowrap}
@@ -288,6 +293,9 @@ select{appearance:none;-webkit-appearance:none;
 .tx-line .t2 b.who1{color:var(--p1)}
 .tx-line .amt{font-size:16.5px;font-weight:800;flex:none;letter-spacing:-.5px}
 .tx-line:active{opacity:.55}
+/* 다른 폰에서 새로 들어온 줄 — 아이콘에 이미 결제자 색 점이 있어서 점 대신 글자 딱지로 */
+.tx-line .newtag{display:inline-block;vertical-align:2px;margin-right:6px;padding:1px 6px;
+  border-radius:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:800}
 
 .legend{display:flex;gap:16px;align-items:center;font-size:13px;color:var(--sub);font-weight:600;margin-top:10px}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -510,6 +518,8 @@ select{appearance:none;-webkit-appearance:none;
       <button class="tiny muted" id="home-ym-lbl" style="font-weight:700"></button></div>
     <button class="tiny muted" id="h-sync" style="display:none;width:100%;text-align:left;
       background:none;border:0;padding:0 0 9px 0;font-weight:700"></button>
+    <!-- 🆕 2026-09-14 — 다른 폰에서 새로 적은 내역이 있으면 여기 뜬다. 눌러야만(홈에서 확인해야만) 사라진다. -->
+    <button class="new-alert" id="h-new-alert" style="display:none"></button>
     <div class="monthbar" id="h-monthbar" style="margin-bottom:12px">
       <button id="h-prev">‹</button>
       <div class="ym num" id="h-ym"></div>
@@ -930,8 +940,8 @@ select{appearance:none;-webkit-appearance:none;
       <button data-f="expense">지출</button>
       <button data-f="income">수입</button>
     </div>
-    <div class="fld sm"></div>
-    <div class="tiny muted" style="margin:0 0 5px 2px;font-weight:700">기간</div>
+    <div class="fld sm" id="fs-period-fld"></div>
+    <div class="tiny muted" id="fs-period-lbl" style="margin:0 0 5px 2px;font-weight:700">기간</div>
     <!-- 🆕 2026-09-02 — "이번주"가 굳이 필요한가 지적받고 뺐다. 대부분 이번달 아니면
          직접 기간을 정하지, "이번주"만 따로 볼 일은 잘 없다는 판단. -->
     <div class="seg sm" id="fs-period" style="grid-template-columns:repeat(2,1fr)">
@@ -955,6 +965,8 @@ select{appearance:none;-webkit-appearance:none;
          「무엇을」 단추와는 서로 안 건드리는 독립된 필터라, 아래 칩을 직접 눌러야만 풀린다
          (2026-09-10, 예전엔 「무엇을」 아무거나 눌러도 조용히 풀려서 헷갈렸다). -->
     <div id="fs-fix-note"></div>
+    <!-- 🆕 2026-09-14 — 홈의 「다른 폰에서 새로 적은 내역」 알림을 눌러 들어오면 여기 뜬다. -->
+    <div id="fs-ids-note"></div>
     <div class="fld sm"></div>
     <!-- 🆕 2026-09-02 — 「정렬」이 따로 한 줄(라벨+단추 3개)을 차지해서
          "누를게 너무 많다"는 지적을 받았다. 목록 바로 위, 건수 옆에 작은 글씨로 줄였다.
@@ -1354,7 +1366,7 @@ var APP_BUILD = '08-31 a';
    🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
    글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
    "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
-var APP_TOUCHED = '09-14';
+var APP_TOUCHED = '09-14 15:08';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -1399,6 +1411,50 @@ var SKEY = 'ourledger_sync_v1';
 var SYNC_FILE = 'ourledger.json';
 var syncCfg = { token:'', owner:'', repo:'', last:0, err:'' };
 var syncBusy = false, syncAgain = false, syncT = null, syncShape = null;
+var syncGotNew = false;   /* 이번 맞추기로 이 폰 살림이 바뀌었나 — 바뀌었으면 화면을 다시 그린다 */
+
+/* 다른 기기에서 새로 들어온 거래 — 홈 알림 줄과 「새로」 글자에 쓴다(2026-09-14).
+   🚨 살림(DB)에 넣지 않고 폰마다 따로 둔다. 넣으면 창고로 올라가 상대 폰에도 「새로」가 뜨고,
+      백업 파일에도 섞인다. 동기화 열쇠(SKEY)와 같은 이유. */
+var NEWKEY = 'ourledger_new_v1';
+var newIds = {};
+function newLoad(){
+  newIds = {};
+  try{ JSON.parse(localStorage.getItem(NEWKEY) || '[]').forEach(function(id){ newIds[id] = 1; }); }catch(e){}
+}
+function newSave(){
+  try{ localStorage.setItem(NEWKEY, JSON.stringify(Object.keys(newIds))); }catch(e){}
+}
+function newHas(id){ return !!newIds[id]; }
+/* 그사이 지워진 것은 세지 않는다 */
+function newLiveIds(){
+  return liveTx().filter(function(t){ return newIds[t.id]; }).map(function(t){ return t.id; });
+}
+/* 홈 알림 줄. 누르면 「봤다」는 뜻으로 바로 비운다 — 따로 취소 단추를 안 둔다. */
+function drawNewAlert(){
+  var al=$('#h-new-alert'); if(!al) return;
+  var ids=newLiveIds();
+  if(!ids.length){ al.style.display='none'; return; }
+  al.style.display='';
+  al.innerHTML='<span>📥</span><span class="grow">다른 폰에서 새로 적은 내역 '+ids.length+'건</span><span>›</span>';
+  al.onclick=function(){
+    newIds={}; newSave(); drawNewAlert();
+    openFind({ filter:'all', fix:'all', who:'all', q:'', period:'month', ids:ids });
+  };
+}
+/* 맞추기로 살림이 바뀌면 지금 보는 화면을 다시 그린다.
+   🚨 go() 는 쓰지 않는다 — 맨 위로 스크롤하고 홈의 달을 이번 달로 되돌리기 때문.
+   🚨 설정 탭은 다시 그리지 않는다 — 이름·열쇠를 적던 칸의 글자가 날아간다.
+   입력 창(#sheet)은 draft 를 따로 들고 있으므로 건드리지 않는다. */
+function refreshAfterSync(){
+  if(curPage==='home') renderHome();
+  else if(curPage==='list') renderList();
+  else if(curPage==='cal') renderCal();
+  else if(curPage==='asset') renderAsset();
+  if($('#fsheet').style.display==='flex') drawFindResults();
+  if($('#dsheet').style.display==='flex') drawDetail();
+  if($('#statsheet').style.display==='flex') drawStat();
+}
 
 function syncLoadCfg(){
   try{
@@ -1505,9 +1561,16 @@ function syncNow(quiet){
     tries++;
     return syncPull().then(function(p){
       if(p.err) return { err:p.err };
-      var rep = { added:0, changed:0, sets:[] };
+      var rep = { added:0, changed:0, sets:[], newTx:[] };
       if(p.data){
+        var hadTx = liveTx().length > 0;
         rep = mergeInto(DB, p.data);
+        /* 「새로」 표시 — 이 폰의 **첫 맞추기**나 **거래가 하나도 없던 폰**이면 전부 새로 들어오므로 표시하지 않는다 */
+        if(rep.newTx.length && syncCfg.last && hadTx){
+          rep.newTx.forEach(function(id){ newIds[id] = 1; });
+          newSave();
+        }
+        if(rep.added || rep.changed || rep.sets.length) syncGotNew = true;
         resnapSettings();       /* 받아온 것을 「내가 방금 고친 것」으로 세지 않게 */
         save();
       }
@@ -1527,6 +1590,8 @@ function syncNow(quiet){
   return round().then(function(r){
     syncBusy = false;
     if(r.err){ syncCfg.err = r.err; syncSaveCfg(); }
+    /* 올리기가 실패했어도 받아온 것은 이미 이 폰에 합쳐졌으므로 화면은 새로 그린다 */
+    if(syncGotNew){ syncGotNew = false; refreshAfterSync(); }
     if(typeof drawSyncCard === 'function') drawSyncCard();
     if(syncAgain){ syncAgain = false; syncSchedule(400); }
     else if(!quiet){
@@ -1538,6 +1603,7 @@ function syncNow(quiet){
     syncBusy = false;
     syncCfg.err = '인터넷에 닿지 못했습니다.\n다음에 저절로 다시 맞춥니다.';
     syncSaveCfg();
+    if(syncGotNew){ syncGotNew = false; refreshAfterSync(); }
     if(typeof drawSyncCard === 'function') drawSyncCard();
     if(!quiet) alert('맞추지 못했습니다.\n\n' + syncCfg.err);
     return { err: syncCfg.err };
@@ -1594,7 +1660,7 @@ function syncOnSave(){
 /* 남의 살림(theirs)을 내 살림(mine)에 합친다. mine 이 그 자리에서 고쳐진다.
    돌려주는 것: 새로 들어온 건수 · 고쳐진 건수 · 바뀐 설정 묶음 이름. */
 function mergeInto(mine, theirs){
-  var report = { added:0, changed:0, sets:[] };
+  var report = { added:0, changed:0, sets:[], newTx:[] };
   if(!theirs || typeof theirs !== 'object') return report;
 
   SYNC_LISTS.forEach(function(key){
@@ -1605,7 +1671,11 @@ function mergeInto(mine, theirs){
       if(!tr || !tr.id) return;
       var at = byId[tr.id];
       if(at === undefined){
-        byId[tr.id] = list.length; list.push(tr); report.added++; return;
+        byId[tr.id] = list.length; list.push(tr); report.added++;
+        /* 「새로」 표시 후보 — 반복이 저절로 만든 기록은 두 폰이 똑같이 만들므로 상대가 적은 게 아니다 */
+        if(key === 'tx' && !tr.deleted && !(tr.ruleId && tr.id === ruleTxId(tr.ruleId, ymOf(tr.date))))
+          report.newTx.push(tr.id);
+        return;
       }
       /* 최신이 이긴다. 「지웠다」도 하나의 고침이라 같은 규칙을 그대로 따른다. */
       if((+tr.updated||0) > (+list[at].updated||0)){ list[at] = tr; report.changed++; }
@@ -2481,6 +2551,8 @@ function renderHome(){
     };
   }
 
+  drawNewAlert();
+
   /* 「어디에 많이 썼나」는 2026-09-01 에 📊 통계 화면으로 옮겼다 — renderBars() 는
      이제 drawStat() 에서만 부른다. */
   renderBudget(ym);
@@ -3295,7 +3367,8 @@ function txLine(t, viewId){
   if(!isMove) emo.appendChild(el('i'));
   b.appendChild(emo);
   var mid=el('div','mid');
-  mid.appendChild(el('div','t1', t.memo ? t.memo : t.cat));
+  var t1=el('div','t1', (newHas(t.id) ? '<span class="newtag">새로</span>' : '') + (t.memo ? t.memo : t.cat));
+  mid.appendChild(t1);
   var sub;
   if(isMove) sub=dayLabel(t.date)+' · '+assetName(t.fromId)+' → '+assetName(t.toId);
   else if(t.type==='income') sub=dayLabel(t.date)+' · '+assetName(t.toId)+' 입금';
@@ -3578,17 +3651,13 @@ function findActive(){
    findCount()/updateFsCount() 를 findMatches()/drawFindResults() 로 바꿨다.
    기간(이번주/이번달/기간지정)이 새로 생겨서, 검색어도 이제 "전체 기간"이 아니라
    그 기간 안에서만 찾는다(참고 화면과 같은 구조 — 기간과 검색어가 동시에 걸린다). */
-var findPeriod='month';        /* 'week' | 'month' | 'custom' */
+var findPeriod='month';        /* 'month' | 'custom' — 'week'(이번주)는 2026-09-02에 화면에서 뺐다 */
 var findFrom='', findTo='';    /* findPeriod==='custom' 일 때만 쓴다 */
 var findSort='date';           /* 'date' | 'amtAsc' | 'amtDesc' */
-function dstr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+/* 🆕 2026-09-14 — 홈의 「다른 폰에서 새로 적은 내역」 알림을 눌러 들어왔을 때만 채워진다.
+   있으면 기간 대신 이 id 목록으로만 거른다(새 내역이 지난달 것일 수도 있어서). */
+var findIds=null;
 function findRange(){
-  if(findPeriod==='week'){
-    var t=new Date(todayStr()+'T00:00:00'), dow=t.getDay();
-    var start=new Date(t); start.setDate(t.getDate()-dow);
-    var end=new Date(start); end.setDate(start.getDate()+6);
-    return { from: dstr(start), to: dstr(end) };
-  }
   if(findPeriod==='custom'){
     return { from: findFrom||'0000-01-01', to: findTo||'9999-12-31' };
   }
@@ -3598,7 +3667,8 @@ function findRange(){
 function findMatches(){
   var range=findRange(), q=listQ.trim().toLowerCase();
   var rows=liveTx().filter(function(t){
-    if(t.date<range.from || t.date>range.to) return false;
+    if(findIds){ if(findIds.indexOf(t.id)<0) return false; }
+    else if(t.date<range.from || t.date>range.to) return false;
     if(q && !txMatches(t,q)) return false;
     if(listFilter==='saving'){ if(!isSavingMove(t)) return false; }
     else if(listFilter!=='all' && t.type!==listFilter) return false;
@@ -3632,9 +3702,28 @@ function drawFixNote(){
     note.className=''; note.style.cssText='';
   }
 }
+/* findIds 로 들어왔을 때 — 「기간」 칸은 뜻이 없으므로 숨기고, 대신 무엇을 보는 중인지 칩으로 알린다.
+   drawFixNote()와 같은 모양(지울 수 있는 칩)으로 통일한다. */
+function drawIdsNote(){
+  var note=$('#fs-ids-note'); note.innerHTML='';
+  if(!findIds) return;
+  note.className='notice';
+  note.style.cssText='margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px';
+  var txt=el('span', null, '<b>다른 폰에서 새로 적은 내역</b>만 보는 중입니다.');
+  var clear=el('button', null, '해제 ✕');
+  clear.type='button';
+  clear.style.cssText='flex:none;background:none;border:0;color:inherit;font:inherit;'
+    + 'font-weight:700;text-decoration:underline;padding:6px 4px;cursor:pointer';
+  clear.onclick=function(){ findIds=null; drawFindResults(); };
+  note.appendChild(txt); note.appendChild(clear);
+}
 function drawFindResults(){
   drawFixNote();
-  $('#fs-custom').style.display = (findPeriod==='custom') ? 'flex' : 'none';
+  drawIdsNote();
+  $('#fs-period-fld').style.display = findIds ? 'none' : '';
+  $('#fs-period-lbl').style.display = findIds ? 'none' : '';
+  $('#fs-period').style.display = findIds ? 'none' : '';
+  $('#fs-custom').style.display = (!findIds && findPeriod==='custom') ? 'flex' : 'none';
   $$('#fs-period button').forEach(function(b){ b.classList.toggle('on', b.dataset.p===findPeriod); });
   var sortLabel={date:'최신순', amtDesc:'큰 금액순', amtAsc:'작은 금액순'}[findSort];
   $('#fs-sort-btn').textContent=sortLabel+' ▾';
@@ -3671,9 +3760,11 @@ function openFind(preset){
   if(preset){
     listFilter=preset.filter; listFix=preset.fix; listWho=preset.who;
     listQ=preset.q; findPeriod=preset.period||'month';
+    findIds=preset.ids||null;
   }else{
     listQ=''; listFilter='all'; listWho='all'; listFix='all';
     findPeriod='month'; findSort='date'; findFrom=''; findTo='';
+    findIds=null;
     $('#fs-from').value=''; $('#fs-to').value='';
   }
   $('#l-q').value=listQ;   /* 검색창 글자는 preset 이든 초기화든 항상 listQ 와 맞춘다 */
@@ -3701,7 +3792,7 @@ function closeFind(){
   $('#fsheet').style.display='none';
   $('#fs-sort-menu').style.display='none';
   document.body.style.overflow='';
-  listQ=''; listFilter='all'; listWho='all'; listFix='all';
+  listQ=''; listFilter='all'; listWho='all'; listFix='all'; findIds=null;
   $('#l-q').value='';
   renderList();
 }
@@ -3748,11 +3839,16 @@ function newTxDate(){
   return todayStr();
 }
 function openSheet(tx){
-  /* 찾기 화면(#fsheet, z-index 68)이 이 시트(z-index 60)보다 위에 뜬다.
-     찾기 화면에서 항목을 눌러 여기로 들어오면, 안 닫아줄 경우 이 화면이 열려도
-     찾기 화면에 가려 안 보인다(2026-09-14 사용자 신고 — "닫기를 누르면 눌러져있더라"). */
+  /* 찾기 화면(#fsheet, z-index 68)·통장 상세(#dsheet, z-index 63)가 이 시트(z-index 60)보다
+     위에 뜬다. 그 화면에서 항목을 눌러 여기로 들어오면, 안 닫아줄 경우 이 화면이 열려도
+     그 화면에 가려 안 보인다(찾기 화면: 2026-09-14 사용자 신고 — "닫기를 누르면 눌러져있더라".
+     통장 상세: 같은 날 전체 훑어보기에서 같은 패턴을 추가로 찾아 같이 고침). */
   if($('#fsheet').style.display==='flex'){
     $('#fsheet').style.display='none';
+    document.body.style.overflow='';
+  }
+  if($('#dsheet').style.display==='flex'){
+    $('#dsheet').style.display='none';
     document.body.style.overflow='';
   }
   if(tx){
@@ -3802,57 +3898,6 @@ function fldLabel(txt, key){
   d.innerHTML=txt;
   if(key) d.setAttribute('data-fld', key);
   return d;
-}
-function chipRow(list, curId, onPick, colorByOwner, groupByOwner){
-  var ch=el('div','chips');
-  if(!list.length){
-    /* 고를 것이 하나도 없는데 「골라주세요」라고만 하면 막다른 길이 된다.
-       그래서 여기서 바로 등록하러 갈 수 있게 한다. */
-    var warn=el('div','tiny muted');
-    warn.innerHTML='아직 등록한 통장·카드가 없습니다.<br>'
-                 + '하나라도 있어야 적을 수 있습니다.<br>'
-                 + '아래 버튼으로 지금 만드세요.';
-    ch.appendChild(warn);
-    var go1=el('button','act', '＋ 통장·카드 만들러 가기');
-    go1.style.cssText='width:100%;margin-top:9px;padding:13px;border-radius:14px;'
-      + 'background:var(--accent);color:#fff;font-weight:700;font-size:15px';
-    go1.onclick=function(){ closeSheet(); go('asset'); openGuide(); };
-    ch.appendChild(go1);
-    return ch;
-  }
-  /* 결제수단이 여러 개면 평평하게 늘어놓으면 못 찾는다.
-     명의(남편/아내/공동)로 묶고, 그 안에서 카드 → 통장 → 현금 순으로 놓는다. */
-  if(groupByOwner && list.length>4){
-    /* 🚨 0 을 쓰면 안 된다 — 자바스크립트에서 0 은 「값 없음」으로 취급돼
-       `ORD[kind]||9` 가 9 로 떨어진다. 그래서 1부터 매긴다. */
-    var ORD={card:1, cash:2, bank:3};
-    [0,1,2].forEach(function(w){
-      var mine=list.filter(function(a){ return ownerOf(a)===w; });
-      if(!mine.length) return;
-      mine.sort(function(x,y){ return (ORD[x.kind]||9)-(ORD[y.kind]||9); });
-      var lab=el('div','tiny');
-      lab.style.cssText='width:100%;margin:2px 0 4px 2px;font-weight:700;color:'
-        + (w===2?'var(--sub)':'var(--p'+w+')');
-      lab.textContent = w===2 ? '공동' : (DB.people[w]||('사람'+(w+1)));
-      ch.appendChild(lab);
-      mine.forEach(function(a){
-        var cls2=(curId===a.id?'on ':'') + (w===2?'':'p'+w);
-        var btn2=el('button', cls2,
-          (a.kind==='cash'?'💵 ':a.kind==='bank'?'🏦 ':'💳 ') + (a.name||KIND_LABEL[a.kind]));
-        btn2.onclick=function(){ onPick(a.id); };
-        ch.appendChild(btn2);
-      });
-    });
-    return ch;
-  }
-  list.forEach(function(a){
-    var cls=(curId===a.id?'on ':'');
-    if(colorByOwner && ownerOf(a)!==2) cls+='p'+ownerOf(a);
-    var btn=el('button', cls, a.name||KIND_LABEL[a.kind]);
-    btn.onclick=function(){ onPick(a.id); };
-    ch.appendChild(btn);
-  });
-  return ch;
 }
 /* 결제수단(지출은 payId, 수입은 toId) 한 칸. 카드를 고르면 어느 통장에서 빠지는지도 보여준다. */
 function renderPayField(b){
@@ -7691,6 +7736,7 @@ $('#s-wipe').onclick=function(){
    15. 시작
    ============================================================================ */
 load();
+newLoad();
 applyTheme();
 runRules();
 go('home');
@@ -7699,6 +7745,17 @@ go('home');
 syncLoadCfg();
 if(syncReady()){ syncShape = JSON.stringify(syncPayload()); syncNow(true); }
 drawSync();
+/* 홈 화면 앱은 완전히 안 끄고 배경에 두는 경우가 많다 — 그 상태로는 위 syncNow(true)가
+   다시 안 돈다. 화면이 다시 보이는 순간(다른 앱에서 돌아옴)마다 한 번 더 맞춘다.
+   너무 잦은 호출을 막기 위해 마지막 성공 맞추기가 30초 안이면 건너뛴다(2026-09-14). */
+function onAppVisible(){
+  if(document.visibilityState !== 'visible') return;
+  if(!syncReady()) return;
+  if(Date.now() - syncCfg.last < 30000) return;
+  syncNow(true);
+}
+document.addEventListener('visibilitychange', onAppVisible);
+window.addEventListener('pageshow', function(e){ if(e.persisted) onAppVisible(); });
 /* 통장·카드가 하나도 없고 아직 「다 했어요」를 안 눌렀으면 안내부터 띄운다. */
 if(guideNeeded()) openGuide();
 </script>
