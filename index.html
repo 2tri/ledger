@@ -296,6 +296,10 @@ select{appearance:none;-webkit-appearance:none;
 /* 다른 폰에서 새로 들어온 줄 — 아이콘에 이미 결제자 색 점이 있어서 점 대신 글자 딱지로 */
 .tx-line .newtag{display:inline-block;vertical-align:2px;margin-right:6px;padding:1px 6px;
   border-radius:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:800}
+/* 「메우기」로 표시한 이체 — 저축 목록에서 「같이 보기」를 켰을 때만 나타나는 항목이라
+   경고색이 아니라 수수하게(회색 테두리만) 표시한다 */
+.tx-line .filltag{display:inline-block;vertical-align:2px;margin-right:6px;padding:1px 6px;
+  border-radius:6px;border:1px solid var(--dim);color:var(--dim);font-size:11px;font-weight:800}
 
 .legend{display:flex;gap:16px;align-items:center;font-size:13px;color:var(--sub);font-weight:600;margin-top:10px}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -1366,7 +1370,7 @@ var APP_BUILD = '08-31 a';
    🚨 글자(a/b/c)가 아니라 **실제 시각**을 쓴다(2026-08-27 확정) — 처음엔 판번호처럼
    글자를 올렸는데, Claude 가 안 보이는 곳에서 고칠 때마다 글자를 올려서 사용자가 보기엔
    "왜 벌써 c 냐"로 헷갈렸다. 시각은 볼 때마다 그 뜻이 그대로 보여서 헷갈릴 일이 없다. */
-var APP_TOUCHED = '09-14 15:08';
+var APP_TOUCHED = '09-16 09:51';
 
 var SYNC_LISTS = ['tx','assets','rules','events'];
 var SYNC_SETS  = ['cats','targets','people','budget','goal'];
@@ -2097,7 +2101,7 @@ function isWalletAsset(a){
 function monthMoves(ym){
   var saved=0, repaid=0;
   liveTx().forEach(function(t){
-    if(t.type!=='transfer' || ymOf(t.date)!==ym) return;
+    if(t.type!=='transfer' || ymOf(t.date)!==ym || t.notSave) return;
     var to=assetById(t.toId), fr=assetById(t.fromId);
     if(isSavingAsset(to)) saved+=t.amount;
     if(isSavingAsset(fr)) saved-=t.amount;
@@ -2128,18 +2132,32 @@ function outOfCashAsset(a){
   if(!a) return false;
   return isSavingAsset(a) || a.kind==='other';
 }
+/* 이 from/to 조합이 (메우기 표시와 무관하게) 원래 저축 성격을 「띌 수 있는」 이체인가.
+   입력 화면에서 「저축/메우기」 토글을 보여줄지 판단할 때 쓴다 — isSavingMove 는 여기에
+   t.notSave 까지 더 본다. */
+function transferTouchesSaving(fromId, toId){
+  var to=assetById(toId), fr=assetById(fromId);
+  return outOfCashAsset(to) || outOfCashAsset(fr) || !!(fr && KIND_DEBT[fr.kind]);
+}
 /* 「저축」 칸을 눌렀을 때 보여줄 옮김인가.
    🚨 monthCash() 의 합계와 **같은 규칙**이어야 한다 — 다르면 눌러서 본 목록의 합이
-      화면의 저축 금액과 안 맞아 「왜 다르지?」가 된다. */
+      화면의 저축 금액과 안 맞아 「왜 다르지?」가 된다.
+   🆕 2026-09-16 — 「메우기」로 표시한 이체(`t.notSave`)는 계좌 종류와 상관없이 항상 제외한다.
+      이미 딴 데서 쓴 돈을 계좌 사이에서 되돌려 놓는 것뿐이라, 저축 의사결정과 무관하기 때문. */
 function isSavingMove(t){
-  if(t.type!=='transfer') return false;
-  var to=assetById(t.toId), fr=assetById(t.fromId);
-  return outOfCashAsset(to) || outOfCashAsset(fr) || !!(fr && KIND_DEBT[fr.kind]);
+  if(t.type!=='transfer' || t.notSave) return false;
+  return transferTouchesSaving(t.fromId, t.toId);
+}
+/* 「저축」으로 거른 목록에 보여줄 것 — 평소엔 진짜 저축만, `listShowFill`을 켜면
+   메우기 이체도 (확인용으로) 같이. 합계 숫자 계산(monthCash)에는 영향 없다. */
+function matchesSavingFilter(t){
+  if(isSavingMove(t)) return true;
+  return !!(listShowFill && t.type==='transfer' && t.notSave && transferTouchesSaving(t.fromId, t.toId));
 }
 function monthCash(ym){
   var s=monthSum(ym), saved=0;
   liveTx().forEach(function(t){
-    if(t.type!=='transfer' || ymOf(t.date)!==ym) return;
+    if(t.type!=='transfer' || ymOf(t.date)!==ym || t.notSave) return;
     var to=assetById(t.toId), fr=assetById(t.fromId);
     if(outOfCashAsset(to)) saved+=t.amount;
     if(outOfCashAsset(fr)) saved-=t.amount;
@@ -2418,6 +2436,10 @@ var listFix='all';
 /* 홈에서 드릴다운해서 내역으로 온 것인지 — 맞으면 위에 「‹ 홈」을 보여준다.
    이 앱은 하단 탭 전환만 있고 뒤로가기 개념이 없어서, 드릴다운했을 때만 예외로 만든다. */
 var listFromHome=false;
+/* 저축 목록(listFilter==='saving')에서 「메우기」로 표시한 이체도 같이 보여줄지 —
+   기본은 숨김(저축 합계·목록에서 이미 빠져 있으므로). 확인하고 싶을 때만 켠다.
+   켜도 맨 위 합계 숫자는 안 바뀐다(그 숫자는 항상 monthCash().saved 그대로). */
+var listShowFill=false;
 
 function go(p){
   curPage=p;
@@ -3367,7 +3389,9 @@ function txLine(t, viewId){
   if(!isMove) emo.appendChild(el('i'));
   b.appendChild(emo);
   var mid=el('div','mid');
-  var t1=el('div','t1', (newHas(t.id) ? '<span class="newtag">새로</span>' : '') + (t.memo ? t.memo : t.cat));
+  var t1=el('div','t1', (newHas(t.id) ? '<span class="newtag">새로</span>' : '')
+    + (t.notSave ? '<span class="filltag">메우기</span>' : '')
+    + (t.memo ? t.memo : t.cat));
   mid.appendChild(t1);
   var sub;
   if(isMove) sub=dayLabel(t.date)+' · '+assetName(t.fromId)+' → '+assetName(t.toId);
@@ -3411,7 +3435,7 @@ function monthDayTotals(ym){
   liveTx().forEach(function(t){
     if(ymOf(t.date)!==ym) return;
     if(listFilter==='saving'){
-      if(!isSavingMove(t)) return;
+      if(!matchesSavingFilter(t)) return;
       if(listWho!=='all' && String(t.who)!==listWho) return;
       /* 적금으로 「들어간」 것은 통장에서 나간 돈이라 빨강 쪽에 넣는다 */
       var ds=out[t.date] || (out[t.date]={in:0,out:0});
@@ -3518,7 +3542,7 @@ function renderList(){
     if(!searching && ymOf(t.date)!==curYM) return false;
     if(searching && !txMatches(t,q)) return false;
     if(!searching && listDay && t.date!==listDay) return false;
-    if(listFilter==='saving'){ if(!isSavingMove(t)) return false; }
+    if(listFilter==='saving'){ if(!matchesSavingFilter(t)) return false; }
     else if(listFilter!=='all' && t.type!==listFilter) return false;
     if(listFix==='fixed' && !isFixed(t)) return false;
     if(listFix==='var' && isFixed(t)) return false;
@@ -3562,6 +3586,19 @@ function renderList(){
     fxHead.innerHTML='<b>'+(listFix==='fixed'?'고정비':'변동비')+'만</b> 걸러서 보고 있습니다.<br>'
                     + '다른 것을 눌러도 이 상태는 그대로 이어집니다.';
     body.appendChild(fxHead);
+  }
+  /* 🆕 2026-09-16 — 「저축」 목록엔 「메우기」로 표시한 이체는 기본적으로 숨긴다
+     (합계에도 안 잡혀 있음). 확인하고 싶을 때만 여기서 켜서 같이 본다. */
+  if(onlySave){
+    var fillBar=el('div','notice');
+    fillBar.innerHTML = listShowFill
+      ? '메우기용 이체도 <b>같이 보고 있습니다.</b> '
+      : '메우기용 이체는 <b>안 보이게 숨겨져 있습니다.</b><br>(위 합계에도 안 잡혀 있습니다) ';
+    var fillBtn=el('button',null, listShowFill?'숨기기':'같이 보기');
+    fillBtn.style.cssText='margin-left:4px;text-decoration:underline;font-weight:700;color:var(--accent)';
+    fillBtn.onclick=function(){ listShowFill=!listShowFill; renderList(); };
+    fillBar.appendChild(fillBtn);
+    body.appendChild(fillBar);
   }
   /* 🚨 여기에 「넣은 것/뺀 것/합계」 안내문을 넣었다가 **뺐다**(2026-09-01).
      사용자가 원한 것은 설명이 아니라 **중복돼 보이는 줄 자체가 안 보이는 것**이었다:
@@ -3670,7 +3707,7 @@ function findMatches(){
     if(findIds){ if(findIds.indexOf(t.id)<0) return false; }
     else if(t.date<range.from || t.date>range.to) return false;
     if(q && !txMatches(t,q)) return false;
-    if(listFilter==='saving'){ if(!isSavingMove(t)) return false; }
+    if(listFilter==='saving'){ if(!matchesSavingFilter(t)) return false; }
     else if(listFilter!=='all' && t.type!==listFilter) return false;
     if(listFix==='fixed' && !isFixed(t)) return false;
     if(listFix==='var' && isFixed(t)) return false;
@@ -3855,7 +3892,7 @@ function openSheet(tx){
     editingId=tx.id;
     draft={ type:tx.type, amount:tx.amount, cat:tx.cat, payId:tx.payId||'', memo:tx.memo||'',
             who:tx.who, date:tx.date, fromId:tx.fromId||'', toId:tx.toId||'',
-            target:tx.target||DEF_TARGET };
+            target:tx.target||DEF_TARGET, notSave:!!tx.notSave };
     $('#sh-del').style.display='';
   }else{
     editingId=null;
@@ -3871,7 +3908,7 @@ function openSheet(tx){
     draft={ type:'expense', amount:0, cat:'', ruleId:'', payId:(lastPay||(p[0]?p[0].id:'')),
             memo:'', who:DB.last.who||0, date:newTxDate(),
             fromId:(b[0]?b[0].id:''), toId:(b[1]?b[1].id:''),
-            target:(DB.last.target||DEF_TARGET),
+            target:(DB.last.target||DEF_TARGET), notSave:false,
             /* 지갑 충전용. -1 은 「아직 안 골랐다」 (0 은 「충전 안 함」이라 뜻이 다르다) */
             topUp:-1, topUpFrom:(DB.last.topUpFrom||'') };
     $('#sh-del').style.display='none';
@@ -4272,6 +4309,25 @@ function drawSheet(){
       b.appendChild(row);
       b.appendChild(el('div','fld'));
     });
+    /* from/to 를 다 골랐고, 그 조합이 원래 저축으로 잡히는 이체일 때만
+       「저축/메우기」 토글을 보여준다. 통장끼리의 평범한 이체엔 안 보여준다(무관하므로). */
+    if(draft.fromId && draft.toId && transferTouchesSaving(draft.fromId, draft.toId)){
+      b.appendChild(fldLabel('저축으로 셀까요'));
+      var fsSeg=el('div','seg'); fsSeg.style.gridTemplateColumns='repeat(2,1fr)';
+      [[false,'저축'],[true,'메우기']].forEach(function(o){
+        var fsBtn=el('button', (!!draft.notSave)===o[0]?'on':'', o[1]);
+        fsBtn.onclick=function(){ draft.notSave=o[0]; drawSheet(); };
+        fsSeg.appendChild(fsBtn);
+      });
+      b.appendChild(fsSeg);
+      b.appendChild(el('div','tiny muted',
+        draft.notSave
+          ? '이미 딴 데서 쓴 돈을<br>이 계좌로 <b>되돌려 채우는 것</b>입니다.<br>'
+            + '홈의 「저축」에는 안 잡힙니다.'
+          : '진짜로 모으거나<br>정해 둔 곳으로 옮기는 것입니다.<br>'
+            + '홈의 「저축」에 그대로 잡힙니다.'));
+      b.appendChild(el('div','fld'));
+    }
     renderDateField(b);
   }else{
     if(draft.type==='income'){
@@ -4630,15 +4686,15 @@ function commitTx(keepOpen){
      안 비우면 「옮김인데 결제수단이 남아 있는」 기록이 생겨 나중에 헷갈린다. */
   var madeWage = null, madeTopUp = null;
   if(draft.type==='transfer'){ draft.payId=''; }
-  else if(draft.type==='income'){ draft.payId=''; draft.fromId=''; }
-  else { draft.fromId=''; draft.toId=''; }
+  else if(draft.type==='income'){ draft.payId=''; draft.fromId=''; draft.notSave=false; }
+  else { draft.fromId=''; draft.toId=''; draft.notSave=false; }
   if(editingId){
     var i, f=null;
     for(i=0;i<DB.tx.length;i++) if(DB.tx[i].id===editingId) f=DB.tx[i];
     if(f){
       f.type=draft.type; f.amount=draft.amount; f.cat=draft.cat; f.payId=draft.payId;
       f.memo=draft.memo; f.who=draft.who; f.date=draft.date;
-      f.target=draft.target;
+      f.target=draft.target; f.notSave=(draft.type==='transfer' && !!draft.notSave);
       f.fromId=draft.fromId; f.toId=draft.toId; f.updated=Date.now();
     }
   }else{
@@ -4655,6 +4711,7 @@ function commitTx(keepOpen){
     DB.tx.push({ id:uid(), ts:Date.now(), date:draft.date, type:draft.type,
       amount:draft.amount, cat:draft.cat, payId:draft.payId, memo:draft.memo,
       who:draft.who, target:draft.target, fromId:draft.fromId, toId:draft.toId,
+      notSave:(draft.type==='transfer' && !!draft.notSave) || undefined,
       ruleId:(draft.ruleId||undefined),
       updated:Date.now(), deleted:false });
     madeWage = wageFromTransfer(draft);   /* 월급을 같이 적어 준다 (아래 설명) */
