@@ -149,7 +149,7 @@ select{appearance:none;-webkit-appearance:none;
 .cal{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;
   border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
   background:var(--card);margin-bottom:14px}
-.cal .cd{min-height:56px;padding:6px 0 5px;text-align:center;min-width:0;overflow:hidden;
+.cal .cd{min-height:56px;padding:3px 0 5px;text-align:center;min-width:0;overflow:hidden;
   border-right:1px solid var(--line);border-top:1px solid var(--line)}
 .cal .cd:nth-child(7n){border-right:none}
 .cal .cd:nth-child(-n+7){border-top:none}
@@ -161,7 +161,11 @@ select{appearance:none;-webkit-appearance:none;
 .cal .cd.sat .dnum{color:var(--accent)}
 /* 공휴일은 일요일과 같은 빨강 — 「쉬는 날」이라는 뜻이 색 하나로 통한다(2026-09-02) */
 .cal .cd.hol .dnum{color:var(--minus)}
-.cal .hnm{font-size:9px;line-height:1.15;color:var(--minus);margin-top:1px;
+/* 🆕 공휴일 이름 줄은 **모든 칸에 같은 높이로 자리를 잡아 둔다**(비어 있어도).
+   예전에는 공휴일 칸에만 이름 줄이 생겨서 그 칸의 막대·점이 한 줄 아래로 밀렸고,
+   10/9~10 처럼 공휴일을 지나는 기간 막대가 칸마다 높이가 달라 끊겨 보였다(사용자 지적).
+   숫자는 칸 위쪽에 두고, 이름·막대·점이 항상 같은 높이에서 시작한다. */
+.cal .hnm{font-size:9px;line-height:11px;height:11px;color:var(--minus);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 1px}
 .cal .cd.today .dnum{background:var(--accent);color:#fff}
 .cal .dots{display:flex;justify-content:center;gap:3px;height:7px;margin-top:2px}
@@ -1979,11 +1983,46 @@ function payInAmount(r, ym){
       자가운전보조금(5만 고정)은 앱이 이미 저절로 적어 두므로,
       **월급 = 옮긴 금액 − 그 달에 이미 적힌 수입** 으로 갈라진다.
       남편은 다른 수입이 없어 옮긴 금액이 그대로 월급이 된다. */
+/* 🆕 2026-10-12 — 「월급 카뱅으로」 이체가 **어느 월급 반복과 한 쌍인지** 찾는다.
+   예전에는 `wageRuleId`/`viaTransfer` 가 데이터에 직접 적혀 있어야 했는데, 그 값을
+   적는 화면이 없어서 **연결이 안 된 채**였다 → 월급도 이체도 챙길 것에 따로 떴다
+   (사용자: "월급 들어온 거랑 이체를 한 번에 하는 게 낫다 — 아내 추천").
+   ➡️ 값이 없으면 **모양으로 짚는다.** 이체 규칙(들어온 월급 그대로)의 출발 통장으로
+      들어오고, 앱이 대신 못 적는(직접 적어야 하는) 월급 반복이 **딱 하나일 때만** 짝으로 본다.
+      애매하면(둘 이상) 연결하지 않는다 — 엉뚱한 월급을 만들면 안 되기 때문.
+      `payInRule` 이 있으면 그것을 먼저 본다(아내: 월급과 자가운전보조금 중 월급만). */
+function wageRuleOf(r){
+  if(!r || r.kind!=='transfer' || !r.payIn || !r.fromId) return null;
+  if(r.wageRuleId){
+    var w0=ruleById(r.wageRuleId);
+    if(w0 && !w0.deleted) return w0;
+  }
+  var cand=liveRules().filter(function(x){
+    return x.kind==='income' && x.active!==false && x.toId===r.fromId && !ruleMakesTx(x);
+  });
+  if(r.payInRule){
+    var byId=cand.filter(function(x){ return x.id===r.payInRule; });
+    if(byId.length===1) return byId[0];
+  }
+  return cand.length===1 ? cand[0] : null;
+}
+/* 이 월급 반복이 이체에 딸려 있는가 — 그러면 챙길 것에 따로 안 띄운다 */
+function wageViaTransfer(x){
+  if(x.viaTransfer) return true;
+  if(x.kind!=='income') return false;
+  var hit=false;
+  liveRules().forEach(function(r){
+    if(r.active===false || r.id===x.id) return;
+    var w=wageRuleOf(r);
+    if(w && w.id===x.id) hit=true;
+  });
+  return hit;
+}
 function wageFromTransfer(d){
   if(d.type!=='transfer' || !d.ruleId || !d.fromId) return null;
   var r=ruleById(d.ruleId);
-  if(!r || !r.payIn || !r.wageRuleId) return null;
-  var wr=ruleById(r.wageRuleId);
+  if(!r || !r.payIn) return null;
+  var wr=wageRuleOf(r);
   if(!wr) return null;
   var ym=ymOf(d.date);
   /* 이미 그 달 월급을 적었으면 또 만들지 않는다 */
@@ -2290,7 +2329,7 @@ function monthTodos(ym){
   liveRules().forEach(function(r){
     if(ruleMakesTx(r) || r.active === false) return;
     /* 월급은 「월급 카뱅으로」 이체가 대신 알려준다 — 두 번 적게 하지 않는다. */
-    if(r.viaTransfer) return;
+    if(wageViaTransfer(r)) return;
     if(r.since && r.since > ym) return;
     if(r.until && r.until < ym) return;
     var dd = Math.min(+r.day || 1, daysInMonth(ym));
@@ -2660,6 +2699,8 @@ function renderHome(){
         else if(!it.due)                how='아직입니다 · '+todoWhen(r);
         /* 「들어온 월급 그대로」는 얼마인지 앱이 안다 — 그 자리에서 알려준다.
            눌러 들어가서야 알게 하면 한 번 더 헤매게 된다. */
+        else if(r.payIn && r.fromId && wageRuleOf(r) && !payInAmount(r, ym))
+                                        how='옮긴 금액만 적으면 월급도 같이 적힙니다';
         else if(r.payIn && r.fromId)    how=(ruleIsAuto(r)?'':'직접 옮기고 적어주세요 · ')
                                           + '이번 달 들어온 돈 '
                                           + wonx(payInAmount(r, ym));
@@ -7194,7 +7235,7 @@ function renderCal(){
     if(ds === calSel) cls += ' sel';
     var cell = el('button', cls);
     cell.appendChild(el('div', 'dnum', String(i)));
-    if(hol) cell.appendChild(el('div', 'hnm', holidayShort(hol)));
+    cell.appendChild(el('div', 'hnm', hol ? holidayShort(hol) : ''));
 
     /* 여러 날에 걸친 것은 **막대로 이어 그린다.** 점으로는 기간이 안 드러난다.
        하루짜리 일정과 돈 나가는 날은 그대로 점으로 둔다 — 그건 정말 「그날 하나」이기 때문. */
